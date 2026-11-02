@@ -1,0 +1,60 @@
+# Cloudflare Pages / Netlify _headers
+# Cloudflare Pages varsayılan asset önbelleğini kullanırız. Özel, bir yıllık
+# `immutable` kuralı dağıtım anında henüz yayılmamış bir hash istendiğinde SPA
+# fallback HTML'ini JavaScript yolu altında kalıcı olarak önbelleğe alabiliyordu.
+
+# --- GÜVENLİK BAŞLIKLARI (tüm yollar) ---
+# CSP hariç bu başlıklar analitik/pixel'leri KIRMAZ; hemen aktif.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  # microphone=(self): yalnız KENDİ sitemiz (admin "Bana Sor" sesli soru) mikrofon
+  # isteyebilir; dış siteler/iframe'ler yine erişemez. '()' tamamen kapatıyordu —
+  # tarayıcı izni açık olsa bile kayıt "izin verilmedi" hatası veriyordu.
+  Permissions-Policy: geolocation=(), microphone=(self), camera=(), payment=(self)
+  # FedCM desteklemeyen tarayıcılarda GIS popup'ının ana pencereyle haberleşebilmesi
+  # gerekir. `same-origin` tek başına bu kanalı kesip boş/tepkisiz popup üretiyordu.
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  # DENETİM SEC-5 F-03: storefront (kart verisi girilen origin) HSTS taşımıyordu.
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  # CSP — ZORLAYICI (T19). Canlı vitrin (ana sayfa, kategori, ürün, sepet, ödeme, giriş, /admin,
+  # /admin/login; masaüstü 1440×900 + mobil 390×844) başsız Chromium ile bu politika enjekte edilerek
+  # dolaşıldı: SIFIR zorlama ihlali. Eski Report-Only politikasında görülen tek meşru ihlal Cloudflare
+  # Web Analytics (static.cloudflareinsights.com → cloudflareinsights.com) idi; eklendi. Ayrıca GA4/Ads
+  # (www.google.com.tr, google.com, pagead2.googlesyndication.com), Clarity (c.bing.com) ve Yandex
+  # (yastatic.net) için üreticilerin CSP belgelerindeki host'lar eklendi.
+  # 'unsafe-inline' (script) KALIR: GTM özel HTML etiketleri, panelden eklenen pikseller ve iyzico 3DS
+  # (document.write + otomatik POST formu) satır içi script çalıştırır. Kaldırma yolu aşağıdaki sıkı
+  # Report-Only politikasıyla ölçülür.
+  # frame-src https: — admin fatura önizlemesi e-arşiv sağlayıcısının (firma ayarı, host sabit değil)
+  # adresini sandbox'lı iframe'de açar; blob: dahili fatura PDF'i içindir. Ödeme: form-action https:
+  # (banka ACS formu). İhlaller report-uri ile API'ye gider (Güvenlik → CSP raporları; zorlanan ve
+  # rapor-modu ihlalleri ayrı sayılır). Panelden eklenen "Özel Kod" yeni bir script host'u kullanırsa
+  # artık ENGELLENİR: önce bu listeye eklenmelidir. Cloudflare satır sınırı 2000 karakter.
+  # GTM Özel JavaScript değişkenleri (dönüşüm tutarı/para birimi/sipariş no) eval ister → 'unsafe-eval'
+  # (Google GTM CSP rehberi). connect-src *.google.com: analytics.google.com GA4 istekleri.
+  # Meta pikseli (connect.facebook.net config) olay uçları — TAM host (joker *.on.aws / *.run.app AÇILMAZ).
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://*.doubleclick.net https://www.google.com https://www.gstatic.com https://accounts.google.com https://appleid.cdn-apple.com https://connect.facebook.net https://analytics.tiktok.com https://s.pinimg.com https://sc-static.net https://mc.yandex.ru https://mc.yandex.com https://yastatic.net https://static.hotjar.com https://script.hotjar.com https://*.clarity.ms https://*.posthog.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://*.googletagmanager.com; font-src 'self' data: https://fonts.gstatic.com https://script.hotjar.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://cdn.facette.com.tr https://api.facette.com.tr; connect-src 'self' https://*.google.com https://api.facette.com.tr https://cdn.facette.com.tr https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.doubleclick.net https://www.google.com.tr https://google.com https://pagead2.googlesyndication.com https://www.googleadservices.com https://accounts.google.com https://www.facebook.com https://connect.facebook.net https://*.tiktok.com https://*.tiktokw.us https://*.pinterest.com https://*.snapchat.com https://mc.yandex.ru https://mc.yandex.com https://*.hotjar.com https://*.hotjar.io https://*.clarity.ms https://c.bing.com https://*.posthog.com https://cloudflareinsights.com wss://*.hotjar.com https://5z-2b6b7616f94640c2840d1841e1ac24c3.ecs.us-east-1.on.aws https://mpc-prod-21-1053047382554.us-central1.run.app; frame-src 'self' blob: https:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'self'; report-uri https://api.facette.com.tr/api/custom-theme/csp-report
+  # Sıkı Report-Only (yalnız ölçüm, hiçbir şeyi engellemez): script-src'de 'unsafe-inline' YOK; yerine
+  # index.html'in satır içi script özetleri ('sha256-…', vitrin bütünlük izleyicisinin kaydettiği
+  # inline_csp_sources) + stil yükleyici onload özniteliği ('unsafe-hashes'). frame-src host listesi.
+  # index.html satır içi script'leri değişirse özetleri izleyici durumundan güncelleyin.
+  Content-Security-Policy-Report-Only: script-src 'self' 'unsafe-hashes' 'sha256-deRFt0jS7nwuZXO1B8KgDGCY3zNfkbrIOZ5KrR9xgs8=' 'sha256-4UKDwX70rcx+ugDJ5lOw/5272pNlMjnpP2BVsVHfQE0=' 'sha256-MBIjauedh9OR6+CAzZ55EtTHMxNvinaqY/1i1h49/a8=' 'sha256-XqvIDncSItAeLKFHgxAYO2LVdwPYpraiiTvlwpr0fG8=' 'sha256-5J/jC4huh0/VW/Jgz8OpuDml5RhiGjcvmraqqHj/jtE=' 'sha256-sUxORKBew9rH02nI+IoXyCuML14liuszZrgBfvcftVs=' 'sha256-HOZMVz4UDZPns2NZlry+oLneIh5f0IFPIjD1VL4gGKY=' 'sha256-QWRIHdhrTxBTBb+XbmAEv7JF9lmRWa+fC8Xy04zP+N0=' 'sha256-w4g/1KG6nZ7oQIspn6AYqbF7HkyqI8U/57/fF2lp6gw=' 'sha256-uq+4nUqZONgARzmy2kR1w9EC+Qeig/Syd091LyT8vOk=' blob: https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://*.doubleclick.net https://www.google.com https://www.gstatic.com https://accounts.google.com https://appleid.cdn-apple.com https://connect.facebook.net https://analytics.tiktok.com https://s.pinimg.com https://sc-static.net https://mc.yandex.ru https://mc.yandex.com https://yastatic.net https://static.hotjar.com https://script.hotjar.com https://*.clarity.ms https://*.posthog.com https://static.cloudflareinsights.com; frame-src 'self' blob: https://*.googletagmanager.com https://accounts.google.com https://appleid.apple.com https://*.doubleclick.net https://www.facebook.com https://ct.pinterest.com https://tr.snapchat.com https://mc.yandex.ru https://mc.yandex.com https://vars.hotjar.com https://api.facette.com.tr; report-uri https://api.facette.com.tr/api/custom-theme/csp-report
+
+# HTML her zaman taze
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+# Build kimliği (T19): vitrin bütünlük izleyicisi her turda okur — önbellekten eski sürüm dönmesin.
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Yerel yazı tipleri: dosya adında sürüm var (…-v18.woff2) → içerik değişirse ad değişir; 1 yıl önbellek güvenli.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
+# Hash'li JS/CSS dosyaları için burada özel Cache-Control tanımlamayız.
+# Pages'in dağıtım-aware varsayılan önbelleği güncel asset setini atomik tutar.

@@ -1,0 +1,67 @@
+# gitleaks 8.x — bilinen YANLIŞ-POZİTİF bulguların parmak izleri (fingerprint).
+# Biçim: <commit>:<dosya>:<kural>:<satır>  (gitleaks --report-format json "Fingerprint" alanı)
+# CI (.github/workflows/security.yml) `gitleaks detect --source .` bu dosyayı otomatik okur.
+#
+# KURAL: Buraya YALNIZ şunlar girer:
+#   (a) test fixture / sahte / örnek değerler (gerçek bir servise ait OLMAYAN),
+#   (b) GERÇEK sırrın geçmişte kalan izi — ANCAK sahibi anahtarı DÖNDÜRDÜKTEN (rotate)
+#       ve eski değerin servis tarafında geçersiz olduğu doğrulandıktan SONRA.
+# Git geçmişi yeniden yazılmaz; geçmişteki gerçek sırrın tek çaresi rotasyondur.
+# Yeni bir bulguyu "susturmak" için bu dosyaya eklemek YASAKTIR — önce sınıflandır.
+
+# ─── (a) Test fixture'ları — backend/tests/security_e2e (commit 00b1cb1e, 2026-10-04) ───
+# Hepsi sentetik: sandbox URL'li sahte iyzico anahtarı, log-redaksiyon testinin sahte
+# "sk_live_" dizesi ve sahte JWT ({"alg":"HS256"} / {"user_id":"123456789"}), RBAC testinde
+# reddedilmesi beklenen sahte parola, MNG webhook testi için sahte imza sırrı.
+# Hiçbiri canlı bir servise ait değildir; testler bunları bilerek içerir.
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/pay_harness.py:generic-api-key:45
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/test_infra_log_redaction.py:stripe-access-token:41
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/test_infra_log_redaction.py:stripe-access-token:82
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/test_infra_log_redaction.py:jwt:18
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/test_identity_rbac.py:generic-api-key:123
+00b1cb1e4847f93b113cb4e4c5ba97e63fc84f92:backend/tests/security_e2e/test_orders_returns_admin_e2e.py:generic-api-key:152
+
+# ─── (b) GERÇEK sırların GEÇMİŞ izleri — ROTASYON BEKLİYOR (pending-rotation) ───
+# Bu değerler mevcut ağaçta (HEAD) YOKTUR; yalnız git geçmişinde kalmıştır.
+# Rotasyon doğrulanana kadar bu satırlar YORUMDA kalır → CI kırmızı kalır (bilerek).
+# Sahibi ilgili anahtarı döndürüp eskisinin geçersiz olduğunu doğruladıktan sonra
+# satırın başındaki "# PENDING-ROTATION " önekini sil ve rotasyon tarihini yaz.
+#
+# Ticimax SOAP API anahtarı (TICIMAX_API_KEY / panel Entegrasyonlar > Ticimax "api_key"):
+# PENDING-ROTATION 03a1fba0632d3cf7920cb46ff46c0d44367172b2:UYGULA.command:generic-api-key:39
+# Ticimax ESKİ API anahtarı ("OLD_KEY", varyant senkron betiği):
+# PENDING-ROTATION 7fbe96e56ba23e37417a823ba8a49496a6e5dc2e:backend/scripts/sync_ticimax_variants.py:generic-api-key:21
+# PENDING-ROTATION 7fbe96e56ba23e37417a823ba8a49496a6e5dc2e:backend/routes/integrations.py:generic-api-key:3280
+# PENDING-ROTATION 2be3cea331bfd88b1a2a2f9edb4c9091e51ecea5:backend/scripts/sync_ticimax_variants.py:generic-api-key:21
+# PENDING-ROTATION 2be3cea331bfd88b1a2a2f9edb4c9091e51ecea5:backend/routes/integrations.py:generic-api-key:3365
+# Meta (Facebook) Conversions API / Pixel erişim jetonu (META_CAPI_TOKEN vb. / panel piksel ayarı):
+# PENDING-ROTATION 7fbe96e56ba23e37417a823ba8a49496a6e5dc2e:backend/scripts/update_meta_pixel.py:facebook-page-access-token:20
+# Trendyol Satıcı API anahtarı (TRENDYOL_API_KEY; aynı kullanıcıya bağlı TRENDYOL_API_SECRET ile birlikte):
+# PENDING-ROTATION 7fbe96e56ba23e37417a823ba8a49496a6e5dc2e:docs/SYSTEM_DOCS.md:generic-api-key:577
+
+# ─── 2026-10-05 tam-geçmiş taraması (depo artık sığ/shallow DEĞİL: 2453 commit) ───
+# Önceki taramalar sığ klondaydı (kök = 7fbe96e5, 2026-06-06); o yüzden yukarıdaki geçmiş
+# bulguları 7fbe96e5'e atanmıştı. Tam geçmişte aynı sırlar İLK eklendikleri commit'lere
+# atanır → parmak izleri aşağıdadır. Sınıflandırma kuralları yukarıdakiyle aynıdır.
+#
+# (a) Test fixture — sahte kayıt parolası (AUTH14 kayıt-numaralandırma testi, sentetik):
+4516bc65d7e54911e9099be6fcfdad1246ecd742:backend/tests/security_e2e/test_identity2_auth14_register_enumeration.py:generic-api-key:28
+#
+# (b) GERÇEK sırların İLK-EKLENME izleri — ROTASYON BEKLİYOR (HEAD'de YOK):
+# Ticimax API anahtarı(ları) — ticimax_client.py'ye gömülü (2026-03/05) ve OLD_KEY kopyaları.
+# Not: 0f96e010'daki değerin entropisi diğerlerinden farklı → AYRI (üçüncü) bir Ticimax anahtarı
+# olabilir; rotasyonda Ticimax panelindeki TÜM eski anahtarlar iptal edilmeli.
+# PENDING-ROTATION 5aad197bdd7477199c8eac96d54a6caa386bb1bc:backend/ticimax_client.py:generic-api-key:3
+# PENDING-ROTATION 5aad197bdd7477199c8eac96d54a6caa386bb1bc:backend/ticimax_client.py:generic-api-key:26
+# PENDING-ROTATION 0f96e0103ce4b9fd646e7a75623da56d1a7e0655:backend/ticimax_client.py:generic-api-key:24
+# PENDING-ROTATION 57bd118a4565fe89b2b5df714fb9d5b247b80a58:backend/routes/integrations.py:generic-api-key:1445
+# PENDING-ROTATION 57bd118a4565fe89b2b5df714fb9d5b247b80a58:backend/scripts/sync_ticimax_variants.py:generic-api-key:21
+# Meta (Facebook) erişim jetonu — ilk eklenme:
+# PENDING-ROTATION aefa087971de8388064e1c84d4530680195c6190:backend/scripts/update_meta_pixel.py:facebook-page-access-token:20
+# Trendyol Satıcı API anahtarı — ilk eklenme:
+# PENDING-ROTATION 01e92359e282aef4728f2e31d3667868ce9bf0b0:docs/SYSTEM_DOCS.md:generic-api-key:577
+# YENİ SINIF — Emergent LLM anahtarı (EMERGENT_LLM_KEY), backend/.env 2026-03-22'de commit'lenmiş
+# (sonra silinmiş). Kod hâlâ env'den geri-dönüş olarak okuyor (routes/ai_chatbot.py). Emergent
+# hesabında anahtar iptal/yenilenmeli:
+# PENDING-ROTATION 73ac0fdc1e350cb387cbc3e5a7446432e8e20f81:backend/.env:generic-api-key:4
+# PENDING-ROTATION 5be2e0cf9652a70adb80a0ea04db3df5305c6e32:backend/.env:generic-api-key:4

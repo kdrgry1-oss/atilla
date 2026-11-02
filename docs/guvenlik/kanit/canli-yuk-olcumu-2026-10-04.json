@@ -1,0 +1,41 @@
+{
+ "at": "2026-10-04T23:56:06Z",
+ "concurrency": 15,
+ "duration_s": 90,
+ "checkout_baseline": {
+  "n": 20,
+  "p50_ms": 346,
+  "p95_ms": 368,
+  "max_ms": 376,
+  "codes": {
+   "200/200": 20
+  }
+ },
+ "checkout_under_load": {
+  "n": 85,
+  "p50_ms": 663,
+  "p95_ms": 1237,
+  "max_ms": 1541,
+  "codes": {
+   "200/200": 85
+  }
+ },
+ "checkout_after": {
+  "n": 10,
+  "p50_ms": 353,
+  "p95_ms": 597,
+  "max_ms": 597,
+  "codes": {
+   "200/200": 10
+  }
+ },
+ "heavy": {
+  "n": 2495,
+  "rps": 27.7,
+  "p50_ms": 523,
+  "p95_ms": 1034,
+  "codes": {
+   "200": 2495
+  }
+ }
+}

@@ -1,0 +1,68 @@
+User-agent: *
+Allow: /
+
+# Özel / oturum gerektiren sayfalar (dizine eklenmesin)
+Disallow: /sepet
+Disallow: /odeme
+Disallow: /hesabim
+Disallow: /giris
+Disallow: /kayit
+Disallow: /odeme-bildirimi
+Disallow: /admin
+Disallow: /siparis-takip
+
+# ---------------------------------------------------------------------------
+# Yapay zeka (LLM) tarayıcıları AÇIKÇA izinli — AI asistanlarının FACETTE'i ve
+# ürünlerini kadın giyim aramalarında önerebilmesi için içerik taranabilir olsun.
+# (Aynı özel sayfa kısıtları geçerli.)
+# ---------------------------------------------------------------------------
+User-agent: GPTBot
+Allow: /
+Disallow: /sepet
+Disallow: /odeme
+Disallow: /hesabim
+Disallow: /giris
+Disallow: /kayit
+Disallow: /admin
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# AI asistanları için marka/ürün özeti (llms.txt standardı)
+# https://facette.com.tr/llms.txt
+
+# Sitemap (dinamik — ürünler, kategoriler ve sayfalar)
+Sitemap: https://facette.com.tr/sitemap.xml

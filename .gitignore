@@ -1,0 +1,89 @@
+# Operating systems and editors
+.DS_Store
+.idea/
+.vscode/
+
+# Dependencies and package-manager state
+node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Build and test output
+/build/
+dist/
+/.next/
+/out/
+/coverage/
+.cache/
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+custom-venv/
+rootvenv/
+
+# Environment files and credentials
+*.env
+*.env.*
+*token.json*
+*credentials.json*
+*.pem
+*.key
+.credentials
+**/.jwt_secret
+**/.admin_initial_password
+
+# Logs, caches, and local tooling
+*.log*
+dump.rdb
+chainlit.md
+.chainlit
+.ipynb_checkpoints/
+.ac
+.vercel
+
+# Local data, imports, exports, and backups
+db_backup/
+*.archive.gz
+data_export/
+backend/scripts/backups/
+backend/imports/
+backend/uploads/
+dump/
+memory/
+*.xlsx
+
+# Archive files and large binary assets
+**/*.zip
+**/*.tar.gz
+**/*.tar
+**/*.tgz
+*.pack
+*.deb
+*.dylib
+
+# Repository-local generated snapshots and reports
+/.iys-backup-*/
+/.iys-yedek-manuel/
+/facette_deploy/
+/test_reports/
+/outputs/
+
+# Development-only nested workspaces and SDKs
+agenthub/agents/youtube/db
+frontend/fcc/
+android-sdk/
+backend/data/audit_outbox/
