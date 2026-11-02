@@ -24,7 +24,16 @@ async def main() -> int:
     import ticimax_xml_import as tx
     db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
     stats = await tx.run_import(db, url, dry_run="--dry-run" in sys.argv)
-    print("Ürün aktarımı:", json.dumps(stats, ensure_ascii=False))
+    st = dict(stats)
+    struct = st.pop("structure", None)
+    print("Ürün aktarımı:", json.dumps(st, ensure_ascii=False))
+    if struct:
+        print("XML yapısı (ürün bulunamadı):")
+        for k, v in struct.items():
+            if k != "paths":
+                print(f"  {k}: {v}")
+        for line in struct.get("paths", []):
+            print("   ", line)
     return 0 if stats.get("errors", 0) == 0 or stats.get("created", 0) + stats.get("updated", 0) > 0 else 1
 
 

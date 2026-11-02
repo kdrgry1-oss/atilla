@@ -260,7 +260,7 @@ SHELL=/bin/bash
 CRON
   chmod 644 /etc/cron.d/atilla-xml-import
   cd "$APP/backend" && timeout 1800 flock /run/atilla-xml.lock "$APP/venv/bin/python" scripts/import_ticimax_xml.py \
-    2>&1 | grep -viE 'https?://|secret|password|token' | tail -n 5 || echo "!! ürün aktarımı tamamlanamadı (sonraki zamanlanmış çalıştırma tekrar dener)"
+    2>&1 | grep -viE 'https?://|secret|password|token' | tail -n 100 || echo "!! ürün aktarımı tamamlanamadı (sonraki zamanlanmış çalıştırma tekrar dener)"
 else
   rm -f /etc/cron.d/atilla-xml-import
   echo "PRODUCT_XML_URL tanımlı değil — atlandı."

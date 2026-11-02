@@ -537,8 +537,49 @@ async def run_import(db, url: str, *, dry_run: bool = False) -> Dict[str, Any]:
         raise RuntimeError(f"XML indirilemedi: HTTP {res.status_code}")
     products = parse_feed(res.content)
     stats = await import_products(db, products, dry_run=dry_run)
+    if not products:
+        stats["structure"] = describe_structure(res.content)
+        stats["content_type"] = res.content_type
     stats["finished_at"] = datetime.now(timezone.utc).isoformat()
     if not dry_run:
         await db.settings.update_one({"id": "ticimax_xml_import_last"},
                                      {"$set": {"id": "ticimax_xml_import_last", **stats}}, upsert=True)
     return stats
+
+
+def describe_structure(content: bytes, limit: int = 70) -> Dict[str, Any]:
+    """Tanı: XML'in etiket yolu dağılımı (değer içermez) + kök bilgisi. Ürün bulunamazsa log'a yazılır."""
+    info: Dict[str, Any] = {"bytes": len(content or b"")}
+    head = (content or b"")[:300].decode("utf-8", "replace")
+    info["starts_with"] = re.sub(r"https?://\S+", "<url>", head.replace("\n", " "))[:200]
+    try:
+        from lxml import etree
+        parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False,
+                                 huge_tree=True, recover=True)
+        root = etree.fromstring(content, parser=parser)
+    except Exception as e:
+        info["parse_error"] = type(e).__name__
+        return info
+    if root is None:
+        info["parse_error"] = "empty"
+        return info
+    counts: Dict[str, int] = {}
+    attrs: Dict[str, set] = {}
+
+    def walk(el, path, depth):
+        if depth > 7:
+            return
+        for c in el:
+            if not isinstance(c.tag, str):
+                continue
+            pth = path + "/" + c.tag.split("}")[-1]
+            counts[pth] = counts.get(pth, 0) + 1
+            if c.attrib:
+                attrs.setdefault(pth, set()).update(k.split("}")[-1] for k in c.attrib)
+            walk(c, pth, depth + 1)
+    walk(root, root.tag.split("}")[-1], 0)
+    top = sorted(counts.items(), key=lambda kv: kv[0])[:limit]
+    info["root"] = root.tag.split("}")[-1]
+    info["paths"] = [f"{k} x{v}" + (f" @{','.join(sorted(attrs[k]))}" if k in attrs else "") for k, v in top]
+    info["total_paths"] = len(counts)
+    return info
