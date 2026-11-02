@@ -1206,6 +1206,8 @@ api_router.include_router(integrations_amazon_router, prefix="/integrations")
 # n11 kendi /n11/status ve /n11/test-connection uçlarına sahip → genel /{marketplace}/… uçlarından ÖNCE.
 api_router.include_router(integrations_n11_router, prefix="/integrations")
 api_router.include_router(integrations_router, prefix="/integrations")
+from routes.ticimax_xml_feed import router as ticimax_xml_feed_router  # Ticimax XMLExport aktarımı
+api_router.include_router(ticimax_xml_feed_router, prefix="/integrations")
 api_router.include_router(integrations_temu_router, prefix="/integrations")
 api_router.include_router(trendyol_retry_queue_router)
 api_router.include_router(capi_router)

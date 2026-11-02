@@ -19,6 +19,7 @@ güvenlik duvarı, günlük yedek). Elle tetiklemek: **Actions → Sunucuya Otom
 | `SSH_PASSWORD` | SSH parolası |
 | `ADMIN_EMAIL` | Panelin ilk yönetici e-postası |
 | `ADMIN_PASSWORD` | İlk yönetici parolası (en az 12 karakter; ilk girişte değiştirilir) |
+| `PRODUCT_XML_URL` | Ticimax XMLExport ürün adresi (isteğe bağlı) — stoklu ürünler kategori ve varyantlarıyla aktarılır, sunucuda her 2 saatte bir stok senkronu çalışır |
 
 | Variable (isteğe bağlı) | Açıklama |
 |---|---|

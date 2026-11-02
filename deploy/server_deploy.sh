@@ -124,6 +124,7 @@ if [ -f "$REL/bootstrap.env" ]; then
     [ -n "$(get_kv ORDER_NOTIFY_EMAIL)" ] || set_kv ORDER_NOTIFY_EMAIL "$ADMIN_EMAIL"
   fi
   [ -n "${ADMIN_PASSWORD:-}" ] && set_kv ADMIN_INITIAL_PASSWORD "$ADMIN_PASSWORD"
+  [ -n "${PRODUCT_XML_URL:-}" ] && set_kv PRODUCT_XML_URL "$PRODUCT_XML_URL"
   shred -u "$REL/bootstrap.env" 2>/dev/null || rm -f "$REL/bootstrap.env"
 fi
 
@@ -206,4 +207,19 @@ else
   echo "✘ API sağlık kontrolü geçmedi — son log satırları:"
   tail -n 40 /var/log/$SVC.log | grep -viE 'secret|password|token|key=' || true
   exit 1
+fi
+
+echo "▶ Ürün aktarımı (XML)"
+if [ -n "$(get_kv PRODUCT_XML_URL)" ]; then
+  # Stok senkronu: her 2 saatte bir (stoğu biten ürün satılamasın, yeni stoklu ürün gelsin).
+  cat > /etc/cron.d/atilla-xml-import <<CRON
+SHELL=/bin/bash
+17 */2 * * * root cd $APP/backend && flock -n /run/atilla-xml.lock $APP/venv/bin/python scripts/import_ticimax_xml.py >> /var/log/atilla-xml-import.log 2>&1
+CRON
+  chmod 644 /etc/cron.d/atilla-xml-import
+  cd "$APP/backend" && timeout 1800 flock /run/atilla-xml.lock "$APP/venv/bin/python" scripts/import_ticimax_xml.py \
+    2>&1 | grep -viE 'https?://|secret|password|token' | tail -n 5 || echo "!! ürün aktarımı tamamlanamadı (sonraki zamanlanmış çalıştırma tekrar dener)"
+else
+  rm -f /etc/cron.d/atilla-xml-import
+  echo "PRODUCT_XML_URL tanımlı değil — atlandı."
 fi

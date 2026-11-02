@@ -7,6 +7,8 @@ name: Sunucuya Otomatik Kurulum
 # Gerekli GitHub Secrets (Settings → Secrets and variables → Actions → Secrets):
 #   SSH_HOST, SSH_USER, SSH_PASSWORD        → sunucu erişimi
 #   ADMIN_EMAIL, ADMIN_PASSWORD (≥12 krk)   → panelin ilk yönetici hesabı
+#   PRODUCT_XML_URL (isteğe bağlı)          → Ticimax XMLExport adresi; stoklu ürünler aktarılır,
+#                                             sunucuda her 2 saatte bir stok/ürün senkronu çalışır
 # İsteğe bağlı Variables (aynı sayfa → Variables):
 #   SITE_DOMAIN (ör. magaza.com), API_DOMAIN (ör. api.magaza.com)
 #   Boşsa site IP üzerinden http://SSH_HOST adresinde açılır.
@@ -79,6 +81,7 @@ jobs:
         env:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          PRODUCT_XML_URL: ${{ secrets.PRODUCT_XML_URL }}
         run: |
           mkdir -p release
           cp -r backend deploy release/
@@ -88,6 +91,7 @@ jobs:
           {
             printf 'ADMIN_EMAIL=%q\n' "$ADMIN_EMAIL"
             printf 'ADMIN_PASSWORD=%q\n' "$ADMIN_PASSWORD"
+            printf 'PRODUCT_XML_URL=%q\n' "$PRODUCT_XML_URL"
           } > release/bootstrap.env
           tar -czf release.tgz -C release .
           du -sh release.tgz
