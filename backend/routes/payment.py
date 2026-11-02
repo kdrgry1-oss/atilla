@@ -21,6 +21,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import re
 import secrets as _secrets
 from datetime import datetime, timedelta, timezone
@@ -101,6 +102,26 @@ async def _record_card_attempt(request, card: dict, order_id: str, status: str) 
         pass
 
 
+
+def _own_hosts() -> set:
+    """Beyaz etiket: bu kurulumun kendi alan adları (SITE_URL / FRONTEND_URL / PUBLIC_API_URL /
+    BACKEND_URL / CORS_ORIGINS). Başka firmanın alan adı koda gömülmez."""
+    from urllib.parse import urlparse
+    raw = []
+    for k in ("SITE_URL", "FRONTEND_URL", "PUBLIC_API_URL", "BACKEND_URL"):
+        raw.append(os.environ.get(k) or "")
+    raw.extend((os.environ.get("CORS_ORIGINS") or "").split(","))
+    out = set()
+    for u in raw:
+        u = u.strip()
+        if not u or u == "*":
+            continue
+        h = (urlparse(u if "://" in u else "https://" + u).hostname or "").lower()
+        if h:
+            out.add(h)
+            out.add(h[4:] if h.startswith("www.") else "www." + h)
+    return out
+
 def _safe_return_base(return_url: str, request) -> str:
     """OPEN-REDIRECT koruması: ödeme sonrası yönlendirilecek adres SADECE kendi
     origin'imize (istek host'u) veya bilinen facette alan adlarına izinli. Dış/kötü
@@ -121,7 +142,7 @@ def _safe_return_base(return_url: str, request) -> str:
             return default
         host = (p.hostname or "").lower()
         req_host = (urlparse(str(request.base_url)).hostname or "").lower()
-        allowed = {req_host, "facette.com.tr", "www.facette.com.tr", "api.facette.com.tr"}
+        allowed = {req_host, *_own_hosts()}
         allowed.discard("")
         if host in allowed:
             return ru.rstrip("/")
@@ -146,7 +167,7 @@ def _safe_callback_url(callback_url: str, request) -> str:
         raise HTTPException(status_code=400, detail="Geçersiz callback_url")
     host = (p.hostname or "").lower()
     req_host = (urlparse(str(request.base_url)).hostname or "").lower()
-    allowed = {req_host, "facette.com.tr", "www.facette.com.tr", "api.facette.com.tr"}
+    allowed = {req_host, *_own_hosts()}
     allowed.discard("")
     if host not in allowed:
         raise HTTPException(status_code=400, detail="callback_url yalnız kendi alan adımıza izinlidir")
@@ -362,10 +383,10 @@ def _build_initialize_payload(order: dict, callback_url: str) -> dict:
     binfo = order.get("billing_info") or {}
 
     first = (ship.get("first_name") or "").strip() or "Müşteri"
-    last = (ship.get("last_name") or "").strip() or "Facette"
+    last = (ship.get("last_name") or "").strip() or "Müşteri"
     contact = f"{first} {last}".strip()
     _raw_email = (ship.get("email") or order.get("email") or "").strip()
-    email = _raw_email if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", _raw_email) else "siparis@facette.com.tr"
+    email = _raw_email if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", _raw_email) else (os.environ.get("ALERT_TO_EMAIL") or "siparis@example.com")
     address = (ship.get("address") or "Adres").strip()
     city = (ship.get("city") or "İstanbul").strip()
     zipcode = str(ship.get("postal_code") or ship.get("zip_code") or "34000")
@@ -697,7 +718,7 @@ async def _notify_paid_order_confirmed(order_id: str) -> None:
             import company as _company
             from notification_service import _email_send
             _ci = await _company.get_company(db)
-            _admin_to = str(_ci.get("contact_email") or _ci.get("email") or "info@facette.com.tr").strip()
+            _admin_to = str(_ci.get("contact_email") or _ci.get("email") or os.environ.get("ORDER_NOTIFY_EMAIL") or os.environ.get("ALERT_TO_EMAIL") or "").strip()
             if _admin_to:
                 from notification_service import build_admin_order_email_html as _bld
                 _html = _bld(order, ship, "Yeni Sipariş", "Ödendi ✓")

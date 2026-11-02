@@ -35,6 +35,8 @@ os.environ["MONGO_URL"] = "mongodb://kv-test.invalid:27017"
 os.environ["DB_NAME"] = "kv_security_e2e"
 os.environ["JWT_SECRET"] = "kv-test-jwt-secret-" + "x" * 48
 os.environ.setdefault("SECRETS_MASTER_KEY", "")
+# Beyaz etiket: yeni sipariş bildirimi alıcısı koddan değil kurulumun ortamından gelir.
+os.environ.setdefault("ORDER_NOTIFY_EMAIL", "siparis-bildirim@example.test")
 for _k in ("CF_EDGE_SECRET", "SMTP_HOST", "SMTP_USER", "SMTP_PASS", "RESEND_API_KEY",
            "ALERT_TO_EMAIL", "RESTORE_MODE", "KVKK_TOMBSTONE_SECRET", "ADMIN_INITIAL_PASSWORD"):
     os.environ.pop(_k, None)

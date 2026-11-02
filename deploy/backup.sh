@@ -11,8 +11,9 @@
 #  * Döküm / doğrulama / yükleme hatası YUTULMAZ: betik sıfır olmayan kodla çıkar (cron log + syslog).
 #  * Yerel kopyalar YALNIZ bulut kopyası boyut + SHA-256 ile doğrulandıktan sonra budanır.
 set -euo pipefail
-APP=/opt/facette
-DIR=/var/backups/facette
+APP="${APP:-/opt/atilla}"
+export APP
+DIR="${BACKUP_DIR:-/var/backups/atilla}"
 ENVF="$APP/backend/.env"
 KEEP_LOCAL=2
 mkdir -p "$DIR"
@@ -21,7 +22,7 @@ umask 077
 
 fail() {
   echo "!! YEDEK BAŞARISIZ: $*" >&2
-  logger -t facette-backup "YEDEK BAŞARISIZ: $*" 2>/dev/null || true
+  logger -t atilla-backup "YEDEK BAŞARISIZ: $*" 2>/dev/null || true
   exit 1
 }
 
@@ -59,7 +60,7 @@ SHA=$(sha256sum "$ENC" | cut -d' ' -f1)
 "$APP/venv/bin/python" - "$ENC" "$SHA" "$R2_BACKUP_BUCKET" <<'PY' || fail "R2 yükleme/doğrulama hatası (yerel kopya duruyor: $ENC)"
 import os, sys, pathlib
 env = {}
-for line in pathlib.Path("/opt/facette/backend/.env").read_text().splitlines():
+for line in pathlib.Path(os.environ.get("APP","/opt/atilla")+"/backend/.env").read_text().splitlines():
     if "=" in line and not line.strip().startswith("#"):
         k, v = line.split("=", 1); env[k.strip()] = v.strip().strip('"').strip("'")
 import boto3
@@ -83,4 +84,4 @@ PY
 # 3) Yalnız doğrulanmış bulut kopyasından SONRA yerelde son KEEP_LOCAL yedek bırakılır.
 rm -f "$ENC"
 { ls -1t "$DIR"/*.gz 2>/dev/null || true; } | tail -n +$((KEEP_LOCAL + 1)) | xargs -r rm -f
-logger -t facette-backup "yedek tamam: $(basename "$FILE") sha256=$SHA" 2>/dev/null || true
+logger -t atilla-backup "yedek tamam: $(basename "$FILE") sha256=$SHA" 2>/dev/null || true

@@ -221,7 +221,8 @@ async def lifespan(app: FastAPI):
     
     try:
         # Create admin user if not exists
-        admin = await db.users.find_one({"email": "admin@facette.com"})
+        _admin_email = (os.environ.get("ADMIN_INITIAL_EMAIL") or "admin@facette.com").strip().lower()
+        admin = await db.users.find_one({"email": _admin_email})
         if not admin:
             from routes.deps import hash_password, generate_id
             from datetime import datetime, timezone
@@ -233,7 +234,7 @@ async def lifespan(app: FastAPI):
             else:
                 await db.users.insert_one({
                     "id": generate_id(),
-                    "email": "admin@facette.com",
+                    "email": _admin_email,
                     "password": hash_password(_admin_pw),
                     "first_name": "Admin",
                     "last_name": "User",
@@ -243,7 +244,7 @@ async def lifespan(app: FastAPI):
                     "must_change_password": True,
                     "created_at": datetime.now(timezone.utc).isoformat()
                 })
-                logger.info("Admin olusturuldu (admin@facette.com) — ADMIN_INITIAL_PASSWORD kullanildi.")
+                logger.info("Admin olusturuldu — ADMIN_INITIAL_PASSWORD kullanildi.")
         # Never elevate an existing account solely because its email matches
         # the bootstrap address. Existing owners retain their explicit flag/role.
 
@@ -312,7 +313,9 @@ async def lifespan(app: FastAPI):
             await grant_influencer_delete_once()
             # TEK SEFERLİK (sahip isteği 2026-10-20): panel sahibi. Sahip tanımlıysa dokunmaz.
             from routes.admin_rbac import set_panel_owner_once
-            await set_panel_owner_once("kdrgry1342@gmail.com")
+            _owner = (os.environ.get("OWNER_SUPER_ADMIN_EMAILS") or "").split(",")[0].strip()
+            if _owner:
+                await set_panel_owner_once(_owner)
         except Exception as _gpe:
             logger.error(f"[guvenlik] GP iptal izni gecisi hatasi: {_gpe}")
 

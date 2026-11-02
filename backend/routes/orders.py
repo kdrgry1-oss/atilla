@@ -558,7 +558,7 @@ async def _send_admin_new_order_email(order: dict, ship: dict, kind_label: str =
         import company as _company
         from notification_service import _email_send
         _ci = await _company.get_company(db)
-        _to = str(_ci.get("contact_email") or _ci.get("email") or "info@facette.com.tr").strip()
+        _to = str(_ci.get("contact_email") or _ci.get("email") or os.environ.get("ORDER_NOTIFY_EMAIL") or os.environ.get("ALERT_TO_EMAIL") or "").strip()
         if not _to:
             return
         # Gövde ORTAK üreteçten gelir (notification_service) → iki sipariş maili de

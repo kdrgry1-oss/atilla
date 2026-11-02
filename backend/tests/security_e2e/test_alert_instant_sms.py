@@ -82,7 +82,10 @@ def test_no_provider_no_crash(id_client, id_respx, monkeypatch):
     assert not id_findall("security_pages")                            # SMS gitmediyse çağrı da başlamaz
 
 
-def test_one_time_job_adds_number_and_stop_email_only_when_missing(id_client):
+def test_one_time_job_adds_number_and_stop_email_only_when_missing(id_client, monkeypatch):
+    # Beyaz etiket: numara/e-posta kodda değil, kurulumun ortam değişkenlerinden gelir.
+    monkeypatch.setenv("ALERT_SMS_PHONE", "05559998877")
+    monkeypatch.setenv("OWNER_SUPER_ADMIN_EMAILS", "sahip@example.test")
     import scheduler
     from notification_service import normalize_phone_tr
     id_set_rule("security.alert_sms_phones", "05550000001")
@@ -193,3 +196,15 @@ def test_paging_disabled_by_default_closes_open_page_without_sms(id_client, sink
     assert len(sink) == 1                                   # yalnız ilk anlık SMS
     assert _tick(t0 + timedelta(seconds=70))["state"] == "disabled"
     assert _tick(t0 + timedelta(seconds=140))["state"] == "idle" and len(sink) == 1
+
+
+def test_one_time_job_writes_nothing_without_env(id_client, monkeypatch):
+    """Beyaz etiket: ortam değişkeni yoksa başka firmanın numarası/e-postası YAZILMAZ."""
+    import scheduler
+    monkeypatch.delenv("ALERT_SMS_PHONE", raising=False)
+    monkeypatch.delenv("OWNER_SUPER_ADMIN_EMAILS", raising=False)
+    id_set_rule("security.alert_sms_phones", "")
+    id_set_rule("security.alert_page_stop_emails", "")
+    id_run(scheduler._ensure_guvenlik_sms_numarasi())
+    vals = id_find("settings", {"id": "business_rules"})["values"]
+    assert not vals.get("security.alert_sms_phones") and not vals.get("security.alert_page_stop_emails")

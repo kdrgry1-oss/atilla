@@ -2356,10 +2356,13 @@ async def _ensure_guvenlik_uyari_adresleri():
         import business_rules as BR
         cur = (await db.settings.find_one({"id": "business_rules"}, {"_id": 0}) or {}).get("values") or {}
         patch = {}
-        if not str(cur.get("security.alert_emails") or "").strip():
-            patch["security.alert_emails"] = "belgin@seamoas.com, kdrgry@gmail.com"
-        if not str(cur.get("security.alert_from") or "").strip():
-            patch["security.alert_from"] = "info@facette.com.tr"
+        # Beyaz etiket: alıcılar kodda DEĞİL — kurulumun kendi ortam değişkenlerinden gelir.
+        _env_to = (os.environ.get("ALERT_TO_EMAIL") or os.environ.get("OWNER_SUPER_ADMIN_EMAILS") or "").strip()
+        _env_from = (os.environ.get("ALERT_FROM_EMAIL") or "").strip()
+        if _env_to and not str(cur.get("security.alert_emails") or "").strip():
+            patch["security.alert_emails"] = _env_to
+        if _env_from and not str(cur.get("security.alert_from") or "").strip():
+            patch["security.alert_from"] = _env_from
         if patch:
             await BR.save_rules(db, patch)
         logger.warning(f"[guvenlik] uyarı adresleri ayarlandı: {sorted(patch)}")
@@ -2381,12 +2384,12 @@ async def _ensure_guvenlik_sms_numarasi():
                                      "at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
         import business_rules as BR
         from notification_service import normalize_phone_tr
-        want = "05396738540"
+        want = (os.environ.get("ALERT_SMS_PHONE") or "").strip()
         cur = str(((await db.settings.find_one({"id": "business_rules"}, {"_id": 0}) or {}).get("values") or {})
                   .get("security.alert_sms_phones") or "").strip()
         parts = [x.strip() for x in cur.replace(";", ",").split(",") if x.strip()]
         patch = {}
-        if normalize_phone_tr(want) not in {normalize_phone_tr(x) for x in parts}:
+        if want and normalize_phone_tr(want) not in {normalize_phone_tr(x) for x in parts}:
             if len(parts) >= 3:
                 logger.warning("[guvenlik] SMS numarası eklenmedi: alan dolu (3 numara)")
             else:
@@ -2394,8 +2397,9 @@ async def _ensure_guvenlik_sms_numarasi():
         # Kullanıcı, 2026-10-05: "kdrgry1342@gmail.com admin olarak panele girmeli" → tekrar SMS'ini bu yönetici
         # panele girince durdurur (alan boşsa yazılır; panelden girilmiş değere dokunulmaz).
         _vals = (await db.settings.find_one({"id": "business_rules"}, {"_id": 0}) or {}).get("values") or {}
-        if not str(_vals.get("security.alert_page_stop_emails") or "").strip():
-            patch["security.alert_page_stop_emails"] = "kdrgry1342@gmail.com"
+        _stop = (os.environ.get("OWNER_SUPER_ADMIN_EMAILS") or "").split(",")[0].strip()
+        if _stop and not str(_vals.get("security.alert_page_stop_emails") or "").strip():
+            patch["security.alert_page_stop_emails"] = _stop
         if patch:
             await BR.save_rules(db, patch)
         logger.warning("[guvenlik] güvenlik SMS ayarları yazıldı: %s", sorted(patch))

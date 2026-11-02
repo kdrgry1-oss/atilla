@@ -1,0 +1,112 @@
+name: Sunucuya Otomatik Kurulum
+
+# Her push'ta (main ve geliştirme dalı) vitrini derler, kodu sunucuya gönderir ve
+# deploy/server_deploy.sh ile kurar/günceller. Elle tetiklemek için:
+# GitHub → Actions → "Sunucuya Otomatik Kurulum" → Run workflow.
+#
+# Gerekli GitHub Secrets (Settings → Secrets and variables → Actions → Secrets):
+#   SSH_HOST, SSH_USER, SSH_PASSWORD        → sunucu erişimi
+#   ADMIN_EMAIL, ADMIN_PASSWORD (≥12 krk)   → panelin ilk yönetici hesabı
+# İsteğe bağlı Variables (aynı sayfa → Variables):
+#   SITE_DOMAIN (ör. magaza.com), API_DOMAIN (ör. api.magaza.com)
+#   Boşsa site IP üzerinden http://SSH_HOST adresinde açılır.
+#
+# DİKKAT: Bu repo herkese açık → Actions log'u da açık. Hiçbir sır log'a yazdırılmaz.
+
+on:
+  push:
+    branches: [main, "claude/jolly-turing-ukpvhy"]
+    paths-ignore: ["**.md", "mobile-customer/**", "docs/**"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+    steps:
+      - name: Ayarları kontrol et
+        id: cfg
+        run: |
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_USER" ] || [ -z "$SSHPASS" ]; then
+            echo "::warning::SSH_HOST / SSH_USER / SSH_PASSWORD secret'ları tanımlı değil — kurulum atlandı."
+            echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -n "$SITE_DOMAIN" ]; then
+            SITE="$SITE_DOMAIN"; API="${API_DOMAIN:-api.$SITE_DOMAIN}"; API_URL="https://$API"
+          else
+            SITE="$SSH_HOST"; API="$SSH_HOST"; API_URL="http://$SSH_HOST"
+          fi
+          echo "site=$SITE" >> "$GITHUB_OUTPUT"
+          echo "api=$API" >> "$GITHUB_OUTPUT"
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.cfg.outputs.skip != '1'
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.cfg.outputs.skip != '1'
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Vitrini derle
+        if: steps.cfg.outputs.skip != '1'
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: ${{ steps.cfg.outputs.api_url }}
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          corepack enable || true
+          yarn install --frozen-lockfile --network-timeout 600000
+          yarn build
+
+      - name: Paketi hazırla
+        if: steps.cfg.outputs.skip != '1'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          mkdir -p release
+          cp -r backend deploy release/
+          cp -r frontend/build release/frontend_build
+          rm -rf release/backend/tests
+          umask 077
+          {
+            printf 'ADMIN_EMAIL=%q\n' "$ADMIN_EMAIL"
+            printf 'ADMIN_PASSWORD=%q\n' "$ADMIN_PASSWORD"
+          } > release/bootstrap.env
+          tar -czf release.tgz -C release .
+          du -sh release.tgz
+
+      - name: Sunucuya gönder ve kur
+        if: steps.cfg.outputs.skip != '1'
+        run: |
+          sudo apt-get install -y -qq sshpass >/dev/null
+          SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ConnectTimeout=20"
+          sshpass -e scp $SSH_OPTS release.tgz "$SSH_USER@$SSH_HOST:/tmp/atilla-release.tgz"
+          # sudo parolası stdin'den verilir (komut satırında/log'da görünmez).
+          printf '%s\n' "$SSHPASS" | sshpass -e ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+            "sudo -S -p '' bash -c 'set -e; rm -rf /tmp/atilla-release; mkdir -p /tmp/atilla-release; \
+             tar -xzf /tmp/atilla-release.tgz -C /tmp/atilla-release; rm -f /tmp/atilla-release.tgz; \
+             bash /tmp/atilla-release/deploy/server_deploy.sh /tmp/atilla-release ${{ steps.cfg.outputs.site }} ${{ steps.cfg.outputs.api }}; \
+             rm -rf /tmp/atilla-release'"
+
+      - name: Dışarıdan kontrol
+        if: steps.cfg.outputs.skip != '1'
+        run: |
+          sleep 5
+          curl -fsS -o /dev/null -w "API: HTTP %{http_code}\n" "${{ steps.cfg.outputs.api_url }}/api/health" || echo "::warning::API dışarıdan erişilemedi (DNS/SSL henüz hazır olmayabilir)."
