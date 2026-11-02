@@ -56,7 +56,9 @@ fi
 echo "▶ 2/9 Swap (2 GB)"
 if ! swapon --show | grep -q swapfile; then
   if [ "$(free -m | awk '/^Mem:/{print $2}')" -lt 4000 ]; then
-    fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap -q /swapfile && swapon /swapfile
+    [ -f /swapfile ] || fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null && swapon /swapfile || echo "!! swap açılamadı (devam ediliyor)"
     grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
     sysctl -qw vm.swappiness=10
   fi
@@ -204,8 +206,25 @@ cat > /etc/caddy/Caddyfile <<CADDY
 }
 CADDY
 fi
+# 80/443'ü tutan başka bir web sunucusu (Apache/Nginx) varsa Caddy açılamaz → onları durdur.
+for other in apache2 nginx lighttpd httpd; do
+  if systemctl is-active --quiet "$other" 2>/dev/null; then
+    echo "!! $other 80/443 portunu kullanıyordu — durduruluyor ve devre dışı bırakılıyor"
+    systemctl stop "$other" || true
+    systemctl disable "$other" >/dev/null 2>&1 || true
+  fi
+done
+if ! caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/tmp/caddy-validate.log 2>&1; then
+  echo "✘ Caddyfile geçersiz:"; tail -n 15 /tmp/caddy-validate.log; exit 1
+fi
 systemctl enable caddy >/dev/null 2>&1 || true
-systemctl reload caddy 2>/dev/null || systemctl restart caddy
+if ! systemctl restart caddy; then
+  echo "✘ Caddy başlamadı — tanı:"
+  journalctl -u caddy -n 25 --no-pager 2>/dev/null | sed -E 's/^.*caddy\[[0-9]+\]: //' | tail -n 25 || true
+  echo "— 80/443 portlarını dinleyenler:"
+  ss -ltnp 2>/dev/null | grep -E ':(80|443)\b' || true
+  exit 1
+fi
 
 ufw allow OpenSSH >/dev/null; ufw allow 80 >/dev/null; ufw allow 443 >/dev/null; ufw --force enable >/dev/null
 install -m 0755 "$APP/deploy/backup.sh" /usr/local/bin/atilla-backup
