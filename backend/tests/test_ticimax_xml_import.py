@@ -139,3 +139,43 @@ def test_google_feed_groups_variants(mdb):
     assert cats == {"Takı", "Kolye", "Yüzük"}
     y = run(mdb.products.find_one({"urun_karti_id": "G3"}))
     assert y["price"] == 500.0 and y["variants"][0]["size"] == "14"
+
+
+GXML2 = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>
+ <item><g:id>1</g:id><g:title>Gümüş Zincir Kolye 45 cm</g:title><g:google_product_category>Kolyeler</g:google_product_category>
+  <g:product_type></g:product_type><g:availability>in stock</g:availability><g:price>900.00 TRY</g:price>
+  <g:item_group_id>K1</g:item_group_id><g:additional_variant_attribute>Name</g:additional_variant_attribute></item>
+ <item><g:id>2</g:id><g:title>Gümüş Zincir Kolye 50 cm</g:title><g:google_product_category>Kolyeler</g:google_product_category>
+  <g:availability>in stock</g:availability><g:price>950.00 TRY</g:price>
+  <g:item_group_id>K1</g:item_group_id><g:additional_variant_attribute>Name</g:additional_variant_attribute></item>
+ <item><g:id>3</g:id><g:title>Kol Düğmesi</g:title><g:google_product_category>Kol Düğmeleri</g:google_product_category>
+  <g:availability>in stock</g:availability><g:price>2295.00 TRY</g:price>
+  <g:item_group_id>D1</g:item_group_id><g:additional_variant_attribute>Name</g:additional_variant_attribute></item>
+</channel></rss>""".encode("utf-8")
+
+
+def test_google_feed_name_placeholder_and_gpc_category(mdb):
+    run(tx.import_products(mdb, tx.parse_feed(GXML2)))
+    k = run(mdb.products.find_one({"urun_karti_id": "K1"}))
+    assert k["name"] == "Gümüş Zincir Kolye"
+    assert sorted(v["size"] for v in k["variants"]) == ["45 cm", "50 cm"]      # 'Name' değil, başlık farkı
+    d = run(mdb.products.find_one({"urun_karti_id": "D1"}))
+    assert d["variants"][0]["size"] is None                                    # tek varyant: 'Name' atıldı
+    cats = {c["name"]: c["id"] for c in run(mdb.categories.find({}).to_list(None))}
+    assert set(cats) == {"Kolyeler", "Kol Düğmeleri"}
+    assert k["category_id"] == cats["Kolyeler"] and d["category_id"] == cats["Kol Düğmeleri"]
+
+
+def test_reimport_fixes_previous_bad_variant_names_and_category(mdb):
+    # önceki sürümün yazdığı hatalı kayıt: kategori yok, varyant bedeni 'Name'
+    run(tx.import_products(mdb, tx.parse_feed(GXML2)))
+    k0 = run(mdb.products.find_one({"urun_karti_id": "K1"}))
+    bad = [dict(v, size="Name") for v in k0["variants"]]
+    run(mdb.products.update_one({"urun_karti_id": "K1"},
+        {"$set": {"category_ids": [], "category_id": None, "variants": bad}}))
+    st = run(tx.import_products(mdb, tx.parse_feed(GXML2)))
+    assert st["updated"] == 2 and st["created"] == 0
+    k = run(mdb.products.find_one({"urun_karti_id": "K1"}))
+    assert sorted(v["size"] for v in k["variants"]) == ["45 cm", "50 cm"] and k["category_id"]
+    assert sorted(k["sizes"]) == ["45 cm", "50 cm"]

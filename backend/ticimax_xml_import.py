@@ -246,9 +246,22 @@ def _parse_google_items(items: list) -> List[Dict[str, Any]]:
                 vals = {next((d["value"] for d in ds if d["name"] == k), None) for ds in details}
                 if len(vals) > 1:
                     varying.add(k)
+        raw_attrs = [_variant_attrs_google(i) for i in its]
+        # Grup içinde DEĞERİ DEĞİŞMEYEN seçenek (ör. feed'deki anlamsız 'Name') varyant ekseni değildir.
+        if len(its) > 1:
+            keep = set()
+            for n in {_norm(n) for ra in raw_attrs for n, _ in ra}:
+                vals = {next((v for nn, v in ra if _norm(nn) == n), None) for ra in raw_attrs}
+                if len(vals) > 1:
+                    keep.add(n)
+            raw_attrs = [[(n, v) for n, v in ra if _norm(n) in keep] for ra in raw_attrs]
+        else:
+            raw_attrs = [[(n, v) for n, v in ra if ":" in f"{n}:" and _norm(n) not in ("SECENEK",)
+                          and _norm(v) not in ("NAME", "VALUE", "")] for ra in raw_attrs]
+        group_name = _common_title([_g(i, "title") for i in its])
         variants = []
-        for it, ds in zip(its, details):
-            attrs = _variant_attrs_google(it)
+        for it, ds, attrs0 in zip(its, details, raw_attrs):
+            attrs = list(attrs0)
             names = {_norm(n) for n, _ in attrs}
             for d in ds:
                 if d["name"] in varying and _norm(d["name"]) not in names:
@@ -265,6 +278,12 @@ def _parse_google_items(items: list) -> List[Dict[str, Any]]:
                     extra.append(v)
             if size is None and extra:
                 size = " / ".join(extra)
+            if len(its) > 1 and color is None and size is None:
+                # Ayırt edici özellik yok → başlıktaki fark varyant adı olur ("Kolye 45 cm" → "45 cm")
+                t = _g(it, "title")
+                rest = t[len(group_name):].strip(" -–,/|") if group_name and t.lower().startswith(group_name.lower()) else t
+                size = rest or t
+                attrs.append(("Seçenek", size))
             avail = _g(it, "availability").lower().replace("_", " ")
             qty = None
             for t in ("quantity", "stock_quantity", "stock"):
@@ -306,6 +325,10 @@ def _parse_google_items(items: list) -> List[Dict[str, Any]]:
                 if u.startswith("http") and u not in imgs:
                     imgs.append(u)
         ptype = _g(first, "product_type")
+        if not ptype:
+            gpc = _g(first, "google_product_category")
+            if gpc and not gpc.strip().isdigit():
+                ptype = gpc
         cat_path = [x.strip() for x in re.split(r"\s*(?:>|»|/|\\|\|)\s*", ptype) if x.strip()]
         cat_path = [x for x in cat_path if _norm(x) not in ("ANA SAYFA", "ANASAYFA", "HOME", "TUM URUNLER")]
         tech_seen, tech = set(), []
@@ -316,7 +339,7 @@ def _parse_google_items(items: list) -> List[Dict[str, Any]]:
             if key not in tech_seen:
                 tech_seen.add(key)
                 tech.append({"name": d["name"], "value": d["value"], **({"section": d["section"]} if d["section"] else {})})
-        name = _common_title([v["title"] for v in variants])
+        name = group_name or _common_title([v["title"] for v in variants])
         fv = variants[0]
         fields = {
             # Ticimax kolon adlarıyla (ürün kartında görünür)
@@ -758,7 +781,9 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                     ov["stock"] = int(nv.get("stock") or 0)
                     ov["ticimax_fields"] = nv.get("fields") or {}
                     ov["ticimax_xml"] = nv.get("raw") or {}
-                    ov["options"] = nv.get("options") or ov.get("options") or []
+                    ov["options"] = nv.get("options") or []
+                    ov["size"] = nv.get("size")
+                    ov["color"] = nv.get("color")
                     vp = _with_vat(nv.get("price"), nv)
                     if vp and not _is_manual(existing, "price"):
                         ov["price"] = vp
@@ -771,6 +796,7 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                     merged.append(ov)
             if not _is_manual(existing, "variants"):
                 upd["variants"] = merged
+                upd["sizes"] = [v["size"] for v in merged if v.get("size")]
                 upd["stock"] = sum(int(v.get("stock") or 0) for v in merged)
             if existing.get("manual_deactivated") or existing.get("is_deleted"):
                 upd.pop("is_active", None)
