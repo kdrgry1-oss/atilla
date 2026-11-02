@@ -30,8 +30,12 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "▶ 1/9 Sistem paketleri"
 # CD/DVD'den kurulmuş Ubuntu'da kalan "deb cdrom:" kaynağı apt-get update'i durdurur → devre dışı.
+# (biçimler: "deb cdrom:[...]/ jammy", "deb [check-date=no] file:///cdrom jammy", deb822 "URIs: file:/cdrom")
 for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
-  [ -f "$f" ] && sed -i -E 's/^(deb(-src)? +\[?[^]]*\]? *cdrom:)/# \1/; s/^(deb(-src)? +cdrom:)/# \1/' "$f" || true
+  [ -f "$f" ] && sed -i -E '/^[[:space:]]*deb(-src)?[[:space:]].*cdrom/ s/^/# /' "$f" || true
+done
+for f in /etc/apt/sources.list.d/*.sources; do
+  [ -f "$f" ] && grep -qiE '^URIs:.*cdrom' "$f" && mv "$f" "$f.cdrom-disabled" || true
 done
 # İnternet paket kaynağı hiç yoksa (yalnız CD ile kurulmuş) resmi Ubuntu kaynaklarını ekle.
 if ! grep -rqsE '^deb +(\[[^]]*\] +)?https?://' /etc/apt/sources.list /etc/apt/sources.list.d/ \
@@ -45,7 +49,7 @@ deb http://security.ubuntu.com/ubuntu $CN-security main restricted universe mult
 SRC
 fi
 if [ ! -f /var/lib/atilla-bootstrap-done ]; then
-  apt-get update -qq
+  apt-get update -qq || echo "!! apt-get update bazı kaynaklarda uyarı verdi — devam ediliyor"
   apt-get install -y -qq curl gnupg ca-certificates git rsync ufw openssl >/dev/null
 fi
 
@@ -66,7 +70,7 @@ if ! command -v mongod >/dev/null; then
   curl -fsSL "https://pgp.mongodb.com/server-${MVER}.asc" | gpg --batch --yes -o /usr/share/keyrings/mongodb.gpg --dearmor
   echo "deb [signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu ${CODENAME}/mongodb-org/${MVER} multiverse" \
     > /etc/apt/sources.list.d/mongodb-org.list
-  apt-get update -qq && apt-get install -y -qq mongodb-org >/dev/null
+  { apt-get update -qq || true; } && apt-get install -y -qq mongodb-org >/dev/null
   if ! grep -q cacheSizeGB /etc/mongod.conf; then
     sed -i 's/^storage:/storage:\n  wiredTiger:\n    engineConfig:\n      cacheSizeGB: 0.5/' /etc/mongod.conf
   fi
@@ -79,7 +83,7 @@ if ! command -v caddy >/dev/null; then
   curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy.gpg
   echo "deb [signed-by=/usr/share/keyrings/caddy.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" \
     > /etc/apt/sources.list.d/caddy.list
-  apt-get update -qq && apt-get install -y -qq caddy >/dev/null
+  { apt-get update -qq || true; } && apt-get install -y -qq caddy >/dev/null
 fi
 
 echo "▶ 5/9 Kod"
