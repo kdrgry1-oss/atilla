@@ -29,6 +29,21 @@ echo "▶ Mod: $MODE  site=$SITE_URL  api=$API_URL"
 export DEBIAN_FRONTEND=noninteractive
 
 echo "▶ 1/9 Sistem paketleri"
+# CD/DVD'den kurulmuş Ubuntu'da kalan "deb cdrom:" kaynağı apt-get update'i durdurur → devre dışı.
+for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+  [ -f "$f" ] && sed -i -E 's/^(deb(-src)? +\[?[^]]*\]? *cdrom:)/# \1/; s/^(deb(-src)? +cdrom:)/# \1/' "$f" || true
+done
+# İnternet paket kaynağı hiç yoksa (yalnız CD ile kurulmuş) resmi Ubuntu kaynaklarını ekle.
+if ! grep -rqsE '^deb +(\[[^]]*\] +)?https?://' /etc/apt/sources.list /etc/apt/sources.list.d/ \
+   && ! grep -rqsE '^URIs: *https?://' /etc/apt/sources.list.d/ ; then
+  . /etc/os-release
+  CN="${UBUNTU_CODENAME:-jammy}"
+  cat > /etc/apt/sources.list.d/atilla-ubuntu.list <<SRC
+deb http://archive.ubuntu.com/ubuntu $CN main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu $CN-updates main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu $CN-security main restricted universe multiverse
+SRC
+fi
 if [ ! -f /var/lib/atilla-bootstrap-done ]; then
   apt-get update -qq
   apt-get install -y -qq curl gnupg ca-certificates git rsync ufw openssl >/dev/null
