@@ -43,6 +43,13 @@ from typing import Any, Dict, List, Optional, Tuple
 log = logging.getLogger("ticimax_xml_import")
 
 SOURCE = "ticimax_xml"
+# Google Shopping feed'i adet vermez (yalnız "in stock"); stoktaki varyantın varsayılan adedi.
+# .env PRODUCT_XML_DEFAULT_STOCK ile değiştirilebilir. Senkron her çalıştığında yeniden yazılır.
+import os as _os
+try:
+    DEFAULT_STOCK = max(1, int(_os.environ.get("PRODUCT_XML_DEFAULT_STOCK") or 1))
+except ValueError:
+    DEFAULT_STOCK = 1
 MAX_FEED_BYTES = 300 * 1024 * 1024
 
 _TR_UP = str.maketrans({"ı": "I", "i": "I", "ğ": "G", "ü": "U", "ş": "S", "ö": "O", "ç": "C",
@@ -149,7 +156,229 @@ def parse_feed(content: bytes) -> List[Dict[str, Any]]:
         raise ValueError("XML okunamadı")
     urunler = [e for e in root.iter() if isinstance(e.tag, str) and _key(e.tag) in ("URUN", "PRODUCT")
                and (_child(e, "UrunKartiID", "UrunAdi", "ProductName") is not None)]
-    return [_parse_product(u) for u in urunler]
+    if urunler:
+        return [_parse_product(u) for u in urunler]
+    # Google Shopping (RSS/Atom) biçimi: her <item> bir varyant, item_group_id ile ürüne bağlanır.
+    items = [e for e in root.iter() if isinstance(e.tag, str) and _key(e.tag) in ("ITEM", "ENTRY")
+             and _child(e, "id") is not None and _child(e, "title") is not None]
+    return _parse_google_items(items)
+
+
+# ───────────────────────── Google Shopping biçimi ─────────────────────────
+
+def _g(item, name: str) -> str:
+    return html.unescape(_txt(_child(item, name)))
+
+
+def _g_all(item, name: str) -> List[str]:
+    return [html.unescape(_txt(c)) for c in _children(item, name) if _txt(c)]
+
+
+def _price_num(v: str) -> Optional[float]:
+    m = re.search(r"\d[\d.,]*", v or "")
+    return _num(m.group(0)) if m else None
+
+
+def _variant_attrs_google(item) -> List[Tuple[str, str]]:
+    """g:color / g:size / g:material / g:pattern + additional_variant_attribute (alt etiketli ya da
+    'Ad: Değer' metni) → [(ad, değer)]."""
+    out: List[Tuple[str, str]] = []
+    for tag, label in (("color", "Renk"), ("size", "Beden"), ("material", "Materyal"), ("pattern", "Desen")):
+        v = _g(item, tag)
+        if v:
+            out.append((label, v))
+    for ava in _children(item, "additional_variant_attribute"):
+        kids = [c for c in ava if isinstance(c.tag, str)]
+        if kids:
+            n = _txt(_child(ava, "label", "name", "attribute_name"))
+            v = _txt(_child(ava, "value", "attribute_value"))
+        else:
+            t = _txt(ava)
+            n, v = (t.split(":", 1) + [""])[:2] if ":" in t else ("Seçenek", t)
+        n, v = html.unescape(n).strip(), html.unescape(v).strip()
+        if v:
+            out.append((n or "Seçenek", v))
+    return out
+
+
+def _product_details_google(item) -> List[Dict[str, str]]:
+    out = []
+    for d in _children(item, "product_detail"):
+        n = html.unescape(_txt(_child(d, "attribute_name")))
+        v = html.unescape(_txt(_child(d, "attribute_value")))
+        sec = html.unescape(_txt(_child(d, "section_name")))
+        if n and v:
+            out.append({"section": sec, "name": n, "value": v})
+    return out
+
+
+def _common_title(titles: List[str]) -> str:
+    titles = [t for t in titles if t]
+    if not titles:
+        return ""
+    if len(set(titles)) == 1:
+        return titles[0]
+    words = [t.split() for t in titles]
+    pref = []
+    for ws in zip(*words):
+        if len(set(w.lower() for w in ws)) == 1:
+            pref.append(ws[0])
+        else:
+            break
+    name = " ".join(pref).strip(" -–,/|")
+    return name if len(name) >= 3 else min(titles, key=len)
+
+
+def _parse_google_items(items: list) -> List[Dict[str, Any]]:
+    groups: Dict[str, list] = {}
+    for it in items:
+        gid = _g(it, "item_group_id") or _g(it, "id")
+        groups.setdefault(gid, []).append(it)
+    products: List[Dict[str, Any]] = []
+    for gid, its in groups.items():
+        first = its[0]
+        details = [_product_details_google(i) for i in its]
+        # Gruptaki varyantlar arasında DEĞERİ DEĞİŞEN ürün detayı → varyant ekseni
+        varying = set()
+        if len(its) > 1:
+            keys = {d["name"] for ds in details for d in ds}
+            for k in keys:
+                vals = {next((d["value"] for d in ds if d["name"] == k), None) for ds in details}
+                if len(vals) > 1:
+                    varying.add(k)
+        variants = []
+        for it, ds in zip(its, details):
+            attrs = _variant_attrs_google(it)
+            names = {_norm(n) for n, _ in attrs}
+            for d in ds:
+                if d["name"] in varying and _norm(d["name"]) not in names:
+                    attrs.append((d["name"], d["value"]))
+            color = size = None
+            extra = []
+            for n, v in attrs:
+                nn = _norm(n)
+                if color is None and any(k in nn for k in _COLOR_KEYS):
+                    color = v
+                elif size is None and any(k in nn for k in _SIZE_KEYS):
+                    size = v
+                else:
+                    extra.append(v)
+            if size is None and extra:
+                size = " / ".join(extra)
+            avail = _g(it, "availability").lower().replace("_", " ")
+            qty = None
+            for t in ("quantity", "stock_quantity", "stock"):
+                if _g(it, t):
+                    qty = _num(_g(it, t))
+                    break
+            in_stock = avail in ("in stock", "instock", "stokta", "preorder", "backorder") if avail else (qty or 0) > 0
+            stock = int(qty) if qty is not None else (DEFAULT_STOCK if in_stock else 0)
+            if not in_stock:
+                stock = 0
+            price = _price_num(_g(it, "price"))
+            sale = _price_num(_g(it, "sale_price"))
+            f = {_key(c.tag): html.unescape(_txt(c)) for c in it if isinstance(c.tag, str)
+                 and not [g for g in c if isinstance(g.tag, str)]}
+            variants.append({
+                "urun_id": _g(it, "id"),
+                "stock_code": _g(it, "mpn") or "",
+                "barcode": _g(it, "gtin") or "",
+                "stock": max(0, stock),
+                "price": price, "sale_price": sale,
+                "purchase_price": None, "market_price": None,
+                "vat_rate": None, "vat_included": True,
+                "currency": (re.findall(r"[A-Z]{3}", _g(it, "price")) or ["TRY"])[0],
+                "desi": None,
+                "color": color, "size": size,
+                "options": [{"name": n, "value": v} for n, v in attrs],
+                "title": _g(it, "title"),
+                "link": _g(it, "link"),
+                "availability": avail,
+                "fields": f,
+                "raw": _el_to_obj(it),
+            })
+        imgs: List[str] = []
+        for it in its:
+            for u in [_g(it, "image_link")] + _g_all(it, "additional_image_link"):
+                u = (u or "").strip()
+                if u.startswith("//"):
+                    u = "https:" + u
+                if u.startswith("http") and u not in imgs:
+                    imgs.append(u)
+        ptype = _g(first, "product_type")
+        cat_path = [x.strip() for x in re.split(r"\s*(?:>|»|/|\\|\|)\s*", ptype) if x.strip()]
+        cat_path = [x for x in cat_path if _norm(x) not in ("ANA SAYFA", "ANASAYFA", "HOME", "TUM URUNLER")]
+        tech_seen, tech = set(), []
+        for d in details[0]:
+            if d["name"] in varying:
+                continue
+            key = (d["name"], d["value"])
+            if key not in tech_seen:
+                tech_seen.add(key)
+                tech.append({"name": d["name"], "value": d["value"], **({"section": d["section"]} if d["section"] else {})})
+        name = _common_title([v["title"] for v in variants])
+        fv = variants[0]
+        fields = {
+            # Ticimax kolon adlarıyla (ürün kartında görünür)
+            "URUNKARTIID": gid, "URUNID": fv["urun_id"], "URUNADI": name,
+            "ACIKLAMA": _g(first, "description"), "MARKA": _g(first, "brand"),
+            "STOKKODU": fv["stock_code"], "BARKOD": fv["barcode"],
+            "SATISFIYATI": str(fv["price"] or ""), "INDIRIMLIFIYAT": str(fv["sale_price"] or ""),
+            "BREADCRUMBKAT": " > ".join(cat_path), "PARABIRIMI": fv["currency"],
+            "ADWORDSKATEGORI": _g(first, "google_product_category"),
+            "OZELALAN1": _g(first, "custom_label_0"), "OZELALAN2": _g(first, "custom_label_1"),
+            "OZELALAN3": _g(first, "custom_label_2"), "OZELALAN4": _g(first, "custom_label_3"),
+            "OZELALAN5": _g(first, "custom_label_4"),
+            "URUNURL": _g(first, "link"),
+            "KARGOUCRETI": str(_price_num(_txt(_child(_child(first, "shipping") if _child(first, "shipping") is not None else first, "price"))) or ""),
+        }
+        # Feed'in kendi alanları da eksiksiz (FEED_ önekiyle)
+        for k, v in fv["fields"].items():
+            fields.setdefault(f"FEED_{k}", v)
+        products.append({
+            "card_id": gid,
+            "name": name,
+            "fields": {k: v for k, v in fields.items() if v not in (None, "")},
+            "images": imgs,
+            "category_paths": [cat_path] if cat_path else [],
+            "technical": tech,
+            "variants": variants,
+            "raw": {"items": [v["raw"] for v in variants]},
+        })
+    return products
+
+
+def feed_samples(content: bytes, n: int = 2) -> Dict[str, Any]:
+    """Tanı: ilk n kaydın alan değerleri (kısaltılmış) + bazı alanlarda görülen farklı değerler."""
+    from lxml import etree
+    parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False, huge_tree=True, recover=True)
+    root = etree.fromstring(content, parser=parser)
+    items = [e for e in root.iter() if isinstance(e.tag, str) and _key(e.tag) == "ITEM"]
+    samples = []
+    for it in items[:n]:
+        row = []
+        for c in it:
+            if not isinstance(c.tag, str) or _key(c.tag) == "DESCRIPTION":
+                continue
+            kids = [g for g in c if isinstance(g.tag, str)]
+            val = " | ".join(f"{_key(g.tag)}={_txt(g)}" for g in kids) if kids else _txt(c)
+            row.append(f"{c.tag.split('}')[-1]}: {val[:90]}")
+        samples.append(row)
+    distinct: Dict[str, Dict[str, int]] = {}
+    for it in items[:3000]:
+        for tag in ("availability", "additional_variant_attribute", "custom_label_0", "custom_label_1",
+                    "custom_label_2", "custom_label_3", "custom_label_4", "product_type"):
+            for c in _children(it, tag):
+                v = _txt(c)[:60]
+                d = distinct.setdefault(tag, {})
+                d[v] = d.get(v, 0) + 1
+    groups: Dict[str, int] = {}
+    for it in items:
+        gid = _txt(_child(it, "item_group_id"))
+        groups[gid] = groups.get(gid, 0) + 1
+    return {"samples": samples,
+            "distinct": {k: sorted(v.items(), key=lambda kv: -kv[1])[:8] for k, v in distinct.items()},
+            "groups": len(groups), "items": len(items)}
 
 
 _COLOR_KEYS = ("RENK", "COLOR", "RENKLER")
@@ -338,6 +567,32 @@ async def _ensure_category_path(db, path: List[str], cache: Dict[Tuple[Optional[
     return ids
 
 
+_seq_state: Dict[str, int] = {}
+
+
+async def _new_product_id(db) -> str:
+    """Önce sistemin 4 haneli kimliği; 4 haneli alan dolmaya başladıysa (rastgele deneme tutmazsa)
+    çakışmasız SIRALI sayısal kimlik (10000+). Kimlik her zaman benzersiz ve sayısaldır."""
+    from routes.deps import generate_short_id
+    if not _seq_state.get("full"):
+        cid = await generate_short_id("products")
+        if cid.isdigit() and not await db.products.find_one({"id": cid}, {"_id": 1}):
+            return cid
+        _seq_state["full"] = 1
+    if "next" not in _seq_state:
+        mx = 9999
+        async for d in db.products.find({}, {"_id": 0, "id": 1}):
+            v = str(d.get("id") or "")
+            if v.isdigit():
+                mx = max(mx, int(v))
+        _seq_state["next"] = mx + 1
+    while True:
+        cid = str(_seq_state["next"])
+        _seq_state["next"] += 1
+        if not await db.products.find_one({"id": cid}, {"_id": 1}):
+            return cid
+
+
 def _variant_doc(v: Dict[str, Any], base_price: Optional[float]) -> Dict[str, Any]:
     from routes.deps import generate_id
     vp = _with_vat(v.get("price"), v)
@@ -464,7 +719,7 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                 variants = [_variant_doc(v, price) for v in vs]
                 doc = {
                     **typed,
-                    "id": await generate_short_id("products") if not dry_run else "dry",
+                    "id": await _new_product_id(db) if not dry_run else "dry",
                     "urun_karti_id": card_id,
                     "slug": slug_with_card_id(name, card_id),
                     "variants": variants,
@@ -530,7 +785,7 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
     return stats
 
 
-async def run_import(db, url: str, *, dry_run: bool = False) -> Dict[str, Any]:
+async def run_import(db, url: str, *, dry_run: bool = False, describe: bool = False) -> Dict[str, Any]:
     from security_fetch import safe_fetch
     res = await safe_fetch(url, max_bytes=MAX_FEED_BYTES, timeout=600, allow_redirects=3)
     if not res.ok:
@@ -543,7 +798,14 @@ async def run_import(db, url: str, *, dry_run: bool = False) -> Dict[str, Any]:
     stats["finished_at"] = datetime.now(timezone.utc).isoformat()
     if not dry_run:
         await db.settings.update_one({"id": "ticimax_xml_import_last"},
-                                     {"$set": {"id": "ticimax_xml_import_last", **stats}}, upsert=True)
+                                     {"$set": {"id": "ticimax_xml_import_last",
+                                               **{k: v for k, v in stats.items() if k != "structure"}}},
+                                     upsert=True)
+    if describe:
+        try:
+            stats["feed_samples"] = feed_samples(res.content)
+        except Exception as e:
+            stats["feed_samples"] = {"error": type(e).__name__}
     return stats
 
 

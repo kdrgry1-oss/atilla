@@ -259,7 +259,7 @@ SHELL=/bin/bash
 17 */2 * * * root cd $APP/backend && flock -n /run/atilla-xml.lock $APP/venv/bin/python scripts/import_ticimax_xml.py >> /var/log/atilla-xml-import.log 2>&1
 CRON
   chmod 644 /etc/cron.d/atilla-xml-import
-  cd "$APP/backend" && timeout 1800 flock /run/atilla-xml.lock "$APP/venv/bin/python" scripts/import_ticimax_xml.py \
+  cd "$APP/backend" && timeout 1800 flock /run/atilla-xml.lock "$APP/venv/bin/python" scripts/import_ticimax_xml.py --describe \
     2>&1 | grep -viE 'https?://|secret|password|token' | tail -n 100 || echo "!! ürün aktarımı tamamlanamadı (sonraki zamanlanmış çalıştırma tekrar dener)"
 else
   rm -f /etc/cron.d/atilla-xml-import

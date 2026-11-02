@@ -93,3 +93,49 @@ def test_reimport_updates_stock_and_keeps_manual_edits(mdb):
     assert p["name"] == "Benim Adım"                                     # elle düzenleme korunur
     assert p["stock"] == 7 and len(p["variants"]) == 2
     assert run(mdb.categories.count_documents({})) == 3                 # kategoriler tekrar oluşmaz
+
+
+GXML = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>
+ <item><g:id>91792</g:id><g:title>Gümüş Kolye 45 cm</g:title><g:description>&lt;p&gt;925 ayar&lt;/p&gt;</g:description>
+  <g:link>https://site.example/gumus-kolye</g:link><g:image_link>https://cdn.example/1.jpg</g:image_link>
+  <g:additional_image_link>https://cdn.example/2.jpg</g:additional_image_link>
+  <g:availability>in stock</g:availability><g:price>1250.00 TRY</g:price><g:brand>Inure</g:brand>
+  <g:mpn>KLY-45</g:mpn><g:item_group_id>G1</g:item_group_id><g:product_type>Takı &gt; Kolye</g:product_type>
+  <g:custom_label_0>X</g:custom_label_0>
+  <g:product_detail><g:section_name>Genel</g:section_name><g:attribute_name>Ayar</g:attribute_name><g:attribute_value>925</g:attribute_value></g:product_detail>
+  <g:product_detail><g:section_name>Genel</g:section_name><g:attribute_name>Uzunluk</g:attribute_name><g:attribute_value>45 cm</g:attribute_value></g:product_detail>
+  <g:shipping><g:price>0 TRY</g:price></g:shipping></item>
+ <item><g:id>91793</g:id><g:title>Gümüş Kolye 50 cm</g:title><g:description>x</g:description>
+  <g:availability>out of stock</g:availability><g:price>1300.00 TRY</g:price><g:mpn>KLY-50</g:mpn>
+  <g:item_group_id>G1</g:item_group_id><g:product_type>Takı &gt; Kolye</g:product_type>
+  <g:image_link>https://cdn.example/3.jpg</g:image_link>
+  <g:product_detail><g:attribute_name>Ayar</g:attribute_name><g:attribute_value>925</g:attribute_value></g:product_detail>
+  <g:product_detail><g:attribute_name>Uzunluk</g:attribute_name><g:attribute_value>50 cm</g:attribute_value></g:product_detail></item>
+ <item><g:id>800</g:id><g:title>Küpe</g:title><g:availability>out of stock</g:availability><g:price>300 TRY</g:price>
+  <g:item_group_id>G2</g:item_group_id><g:product_type>Takı &gt; Küpe</g:product_type></item>
+ <item><g:id>900</g:id><g:title>Yüzük</g:title><g:availability>in stock</g:availability><g:price>500,00 TRY</g:price>
+  <g:item_group_id>G3</g:item_group_id><g:product_type>Takı &gt; Yüzük</g:product_type>
+  <g:additional_variant_attribute>Yüzük Ölçüsü:14</g:additional_variant_attribute></item>
+</channel></rss>""".encode("utf-8")
+
+
+def test_google_feed_groups_variants(mdb):
+    prods = tx.parse_feed(GXML)
+    assert len(prods) == 3
+    st = run(tx.import_products(mdb, prods))
+    assert st["created"] == 2 and st["skipped_no_stock"] == 1 and st["errors"] == 0
+    p = run(mdb.products.find_one({"urun_karti_id": "G1"}))
+    assert p["name"] == "Gümüş Kolye" and p["price"] == 1250.0 and p["stock"] == 1
+    sizes = {v["size"]: v["stock"] for v in p["variants"]}
+    assert sizes == {"45 cm": 1, "50 cm": 0}
+    assert {v["stock_code"] for v in p["variants"]} == {"KLY-45", "KLY-50"}
+    assert p["images"] == ["https://cdn.example/1.jpg", "https://cdn.example/2.jpg", "https://cdn.example/3.jpg"]
+    assert {"name": "Ayar", "value": "925", "section": "Genel"} in p["technical_details"]
+    assert not any(t["name"] == "Uzunluk" for t in p["technical_details"])   # varyant ekseni, teknik değil
+    assert p["brand"] == "Inure" and p["description"] == "<p>925 ayar</p>"
+    assert p["ticimax_fields"]["OZELALAN1"] == "X" and p["breadcrumb"] == "Takı > Kolye"
+    cats = {c["name"] for c in run(mdb.categories.find({}).to_list(None))}
+    assert cats == {"Takı", "Kolye", "Yüzük"}
+    y = run(mdb.products.find_one({"urun_karti_id": "G3"}))
+    assert y["price"] == 500.0 and y["variants"][0]["size"] == "14"

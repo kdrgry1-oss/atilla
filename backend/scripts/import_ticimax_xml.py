@@ -23,9 +23,10 @@ async def main() -> int:
     from motor.motor_asyncio import AsyncIOMotorClient
     import ticimax_xml_import as tx
     db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
-    stats = await tx.run_import(db, url, dry_run="--dry-run" in sys.argv)
+    stats = await tx.run_import(db, url, dry_run="--dry-run" in sys.argv, describe="--describe" in sys.argv)
     st = dict(stats)
     struct = st.pop("structure", None)
+    samples = st.pop("feed_samples", None)
     print("Ürün aktarımı:", json.dumps(st, ensure_ascii=False))
     if struct:
         print("XML yapısı (ürün bulunamadı):")
@@ -34,6 +35,14 @@ async def main() -> int:
                 print(f"  {k}: {v}")
         for line in struct.get("paths", []):
             print("   ", line)
+    if samples:
+        print(f"Feed: {samples.get('items')} kayıt, {samples.get('groups')} ürün grubu")
+        for i, row in enumerate(samples.get("samples", []), 1):
+            print(f"  Örnek kayıt {i}:")
+            for line in row:
+                print("    ", line)
+        for k, vals in (samples.get("distinct") or {}).items():
+            print(f"  {k}: " + " ; ".join(f"{v!r} x{c}" for v, c in vals))
     return 0 if stats.get("errors", 0) == 0 or stats.get("created", 0) + stats.get("updated", 0) > 0 else 1
 
 
