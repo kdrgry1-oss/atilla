@@ -9,7 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 
 def _codemagic_script():
     y = yaml.safe_load((ROOT / "codemagic.yaml").read_text(encoding="utf-8"))
-    wf = y["workflows"]["ios-facette"]
+    wf = y["workflows"]["ios-atilla"]
     return "\n".join(s["script"] for s in wf["scripts"])
 
 
@@ -43,4 +43,4 @@ def test_f22_weekly_restore_test_into_temp_db():
     assert '--nsTo="${TMPDB}.*"' in r and 'TMPDB="restore_test"' in r      # canlı DB'ye geri yüklenmez
     assert "sha256 uyuşmuyor" in r and "drop_database" in r
     inst = (ROOT / "deploy" / "install.sh").read_text(encoding="utf-8")
-    assert "/etc/cron.weekly/facette-restore-test" in inst
+    assert "/etc/cron.weekly/atilla-restore-test" in inst

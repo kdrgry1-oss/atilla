@@ -180,7 +180,7 @@ export default function AccountPrivacyPane() {
       const res = await axios.get(`${API}/kvkk/my-data`, { headers: authHeaders(), responseType: "blob" });
       const cd = String(res.headers?.["content-disposition"] || "");
       const m = cd.match(/filename="?([^";]+)"?/i);
-      const name = (m && m[1]) || "facette-verilerim.json";
+      const name = (m && m[1]) || "atilla-verilerim.json";
       const url = URL.createObjectURL(new Blob([res.data], { type: "application/json" }));
       const a = document.createElement("a");
       a.href = url;

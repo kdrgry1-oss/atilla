@@ -44,7 +44,7 @@
 | Push bildirimleri | — | Personel cihazı | FCM/APNs | Şablon + telefon/adres süzgeci; `adres/gsm/...` data anahtarları atılır |
 | Reklam platformları | — | — | Meta/TikTok/Google/Pinterest/Snapchat CAPI | Yalnız SHA-256 e-posta/telefon (+ il/ilçe hash); **açık adres ve posta kodu gönderilmez**; consent gate (`marketing.capi_consent_gate`) satın alma + iade/iptal olaylarında |
 | Herkese açık sipariş-no ucu | `GET /api/orders/by-number/{n}` | Herkes (sipariş no ile) | — | Ad/soyad maskeli, telefon son 2 hane, **açık adres dönmez** (yalnız il/ilçe) |
-| Tarayıcı | `localStorage.facette_last_address` | — | — | Hiç yazılmaz; ödeme sayfası açılışında ve çıkışta silinir |
+| Tarayıcı | `localStorage.atilla_last_address` | — | — | Hiç yazılmaz; ödeme sayfası açılışında ve çıkışta silinir |
 
 ## 2. Influencer verisi
 

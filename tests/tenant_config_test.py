@@ -45,8 +45,8 @@ def test_alias_and_canonical_precedence():
 
 
 def test_neutral_defaults_seed_and_compatibility_write():
-    assert "FACETTE" not in str(TenantConfig().model_dump())
-    assert migration_seed({}, {}, {})["brand"]["store_name"] == "FACETTE"
+    assert "ATILLA" not in str(TenantConfig().model_dump())
+    assert migration_seed({}, {}, {})["brand"]["store_name"] == "ATILLA"
     cfg = TenantConfig.model_validate({
         "brand": {"store_name": "New Brand"},
         "domains": {"storefront_url": "https://example.test/"},
@@ -78,11 +78,11 @@ def test_only_opaque_secret_refs_survive_schema():
 def test_legacy_bare_domains_are_normalized_to_absolute_urls():
     cfg = TenantConfig.model_validate({
         "domains": {
-            "storefront_url": "facette.com.tr/",
-            "api_url": "//api.facette.com.tr/",
+            "storefront_url": "atilla.com.tr/",
+            "api_url": "//api.atilla.com.tr/",
             "cdn_url": "localhost:3000/",
         }
     })
-    assert cfg.domains.storefront_url == "https://facette.com.tr"
-    assert cfg.domains.api_url == "https://api.facette.com.tr"
+    assert cfg.domains.storefront_url == "https://atilla.com.tr"
+    assert cfg.domains.api_url == "https://api.atilla.com.tr"
     assert cfg.domains.cdn_url == "http://localhost:3000"

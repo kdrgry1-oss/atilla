@@ -34,7 +34,7 @@ def _p8() -> str:
 def apns_cfg():
     pem = _p8()
     return {"key_id": "KEY1234567", "team_id": "TEAM123456", "key": push_mod._normalize_p8(pem),
-            "topic": "tr.com.facette.admin", "env": "production"}
+            "topic": "tr.com.atilla.admin", "env": "production"}
 
 
 def test_normalize_p8_accepts_pem_escaped_and_bare_base64():
@@ -65,7 +65,7 @@ async def test_apns_send_request_shape_and_outcomes(apns_cfg):
     assert any("400" in e and "BadDeviceToken" in e for e in errors)
 
     req = ok.calls.last.request
-    assert req.headers["apns-topic"] == "tr.com.facette.admin"
+    assert req.headers["apns-topic"] == "tr.com.atilla.admin"
     assert req.headers["apns-push-type"] == "alert"
     tok = req.headers["authorization"].split(" ", 1)[1]
     hdr = jwt.get_unverified_header(tok)
@@ -99,7 +99,7 @@ async def test_apns_config_from_env_and_missing(monkeypatch, pay_env):
     monkeypatch.setenv("APNS_TEAM_ID", "T1")
     monkeypatch.setenv("APNS_KEY", _p8().replace("\n", "\\n"))
     cfg = await push_mod._apns_config()
-    assert cfg["topic"] == "tr.com.facette.admin" and cfg["env"] == "production"
+    assert cfg["topic"] == "tr.com.atilla.admin" and cfg["env"] == "production"
     monkeypatch.setenv("APNS_ENV", "bogus")
     assert (await push_mod._apns_config())["env"] == "production"
 
@@ -116,7 +116,7 @@ def routed(pay_env, monkeypatch):
         return len(tokens), []
 
     async def _apns_cfg():
-        return {"key_id": "K", "team_id": "T", "key": "x", "topic": "tr.com.facette.admin", "env": "production"}
+        return {"key_id": "K", "team_id": "T", "key": "x", "topic": "tr.com.atilla.admin", "env": "production"}
 
     async def _apns_send(cfg, tokens, title, body, data):
         apns.append({"tokens": list(tokens), "title": title, "data": dict(data)})

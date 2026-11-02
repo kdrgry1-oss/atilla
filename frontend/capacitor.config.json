@@ -1,6 +1,6 @@
 {
-  "appId": "tr.com.facette.admin",
-  "appName": "Facette",
+  "appId": "tr.com.atilla.admin",
+  "appName": "Atilla",
   "webDir": "build",
   "bundledWebRuntime": false,
   "server": {
@@ -27,13 +27,13 @@
       "overlaysWebView": false
     },
     "Preferences": {
-      "group": "tr.com.facette.admin"
+      "group": "tr.com.atilla.admin"
     }
   },
   "ios": {
     "contentInset": "always",
     "backgroundColor": "#000000",
-    "scheme": "Facette"
+    "scheme": "Atilla"
   },
   "android": {
     "allowMixedContent": false,

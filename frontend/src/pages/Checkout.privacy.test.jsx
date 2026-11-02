@@ -39,9 +39,9 @@ describe("checkout address isolation", () => {
   afterEach(async () => { await act(async () => root.unmount()); jest.clearAllMocks(); });
 
   test("guest checkout deletes the legacy address and never displays it", async () => {
-    localStorage.setItem("facette_last_address", JSON.stringify({ first_name: "PRIVATE_PREVIOUS_CUSTOMER", address: "PRIVATE_ADDRESS" }));
+    localStorage.setItem("atilla_last_address", JSON.stringify({ first_name: "PRIVATE_PREVIOUS_CUSTOMER", address: "PRIVATE_ADDRESS" }));
     await act(async () => root.render(<Checkout />));
-    expect(localStorage.getItem("facette_last_address")).toBeNull();
+    expect(localStorage.getItem("atilla_last_address")).toBeNull();
     expect(container.textContent).not.toContain("PRIVATE_PREVIOUS_CUSTOMER");
     expect(container.textContent).not.toContain("PRIVATE_ADDRESS");
   });
@@ -69,7 +69,7 @@ describe("checkout address isolation", () => {
     await act(async () => resolveOld({ data: { addresses: [{ first_name: "PRIVATE_PREVIOUS_CUSTOMER", address: "PRIVATE_ADDRESS" }] } }));
     expect(container.textContent).not.toContain("PRIVATE_PREVIOUS_CUSTOMER");
     expect(container.textContent).not.toContain("PRIVATE_ADDRESS");
-    expect(localStorage.getItem("facette_last_address")).toBeNull();
+    expect(localStorage.getItem("atilla_last_address")).toBeNull();
   });
 
   test.each([

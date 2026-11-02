@@ -1,4 +1,4 @@
-# Facette — Geliştirme Kuralları (ZORUNLU)
+# Atilla — Geliştirme Kuralları (ZORUNLU)
 
 Bu depo canlı bir e-ticaret sistemidir (FastAPI + MongoDB backend / Railway,
 React CRA frontend / Cloudflare Pages). Gerçek para, gerçek siparişler.
@@ -52,7 +52,7 @@ değişiklikten önce bu bölümü oku, sonunda testleri çalıştır.**
 ## Genel kurallar
 - **Deploy:** YALNIZ yayın öncesi kapıdan geçerek: `PYTHON=<test bağımlılıklı python> bash scripts/predeploy.sh --deploy`
   (derleme + rota kapısı + security_e2e TAMAMI + sır taraması geçmezse gönderim yapılmaz; ardından
-  `git push origin HEAD:main HEAD:claude/facette-repo-connect-s07sw3` betik içinde yapılır).
+  `git push origin HEAD:main HEAD:claude/atilla-repo-connect-s07sw3` betik içinde yapılır).
   GitHub Actions faturalama nedeniyle çalışmadığında da bu kapı zorunludur. Railway backend ~30-90s,
   Cloudflare frontend ~2-4dk.
 - **Her deploy sonrası smoke:** `bash <scratchpad>/smoke.sh` — site/admin/giriş/ödeme

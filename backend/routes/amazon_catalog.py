@@ -1,5 +1,5 @@
 """
-Amazon KATALOG EŞLEŞTİRME — Amazon'da (bu platform dışında) açılmış mevcut listelemeleri Facette
+Amazon KATALOG EŞLEŞTİRME — Amazon'da (bu platform dışında) açılmış mevcut listelemeleri Atilla
 ürün/varyantlarıyla eşleştirir, eşleşen SKU'ların stok/fiyatını senkrona dahil eder ve
 "hangi ürünümüz Amazon'da var / yok" raporu üretir (JSON + Excel).
 
@@ -252,7 +252,7 @@ def _digits(s: str) -> str:
 
 
 async def match_catalog(rows: list) -> dict:
-    """Amazon satırlarını Facette varyantlarıyla eşleştirir → db.amazon_sku_map."""
+    """Amazon satırlarını Atilla varyantlarıyla eşleştirir → db.amazon_sku_map."""
     from .amazon_spapi import _amazon_seller_sku
     from .integrations_common import _resolve_stock_code
     products = await db.products.find({"is_deleted": {"$ne": True}}, {"_id": 0, "id": 1, "name": 1, "stock_code": 1,

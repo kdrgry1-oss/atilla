@@ -218,7 +218,7 @@ def test_headers_file_enforcing_csp_is_strict_enough_and_reports():
     csp = parse_csp(enf)
     assert csp_flags(csp) == {"present": True, "report": True, "object_src_none": True, "frame_ancestors": True,
                               "base_uri": True, "script_restricted": True}
-    assert "report-uri https://api.facette.com.tr/api/custom-theme/csp-report" in enf
+    assert "report-uri https://api.atilla.com.tr/api/custom-theme/csp-report" in enf
     assert csp["default-src"] == ["'self'"] and csp["base-uri"] == ["'self'"]
     assert csp["frame-ancestors"] == ["'self'"] and csp["form-action"] == ["'self'", "https:"]
     script = _script_sources(csp)
@@ -229,7 +229,7 @@ def test_headers_file_enforcing_csp_is_strict_enough_and_reports():
     for host in ("https://*.googletagmanager.com", "https://connect.facebook.net", "https://analytics.tiktok.com",
                  "https://*.posthog.com", "https://static.cloudflareinsights.com"):
         assert host in script, host
-    assert "https://api.facette.com.tr" in csp["connect-src"] and "https://cloudflareinsights.com" in csp["connect-src"]
+    assert "https://api.atilla.com.tr" in csp["connect-src"] and "https://cloudflareinsights.com" in csp["connect-src"]
     # every line within Cloudflare's 2000-character limit
     txt, lines = _headers_lines()
     assert max(len(x) for x in lines) <= 2000
@@ -243,7 +243,7 @@ def test_headers_file_strict_report_only_measures_unsafe_inline_removal():
     ro = parse_csp(_header_value("Content-Security-Policy-Report-Only"))
     script = ro["script-src"]
     assert "'unsafe-inline'" not in script and any(s.startswith("'sha256-") for s in script)
-    assert ro["report-uri"] == ["https://api.facette.com.tr/api/custom-theme/csp-report"]
+    assert ro["report-uri"] == ["https://api.atilla.com.tr/api/custom-theme/csp-report"]
     # same host allowlist as the enforcing policy (only the inline handling differs)
     enf = parse_csp(_header_value("Content-Security-Policy"))
     hosts = lambda srcs: {s for s in srcs if s.startswith("https://")}  # noqa: E731

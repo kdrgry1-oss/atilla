@@ -31,9 +31,9 @@ bağımlılıklar, systemd servisi, Caddy ile otomatik SSL, günlük yedek (03:0
 
 ## 3) Ayarlar
 
-`/opt/facette/backend/.env` dosyasını doldurun (`deploy/env.example` kopyasıdır):
+`/opt/atilla/backend/.env` dosyasını doldurun (`deploy/env.example` kopyasıdır):
 zorunlu olanlar `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, iyzico anahtarları,
-R2 anahtarları, yedek ayarları (`R2_BACKUP_BUCKET`, `BACKUP_PASSPHRASE`), SMTP. Sonra: `systemctl restart facette-api`.
+R2 anahtarları, yedek ayarları (`R2_BACKUP_BUCKET`, `BACKUP_PASSPHRASE`), SMTP. Sonra: `systemctl restart atilla-api`.
 
 ## 4) Panel içi kapatılacaklar (bu markada kullanılmayanlar)
 
@@ -60,7 +60,7 @@ gecikmesi yok, yönetim tek yerden. Bedeli: sunucu giderse veri de gider. Bu yü
 `mongodump`'ını alır, arşivi doğrular, **şifreler** (`BACKUP_PASSPHRASE`) ve **ayrı, gizli**
 bir R2 bucket'ına (`R2_BACKUP_BUCKET`) yükler; buluttaki kopyanın boyutu + SHA-256'sı
 doğrulandıktan sonra diskte yalnız son 2 kopyayı bırakır. Herhangi bir adım başarısızsa
-betik hata koduyla çıkar (`/var/log/facette-backup.log` + syslog `facette-backup`).
+betik hata koduyla çıkar (`/var/log/atilla-backup.log` + syslog `atilla-backup`).
 
 > ⚠️ Yedekleri **asla** görsellerin durduğu public bucket'a koymayın. Yedek bucket'ında public
 > erişim / r2.dev / özel alan adı KAPALI olmalı; mümkünse yalnız o bucket'a yazabilen ayrı
@@ -68,12 +68,12 @@ betik hata koduyla çıkar (`/var/log/facette-backup.log` + syslog `facette-back
 
 Kurulum her hafta `deploy/restore_test.sh` ile otomatik **geri yükleme testi** yapar: buluttaki en son
 yedek indirilir, SHA-256'sı doğrulanır, şifresi çözülür ve canlıya dokunmadan geçici `restore_test`
-veritabanına yüklenip temel koleksiyonların dolu olduğu kontrol edilir (`/var/log/facette-restore-test.log`).
+veritabanına yüklenip temel koleksiyonların dolu olduğu kontrol edilir (`/var/log/atilla-restore-test.log`).
 
 Elle geri yükleme:
 ```bash
 # yerel kopyadan
-mongorestore --gzip --archive=/var/backups/facette/<dosya>.archive.gz --drop
+mongorestore --gzip --archive=/var/backups/atilla/<dosya>.archive.gz --drop
 # buluttan indirilen şifreli kopyadan
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in <dosya>.enc -out <dosya>.archive.gz
 mongorestore --gzip --archive=<dosya>.archive.gz --drop

@@ -1,7 +1,7 @@
-# FACETTE E-Commerce & ERP — Sistem Dokümantasyonu
+# ATILLA E-Commerce & ERP — Sistem Dokümantasyonu
 
 > **Sürüm:** 2026.02 · **Son güncelleme:** 26 Şubat 2026
-> **Sahibi:** facette.com.tr · **Stack:** React 19 + FastAPI + MongoDB
+> **Sahibi:** atilla.com.tr · **Stack:** React 19 + FastAPI + MongoDB
 
 ---
 
@@ -27,11 +27,11 @@
 
 ## 1. Genel Bakış
 
-**Facette**, üst segment kadın giyim markası için inşa edilmiş entegre bir e-ticaret yönetim platformudur. Sistem üç ana sütun üzerine kuruludur:
+**Atilla**, üst segment kadın giyim markası için inşa edilmiş entegre bir e-ticaret yönetim platformudur. Sistem üç ana sütun üzerine kuruludur:
 
 | Sütun | Açıklama |
 |---|---|
-| **Storefront (Müşteri)** | facette.com.tr için inşa edilen Miu Miu tarzı premium tema — ürün listeleme, ürün detay, sepet, ödeme, üye girişi/kayıt, sipariş takip. |
+| **Storefront (Müşteri)** | atilla.com.tr için inşa edilen Miu Miu tarzı premium tema — ürün listeleme, ürün detay, sepet, ödeme, üye girişi/kayıt, sipariş takip. |
 | **Admin Paneli (ERP)** | 60+ yönetim sayfası — ürün, sipariş, üye, kupon, kampanya, üretim planı, stok hareketi, raporlar, AI asistan, RBAC vb. |
 | **Pazaryeri Entegrasyonu** | Ticimax (SOAP) ↔ Trendyol/Hepsiburada/Temu (REST) köprüsü. Ürün, stok, fiyat, sipariş ve barkod senkronizasyonu. |
 
@@ -47,7 +47,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         FACETTE PLATFORM                         │
+│                         ATILLA PLATFORM                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  STOREFRONT (React 19)            ADMIN PANEL (React 19)         │
@@ -387,8 +387,8 @@ Başlıca Pydantic modelleri:
   "color": "Haki",
   "stock_code": "FCSS2000002",
   "sku": "FCSS2000002",
-  "brand": "FACETTE",
-  "vendor": "FACETTE",
+  "brand": "ATILLA",
+  "vendor": "ATILLA",
   "category_id": "55",
   "category_name": "Takım",
   "breadcrumb": "GİYİM > Üst Giyim > Takım",
@@ -470,7 +470,7 @@ Ticimax SOAP servislerinden gelen veri, üç farklı yöntemle DB'ye işlenir:
 - **Script:** `scripts/ticimax_pull_via_storefront.py`
 - **Neden:** Ticimax `UrunServis` SOAP servisi WS Key'e "Ürün Servis" yetkisi vermeyince **SelectUrun sessizce boş döner**.
 - **Akış:**
-  1. `https://www.facette.com.tr/sitemap/products/0.xml` → 281 ürün URL'i.
+  1. `https://www.atilla.com.tr/sitemap/products/0.xml` → 281 ürün URL'i.
   2. URL slug sonundaki `-<ID>` suffix → hedef URUNKARTIID eşlemesi.
   3. Her ürün detay sayfasındaki `var productDetailModel = {…}` JS nesnesi brace-balance ile parse.
   4. `productDetailModel.products[]` (varyant + barkod + stok + fiyat + KDV), `productVariantData[]` (renk/beden), `productImages[]`, `breadCrumb` → DB schema'sına çevrilir, upsert edilir.
@@ -557,7 +557,7 @@ Sistem bu sorunları **4 kademeli akıllı fallback** ile çözer:
 ```ini
 # Veritabanı
 MONGO_URL=mongodb://localhost:27017
-DB_NAME=facette
+DB_NAME=atilla
 
 # Auth
 JWT_SECRET=********
@@ -678,7 +678,7 @@ cd /app/backend && pytest tests/
 API_URL=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d '=' -f2)
 TOKEN=$(curl -s -X POST "$API_URL/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@facette.com","password":"admin123"}' \
+  -d '{"email":"admin@atilla.com","password":"admin123"}' \
   | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
 curl -s "$API_URL/api/products?page=1" -H "Authorization: Bearer $TOKEN"
 ```
@@ -688,7 +688,7 @@ curl -s "$API_URL/api/products?page=1" -H "Authorization: Bearer $TOKEN"
 ```
 Admin Paneli:
    URL    : <REACT_APP_BACKEND_URL>/admin/login
-   Email  : admin@facette.com
+   Email  : admin@atilla.com
    Şifre  : admin123
 ```
 

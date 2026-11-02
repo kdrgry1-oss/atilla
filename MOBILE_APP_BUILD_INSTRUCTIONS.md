@@ -1,4 +1,4 @@
-# 🚀 Facette Mobile App — Mac/PC'nizde Çalıştırma Rehberi
+# 🚀 Atilla Mobile App — Mac/PC'nizde Çalıştırma Rehberi
 
 > **Durum:** Capacitor projesi sunucuda %100 hazır. Mac/PC'nize indirip 3 komutla build alabilirsiniz.
 
@@ -41,17 +41,17 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 **A) Önce keystore oluştur (TEK SEFER):**
 ```bash
 cd frontend/android/app
-keytool -genkey -v -keystore facette.keystore \
-  -alias facette \
+keytool -genkey -v -keystore atilla.keystore \
+  -alias atilla \
   -keyalg RSA \
   -keysize 2048 \
   -validity 10000
 
 # 6+ haneli güçlü password gir
-# CN: Facette, Organization: Facette Dış Tic. A.Ş., City: Istanbul, Country: TR
+# CN: Atilla, Organization: Atilla Dış Tic. A.Ş., City: Istanbul, Country: TR
 ```
 
-⚠️ **`facette.keystore` dosyasını GÜVENLİ YERE YEDEKLE!** Kaybedersen Play Store'a yeni güncelleme yükleyemezsin.
+⚠️ **`atilla.keystore` dosyasını GÜVENLİ YERE YEDEKLE!** Kaybedersen Play Store'a yeni güncelleme yükleyemezsin.
 
 **B) Şifreleri env'e koy + build:**
 ```bash
@@ -84,7 +84,7 @@ Xcode içinde:
 1. **Sol panel** → "App" tıkla
 2. **Signing & Capabilities** sekmesi
 3. **Team:** Apple Developer hesabınla seçili olmalı
-4. **Bundle Identifier:** `com.facette.app` (otomatik)
+4. **Bundle Identifier:** `com.atilla.app` (otomatik)
 5. **+ Capability** → **Push Notifications** ekle
 6. **+ Capability** → **Background Modes** ekle → "Remote notifications" işaretle
 7. Üstte **"Any iOS Device (arm64)"** seç
@@ -97,10 +97,10 @@ export APPLE_TEAM_ID="ABC123XYZ4"   # Apple Developer Team ID
 cd frontend
 bash build-ios.sh archive
 ```
-Çıktı: `frontend/ios/App/build/ipa/Facette.ipa`
+Çıktı: `frontend/ios/App/build/ipa/Atilla.ipa`
 Upload için:
 ```bash
-xcrun altool --upload-app -f Facette.ipa \
+xcrun altool --upload-app -f Atilla.ipa \
   -u "your-apple-id@example.com" \
   -p "app-specific-password"   # https://appleid.apple.com/account/manage
 ```
@@ -109,7 +109,7 @@ xcrun altool --upload-app -f Facette.ipa \
 
 ## 🎨 4. APP ICON & SPLASH SCREEN
 
-Şu an Capacitor default ikonlar var. Facette logosu hazırlandığında:
+Şu an Capacitor default ikonlar var. Atilla logosu hazırlandığında:
 
 **Tek komutla tüm boyutlara üretmek için:**
 ```bash
@@ -138,7 +138,7 @@ npx capacitor-assets generate --iconBackgroundColor '#000000'
 ## 🔔 5. FIREBASE CLOUD MESSAGING (Push için)
 
 ### A. Firebase Console Setup
-1. https://console.firebase.google.com → "Add project" → "Facette"
+1. https://console.firebase.google.com → "Add project" → "Atilla"
 2. Sol panel → **Project settings** → **Cloud Messaging** sekmesi
 3. **Server key**'i kopyala (legacy) — backend `.env`'e ekle:
    ```
@@ -147,7 +147,7 @@ npx capacitor-assets generate --iconBackgroundColor '#000000'
 
 ### B. Android (FCM)
 1. Firebase Console → **Add app** → Android
-2. Bundle ID: `com.facette.app`
+2. Bundle ID: `com.atilla.app`
 3. **google-services.json** dosyasını indir
 4. Dosyayı şuraya koy: `frontend/android/app/google-services.json`
 5. Yeni build al — push notif aktif
@@ -227,5 +227,5 @@ npx capacitor-assets generate --iconBackgroundColor '#000000'
 
 ---
 
-*Sorularınız için: tech@facette.com.tr*
+*Sorularınız için: tech@atilla.com.tr*
 *Tahmini ilk store yayını: 2-3 hafta (1 hafta build + 1-2 hafta review)*

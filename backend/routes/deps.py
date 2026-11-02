@@ -73,7 +73,7 @@ def _load_jwt_secret() -> str:
 
 JWT_SECRET = _load_jwt_secret()
 JWT_ALGORITHM = "HS256"  # strict — prevents 'alg=none' attacks
-JWT_ISSUER = "facette-api"
+JWT_ISSUER = "atilla-api"
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -391,7 +391,7 @@ async def register_failed_login_ip(ip: str) -> None:
 
 # A1.3 (GÜVENLİK): Cloudflare'in eklediği paylaşımlı gizli header ile "istek gerçekten
 # CF üzerinden mi geldi" doğrulaması. CF Transform Rule ile her isteğe
-# `X-Facette-Edge: <secret>` eklenir; origin bu secret'ı bilir. Böylece origin'e
+# `X-Atilla-Edge: <secret>` eklenir; origin bu secret'ı bilir. Böylece origin'e
 # DOĞRUDAN (CF'i baypas ederek) gelen bir saldırgan `cf-connecting-ip` header'ını
 # spoof edip rate-limit/lockout/blocklist anahtarını rotasyonlayamaz.
 #   - CF_EDGE_SECRET set + header eşleşiyorsa → cf-connecting-ip güvenilir (gerçek client).
@@ -485,7 +485,7 @@ def _edge_trusted(request) -> bool:
             return True
     try:
         import hmac as _hmac
-        hdr = (request.headers.get("x-facette-edge") or "").strip()
+        hdr = (request.headers.get("x-atilla-edge") or "").strip()
         return bool(hdr) and _hmac.compare_digest(hdr, _CF_EDGE_SECRET)
     except Exception:
         return False
@@ -1658,7 +1658,7 @@ def tr_range_to_utc(start, end):
 
 def instance_tag() -> str:
     """Bu süreci tanımlayan etiket (hangi deployment/replica çalışıyor): stok gönderim loglarına
-    yazılır → api.facette.com.tr dışında ikinci bir senkron çalışıyorsa /health'te ayrı etiketle görünür."""
+    yazılır → api.atilla.com.tr dışında ikinci bir senkron çalışıyorsa /health'te ayrı etiketle görünür."""
     import os as _os, socket as _socket
     parts = [
         _os.environ.get("RAILWAY_SERVICE_NAME") or "",

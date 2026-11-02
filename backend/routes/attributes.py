@@ -511,7 +511,7 @@ async def bulk_set_default_attributes(current_user: dict = Depends(require_permi
 
 
 async def seed_attribute_defaults():
-    """Koddaki FACETTE sabit varsayılanlarını (facette_defaults.FACETTE_FIXED_ATTR_DEFAULTS —
+    """Koddaki ATILLA sabit varsayılanlarını (atilla_defaults.ATILLA_FIXED_ATTR_DEFAULTS —
     Cinsiyet=Kadın, Menşei=Türkiye, Yaş Grubu=Yetişkin, Ek Özellik=Yok, Ortam/Koleksiyon=
     Casual/Günlük, Kutu Durumu=Kutu Yok, Persona=Fashion Forward, Performans=Cool & Comfort,
     Sürdürülebilirlik Detayı=Hayır) attributes koleksiyonunun `default_value` alanına TOHUMLAR.
@@ -525,9 +525,9 @@ async def seed_attribute_defaults():
     İsim eşleştirme Türkçe-duyarsız normalize ile yapılır (mevcut kayıt varsa ona yazar).
     """
     try:
-        from facette_defaults import FACETTE_FIXED_ATTR_DEFAULTS
+        from atilla_defaults import ATILLA_FIXED_ATTR_DEFAULTS
     except Exception as e:
-        logger.error(f"seed_attribute_defaults: facette_defaults import edilemedi: {e}")
+        logger.error(f"seed_attribute_defaults: atilla_defaults import edilemedi: {e}")
         return {"created": 0, "seeded": 0}
 
     existing = await db.attributes.find({}, {"_id": 0, "id": 1, "name": 1, "default_value": 1}).to_list(5000)
@@ -538,7 +538,7 @@ async def seed_attribute_defaults():
     created = 0
     seeded = 0
     now = datetime.now(timezone.utc).isoformat()
-    for name, value in FACETTE_FIXED_ATTR_DEFAULTS.items():
+    for name, value in ATILLA_FIXED_ATTR_DEFAULTS.items():
         norm = _norm_attr(name)
         doc = by_norm.get(norm)
         if doc:

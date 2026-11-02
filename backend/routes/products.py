@@ -265,8 +265,8 @@ def _build_merchant_xml(prods, site, shop, target="google", in_stock_only=False,
 
 async def _feed_site_shop_prods():
     main = await db.settings.find_one({"id": "main"}, {"_id": 0}) or {}
-    site = (main.get("site_url") or "https://facette.com.tr").rstrip("/")
-    shop = main.get("site_name") or "FACETTE"
+    site = (main.get("site_url") or "https://atilla.com.tr").rstrip("/")
+    shop = main.get("site_name") or "ATILLA"
     _q = {"is_active": True, "is_deleted": {"$ne": True}}
     # ÜYELERE ÖZEL: feed'ler ANONİM (üye kavramı yok) → members_only ürünleri HER ZAMAN hariç.
     _mo_ids = await _members_only_cat_ids()
@@ -688,7 +688,7 @@ async def ai_generate_description(payload: dict, current_user: dict = Depends(re
     )
 
     sys = (
-        "Sen FACETTE (Türk kadın giyim) için ürün açıklaması üreten bir asistansın. "
+        "Sen ATILLA (Türk kadın giyim) için ürün açıklaması üreten bir asistansın. "
         "Sana SABİT bir HTML ŞABLONU verilecek. Çıktın bu şablonun HTML yapısını, etiketlerini, "
         "inline style'larını (font-size:11px), &nbsp; girintilerini, <br /> satır sonlarını ve ÜÇ "
         "bölümünü (1) kısa özellikler paragrafı, (2) 'Kumaş &amp; İçerik Bilgisi', (3) 'Yıkama ve "
@@ -3080,7 +3080,7 @@ async def create_product(
         "category_id": _primary_cat,
         "category_ids": _cat_ids_all,
         "categories": _sel_cats,
-        "brand": product_data.get("brand", "FACETTE"),
+        "brand": product_data.get("brand", "ATILLA"),
         "images": _size_tables_last(product_data.get("images", [])),
         "variants": product_data.get("variants", []),
         "attributes": product_data.get("attributes", []),
@@ -3093,7 +3093,7 @@ async def create_product(
         "barcode": product_data.get("barcode", ""),
         "sku": product_data.get("sku", ""),
         "supplier": product_data.get("supplier", ""),
-        "manufacturer": product_data.get("manufacturer", "FACETTE"),
+        "manufacturer": product_data.get("manufacturer", "ATILLA"),
         "season": (product_data.get("season") or "").strip(),  # İlkbahar/Yaz/Sonbahar/Kış — rapor sezon filtresi buradan beslenir
         # Standart (tek) bedenli üründe "hangi bedenlere uyar" (panelden seçilir; vitrin: "X – Y bedenler arası uyumludur")
         "fit_sizes": _clean_fit_sizes(product_data.get("fit_sizes")),
@@ -4571,7 +4571,7 @@ async def bulk_add_to_category_after(
 # product.id referansı tutan koleksiyon/alanlar (ajan haritası). kind: scalar | arr_scalar | arr_obj
 _PID_REFS = [
     ("orders", "arr_obj", "items.product_id"),
-    ("orders", "arr_obj", "items.facette_product_id"),
+    ("orders", "arr_obj", "items.atilla_product_id"),
     ("orders", "arr_obj", "products.product_id"),
     ("orders_deleted", "arr_obj", "items.product_id"),
     ("cart_sessions", "arr_obj", "items.product_id"),

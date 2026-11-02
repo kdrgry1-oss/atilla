@@ -20,9 +20,9 @@ from .deps import instance_tag as _instance_tag
 from .report_dedup import (canonical_order_stages, effective_order_date_match, merge_match,
                            marketplace_claim_status_bucket)
 from stock_audit import record_stock_sync_audit
-from facette_defaults import (
-    facette_company_value,     # yalnız GPSR (Üretici/İthalatçı) — beyaz-etiket, dinamik
-    FACETTE_FIXED_ATTR_DEFAULTS,  # statik seed haritası (yalnız DB'de doküman YOKSA fallback)
+from atilla_defaults import (
+    atilla_company_value,     # yalnız GPSR (Üretici/İthalatçı) — beyaz-etiket, dinamik
+    ATILLA_FIXED_ATTR_DEFAULTS,  # statik seed haritası (yalnız DB'de doküman YOKSA fallback)
 )
 
 router = APIRouter(tags=["Integrations-Trendyol"])
@@ -58,10 +58,10 @@ from .integrations_common import (
 # NOT: Bu blok, _normalize_attr_key'in integrations_common'dan import edildiği YERDEN SONRA
 # tanımlanır — modül yüklenirken _STATIC_FIXED_NORM comprehension'ı _normalize_attr_key'i
 # çağırdığından, import'tan ÖNCE tanımlanırsa NameError ile başlatma çöker.
-# Statik FACETTE sabitlerinin (seed kaynağı) normalize haritası. TEK OTORİTE artık DB
+# Statik ATILLA sabitlerinin (seed kaynağı) normalize haritası. TEK OTORİTE artık DB
 # attributes.default_value'dür; bu harita SADECE DB'de HİÇ dokümanı olmayan (seed henüz
 # çalışmamış edge-case) özellik için son-çare fallback olarak kullanılır.
-_STATIC_FIXED_NORM = {_normalize_attr_key(k): v for k, v in FACETTE_FIXED_ATTR_DEFAULTS.items()}
+_STATIC_FIXED_NORM = {_normalize_attr_key(k): v for k, v in ATILLA_FIXED_ATTR_DEFAULTS.items()}
 
 # Beden (size) alias çiftleri — normalize edilmiş (_norm_val: küçük harf + alfasayısal).
 # XXS↔2XS gibi aynı bedenin farklı yazımları. SADECE bu çiftlerde köprü; substring YOK
@@ -126,7 +126,7 @@ def _resolve_gap_default(attr_name, default_map, doc_norms):
     kalan / processed olmayan özelliğe uygulanır):
       1) DB attributes.default_value (kullanıcı düzenleyebilir/silebilir — DB otorite)
       2) GPSR şirket bilgisi (Üretici/İthalatçı — beyaz-etiket, dinamik)
-      3) Statik FACETTE seed fallback — YALNIZ DB'de o özelliğin dokümanı hiç yoksa
+      3) Statik ATILLA seed fallback — YALNIZ DB'de o özelliğin dokümanı hiç yoksa
     Döner: değer (str) veya None."""
     norm = _normalize_attr_key(attr_name or "")
     if not norm:
@@ -134,7 +134,7 @@ def _resolve_gap_default(attr_name, default_map, doc_norms):
     dv = default_map.get(norm)
     if dv:
         return dv
-    cv = facette_company_value(attr_name)
+    cv = atilla_company_value(attr_name)
     if cv:
         return cv
     if norm not in doc_norms:
@@ -227,7 +227,7 @@ async def get_trendyol_headers():
     encoded = base64.b64encode(credentials.encode()).decode()
     return {
         "Authorization": f"Basic {encoded}",
-        "User-Agent": f'{config["supplier_id"]} - FacetteIntegration',
+        "User-Agent": f'{config["supplier_id"]} - AtillaIntegration',
         "Content-Type": "application/json"
     }
 def calculate_trendyol_price(base_price: float, product_data: dict, trendyol_config: dict) -> float:
@@ -1795,7 +1795,7 @@ async def sync_products_to_trendyol(
     _attr_meta_cache: dict = {}
 
     # 🔑 GAP-FILL TEK OTORİTE: attributes.default_value (DB). Kullanıcı UI'dan düzenler/siler;
-    # kod yeniden dayatmaz. Statik FACETTE seed yalnız DB'de dokümanı olmayan özellik için fallback.
+    # kod yeniden dayatmaz. Statik ATILLA seed yalnız DB'de dokümanı olmayan özellik için fallback.
     _attr_default_map, _attr_doc_norms = await _load_attr_defaults()
     await refresh_value_synonyms()  # DB-driven değer eşanlamlılarını cache'e tazele (sync resolver okur)
 
@@ -2061,7 +2061,7 @@ async def sync_products_to_trendyol(
         # 🎯 VARSAYILAN DEĞER GAP-FILL (EN SON, TEK OTORİTE ZİNCİRİ):
         #   1) DB attributes.default_value (kullanıcı UI'dan düzenler/siler — DB OTORİTEDİR)
         #   2) GPSR şirket bilgisi (Üretici/İthalatçı — beyaz-etiket, dinamik)
-        #   3) Statik FACETTE seed fallback (yalnız DB'de o özelliğin dokümanı hiç yoksa)
+        #   3) Statik ATILLA seed fallback (yalnız DB'de o özelliğin dokümanı hiç yoksa)
         # Yalnız ürünün DOLDURMADIĞI (processed olmayan) Trendyol özelliğine yazılır → hiçbir
         # değer sessizce EZİLMEZ. Listeli alanlar ADIYLA value_id'ye çözülür (Türkiye→TR),
         # serbest alanlar custom gider. Kullanıcı bir varsayılanı UI'dan silince kod DAYATMAZ.
@@ -5396,7 +5396,7 @@ async def gider_pusulasi_locate(
     no: str = Query(..., min_length=1, max_length=40),
     current_user: dict = Depends(require_permission("returns.view")),
 ):
-    """GİDER PUSULASI NO → hangi kaynakta (facette/trendyol/hepsiburada/amazon) ve hangi siparişte.
+    """GİDER PUSULASI NO → hangi kaynakta (atilla/trendyol/hepsiburada/amazon) ve hangi siparişte.
     Salt-okur. Önce birebir numara, yoksa içeren eşleşme (en fazla 10). İptal arşivi de taranır."""
     from routes.integrations_common import _claim_is_site_order
     q = str(no)[:40].strip().lstrip("#")
@@ -5412,10 +5412,10 @@ async def gider_pusulasi_locate(
             c = await db.trendyol_claims.find_one({"claim_id": cid}, {"_id": 0})
             if c:
                 if _claim_is_site_order(c):
-                    return "facette"
+                    return "atilla"
                 plt = str(c.get("platform") or "").lower()
                 return plt if plt in ("hepsiburada", "amazon") else "trendyol"
-        return "facette"
+        return "atilla"
 
     out = []
     for coll, cancelled in ((db.gider_pusulasi, False), (db.gider_pusulasi_iptal, True)):
@@ -5978,7 +5978,7 @@ async def get_trendyol_claims(
     Tüm claim'ler İADE'dir (İptal ayrı menüde, sipariş durumu üzerinden).
     `status` = durum sekmesi anahtarı: all / talep_olusturulan / kargoya_verilen /
     aksiyon_bekleyen / onaylanan / reddedilen.
-    `platform` = 'facette' (web/site iadeleri) veya bir pazaryeri anahtarı
+    `platform` = 'atilla' (web/site iadeleri) veya bir pazaryeri anahtarı
     (trendyol, hepsiburada, ...). Ayrım `_claim_is_site_order` kuralıyla yapılır.
     """
     # Sekme kovası eşlemesi artık _claim_bucket(c) helper'ında (status + kargo takip durumu).
@@ -6080,7 +6080,7 @@ async def get_trendyol_claims(
     elif _plt in ("trendyol", ""):
         platform_scoped = [c for c in deduped
                            if str(c.get("platform") or "").lower() not in ("hepsiburada", "amazon")]
-    elif _plt in ("facette", "site", "web"):
+    elif _plt in ("atilla", "site", "web"):
         # DENETİM HATA-5: site iadeleri bu koleksiyonda DEĞİL (customer_returns'te) —
         # eskiden tüm pazaryeri kayıtları dönüyordu. Site sinyali taşıyanlar süzülür
         # (pratikte boş liste), pazaryeri kayıtları asla dönmez.
@@ -7670,7 +7670,7 @@ async def sync_product_to_trendyol(product_id: str, current_user: dict = Depends
     """Tekil ürün senkronu — TOPLU (doğru/validasyonlu) yola DELEGE eder.
 
     Eski tekil implementasyon ayrı ve eksik bir kopyaydı: required-attribute gap-fill,
-    Facette sabit varsayılanları, kategori meta/allowCustom doğrulaması ve value-id
+    Atilla sabit varsayılanları, kategori meta/allowCustom doğrulaması ve value-id
     doğrulaması YOKTU. Bu yüzden mp_attr_id KeyError, int('XXS') çökmesi ve enum reddi
     gibi hatalar veriyor; per-ürün "Trendyol'a Gönder" ve "Başarısız Aktarımlar → tekrar
     dene" butonlarını kırıyordu. Artık toplu senkron gövdesine yönlendirir → tek ve doğru

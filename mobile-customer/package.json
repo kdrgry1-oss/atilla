@@ -1,8 +1,8 @@
 {
-  "name": "facette-customer-app",
+  "name": "atilla-customer-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Facette müşteri (storefront) mobil uygulaması — Capacitor kabuğu. Web tarafı ../frontend build'inden gelir (REACT_APP_APP_TARGET=customer).",
+  "description": "Atilla müşteri (storefront) mobil uygulaması — Capacitor kabuğu. Web tarafı ../frontend build'inden gelir (REACT_APP_APP_TARGET=customer).",
   "scripts": {
     "build:web": "cd ../frontend && npm run build:customer",
     "sync": "cap sync",

@@ -79,7 +79,7 @@ async def _c_archive():
     if not h.get("ok"):
         return "fail", f"depoya erişilemiyor: {str(h.get('error'))[:120]}"
     key = f"_selftest/{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}.txt"
-    data = b"facette-selftest"
+    data = b"atilla-selftest"
     await asyncio.to_thread(r2.archive_put, key, data, "text/plain")
     got, _ = await asyncio.to_thread(r2.archive_get, key)
     try:

@@ -487,7 +487,7 @@ def _first_img_abs(imgs) -> str:
         if u.startswith("https://"):
             return u
         if u.startswith("/"):
-            return "https://facette.com.tr" + u
+            return "https://atilla.com.tr" + u
         return u
     return ""
 
@@ -1043,7 +1043,7 @@ async def export_pr_entries(
             # public IP'ye pinli bağlantı, her yönlendirme hop'unda yeniden denetim, 10 MB sınırı.
             from security_fetch import safe_fetch as _safe_fetch
             _sem = asyncio.Semaphore(8)
-            _ua = {"User-Agent": "Mozilla/5.0 (FacetteExcel/1.0)"}
+            _ua = {"User-Agent": "Mozilla/5.0 (AtillaExcel/1.0)"}
             _ok = 0
             _err_sample = []
 
@@ -1842,7 +1842,7 @@ async def auto_refresh_pr_tracking(limit: int = 150) -> dict:
                     _rows = [r for r in _rows_all
                              if not (str(r.get("sender_no") or "").strip() or r.get("sender_name"))
                              or str(r.get("sender_no") or "").strip() in _ours0
-                             or "facette" in _inf_norm(r.get("sender_name") or "")]
+                             or "atilla" in _inf_norm(r.get("sender_name") or "")]
                     bd["rows_total"] = len(_rows_all)
                     bd["rows_with_tracking"] = sum(1 for r in _rows if r.get("tracking"))
                     bd["rows_with_mng_ref"] = sum(1 for r in _rows if r.get("mng_ref"))
@@ -1906,7 +1906,7 @@ async def auto_refresh_pr_tracking(limit: int = 150) -> dict:
                 res["rows"].sort(key=lambda r: 0 if r.get("tracking") else 1)
                 _ours = {str(x).strip() for x in (_cc + [user]) if x}
                 bd["rows_from_us"] = sum(1 for r in res["rows"] if (str(r.get("sender_no") or "").strip() in _ours)
-                                         or ("facette" in _inf_norm(r.get("sender_name") or "")))
+                                         or ("atilla" in _inf_norm(r.get("sender_name") or "")))
                 bd["rows_with_sender"] = sum(1 for r in res["rows"] if r.get("sender_no") or r.get("sender_name"))
                 for _ri, row in enumerate(res["rows"]):
                     if _ri % 500 == 499:
@@ -1918,7 +1918,7 @@ async def auto_refresh_pr_tracking(limit: int = 150) -> dict:
                         continue
                     # GÖNDERİCİ BİZ OLMALI: rapor başka müşterilerin gönderilerini de içerebilir (60 bin satır)
                     _sn, _sname = str(row.get("sender_no") or "").strip(), _inf_norm(row.get("sender_name") or "")
-                    if (_sn or _sname) and not (_sn in _ours or "facette" in _sname):
+                    if (_sn or _sname) and not (_sn in _ours or "atilla" in _sname):
                         continue
                     hits = [c for c in pend if any(_mng_name_match(n, nm) for n in
                                                    [c.get("influencer_name") or "", inf_names.get(c.get("influencer_id") or "", "")] if n)]
@@ -2172,7 +2172,7 @@ async def influencer_pr_cargo_label(entry_id: str, current_user: dict = Depends(
     rfull = ", ".join([x for x in [radres, rcity] if x])
     sender = await _get_sender_info()
     mng = await _get_mng_settings()
-    sender_company = mng.get("customer_code") or sender.get("name") or "FACETTE"
+    sender_company = mng.get("customer_code") or sender.get("name") or "ATILLA"
     sender_addr_line = f"{sender.get('address','')}, {sender.get('district','')}/{sender.get('city','')}".strip(" ,/")
     html = _render_cargo_label_html(
         siparis_no=bc, main_barcode=bc,
@@ -2205,7 +2205,7 @@ async def influencer_pr_irsaliye(entry_id: str, current_user: dict = Depends(req
     rfull = ", ".join([x for x in [radres, rcity] if x]) or "—"
     insta = (inf.get("instagram") or e.get("instagram") or "").strip()
     sender = await _get_sender_info()
-    sender_company = sender.get("name") or "FACETTE"
+    sender_company = sender.get("name") or "ATILLA"
     sender_addr = f"{sender.get('address','')}, {sender.get('district','')}/{sender.get('city','')}".strip(" ,/")
     sender_phone = sender.get("phone", "") or ""
     tarih = (e.get("shipped_at") or e.get("date") or _now_iso())[:10]
@@ -2718,7 +2718,7 @@ async def create_campaign_cargo(campaign_id: str, current_user: dict = Depends(r
     # SMS bildirimi (influencer'a)
     sms_res = await _send_direct_sms(
         phone,
-        f"Merhaba {inf.get('name','')}, Facette numune gonderiniz hazirlandi. Takip: {real_tracking or siparis_no}",
+        f"Merhaba {inf.get('name','')}, Atilla numune gonderiniz hazirlandi. Takip: {real_tracking or siparis_no}",
     )
 
     return {"success": True, "cargo_barcode": barkod, "tracking_no": siparis_no, "sms": sms_res,
@@ -2757,10 +2757,10 @@ async def influencer_cargo_webhook(payload: dict, request: Request):
     sms_text = None
     if "teslim" in status_lower or "delivered" in status_lower:
         new_cargo_status = "delivered"
-        sms_text = "Facette numune gonderiniz teslim edildi. Icerik standartlari: 9:16 dikey format, @facette mention. Iyi cekimler!"
+        sms_text = "Atilla numune gonderiniz teslim edildi. Icerik standartlari: 9:16 dikey format, @atilla mention. Iyi cekimler!"
     elif "kargo" in status_lower or "shipped" in status_lower or "yola" in status_lower:
         new_cargo_status = "shipped"
-        sms_text = f"Facette numune gonderiniz kargoya verildi. Takip: {tracking}"
+        sms_text = f"Atilla numune gonderiniz kargoya verildi. Takip: {tracking}"
 
     await db.influencer_campaigns.update_one(
         {"id": camp["id"]},

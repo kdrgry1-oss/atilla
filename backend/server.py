@@ -1,5 +1,5 @@
 """
-Facette E-Commerce API - Main Server
+Atilla E-Commerce API - Main Server
 Modular architecture with routes
 """
 from fastapi import FastAPI, APIRouter
@@ -217,11 +217,11 @@ from routes.deps import client, db
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown"""
     # Startup
-    logger.info("Starting Facette E-Commerce API...")
+    logger.info("Starting Atilla E-Commerce API...")
     
     try:
         # Create admin user if not exists
-        _admin_email = (os.environ.get("ADMIN_INITIAL_EMAIL") or "admin@facette.com").strip().lower()
+        _admin_email = (os.environ.get("ADMIN_INITIAL_EMAIL") or "admin@atilla.com").strip().lower()
         admin = await db.users.find_one({"email": _admin_email})
         if not admin:
             from routes.deps import hash_password, generate_id
@@ -339,7 +339,7 @@ async def lifespan(app: FastAPI):
         except Exception as _rfe:
             logger.error(f"[odeme-telafi] reclassify hatasi: {_rfe}")
 
-        # ÖZELLİK VARSAYILANLARI: koddaki FACETTE sabit varsayılanlarını (Cinsiyet=Kadın,
+        # ÖZELLİK VARSAYILANLARI: koddaki ATILLA sabit varsayılanlarını (Cinsiyet=Kadın,
         # Menşei=Türkiye, Yaş Grubu=Yetişkin, Ek Özellik=Yok …) attributes.default_value alanına
         # İDEMPOTENT tohumla → Özellik Ayar Kartı'nda görünür/düzenlenebilir. DB OTORİTEDİR:
         # yalnız alan HİÇ yoksa yazar, kullanıcı silince ("") yeniden dayatmaz.
@@ -755,7 +755,7 @@ async def lifespan(app: FastAPI):
 _docs_enabled = os.environ.get("ENABLE_API_DOCS", "").strip() == "1" or \
     os.environ.get("ENVIRONMENT", "production").strip().lower() in ("dev", "development", "local")
 app = FastAPI(
-    title="Facette E-Commerce API",
+    title="Atilla E-Commerce API",
     version="3.0",
     description="Modular E-Commerce API with Iyzico, Trendyol, MNG Kargo, GIB integrations",
     lifespan=lifespan,
@@ -775,12 +775,12 @@ if not _origins_list:
 # çağıranın Origin'ini yansıtıp kimlik-bilgili (cookie/Authorization) çapraz-origin isteğe izin
 # verirdi. Wildcard varsa credentials KAPATILIR (spec gereği zaten geçersiz kombinasyon).
 # Native mobil uygulama (Capacitor WebView) kaynakları: iOS capacitor://localhost veya
-# capacitor.config ios.scheme ("Facette") → Facette://localhost; Android https://localhost
+# capacitor.config ios.scheme ("Atilla") → Atilla://localhost; Android https://localhost
 # (androidScheme=https). Bunlar olmadan uygulamadan HER istek (giriş dahil) CORS'ta 400
 # "Disallowed CORS origin" alır. Kimlik Bearer token ile (çerez değil); düz http://localhost
 # bilinçli olarak EKLENMEZ (uygulama kullanmıyor).
 if _origins_list != ["*"]:
-    for _no in ("capacitor://localhost", "Facette://localhost", "facette://localhost",
+    for _no in ("capacitor://localhost", "Atilla://localhost", "atilla://localhost",
                 "ionic://localhost", "https://localhost"):
         if _no not in _origins_list:
             _origins_list.append(_no)
@@ -1384,7 +1384,7 @@ api_router.include_router(inbound_mail_router)
 @api_router.get("/")
 async def root():
     return {
-        "message": "Facette E-Commerce API",
+        "message": "Atilla E-Commerce API",
         "version": "3.0",
         "status": "running"
     }
@@ -2256,7 +2256,7 @@ async def audit_cancel_requested_visibility_once() -> None:
         for r in rows:
             pf = r.get("platform")
             plat_c[str(pf)] += 1
-            web = pf in ("facette", None, "")
+            web = pf in ("atilla", None, "")
             junk = (web and str(r.get("payment_status") or "").lower() not in _settled
                     and str(r.get("payment_method") or "").lower() not in _offline
                     and "cancel_requested" not in _fulfilled)
@@ -2265,13 +2265,13 @@ async def audit_cancel_requested_visibility_once() -> None:
             det.append({"siparis": r.get("order_number"), "tarih": str(r.get("created_at"))[:19],
                         "platform": pf, "odeme": r.get("payment_status"),
                         "yontem": r.get("payment_method"), "tutar": r.get("total"),
-                        "facette_suzgecinde_gorunur": pf == "facette",
+                        "atilla_suzgecinde_gorunur": pf == "atilla",
                         "junk_suzgeci_gizler": junk})
         await _db.settings.update_one({"id": flag_id}, {"$set": {
             "id": flag_id, "done": True, "at": _dt.now(_tz.utc).isoformat(),
             "adet": len(rows), "platform_dagilimi": dict(plat_c),
             "junk_suzgeci_gizleyen": gizli,
-            "facette_suzgecinde_gorunmeyen": sum(1 for d in det if not d["facette_suzgecinde_gorunur"]),
+            "atilla_suzgecinde_gorunmeyen": sum(1 for d in det if not d["atilla_suzgecinde_gorunur"]),
             "ornekler": det[:40], "note": "Sadece rapor."}}, upsert=True)
         logger.warning(f"[teshis] cancel_requested={len(rows)} platform={dict(plat_c)} "
                        f"junk_gizler={gizli}")
@@ -2717,7 +2717,7 @@ async def fix_w11874_payment_method_once() -> None:
             "payment_method_raw": "Havale/EFT (yanlış yöntem düzeltildi)",
             "payment_status": "paid",
             "paid_at": now,
-            "paid_by": "ilayda.aman@facette.co",
+            "paid_by": "ilayda.aman@atilla.co",
             "payment_approved_via": "manual_correction_w11874",
             "updated_at": now}})
         try:
@@ -3871,7 +3871,7 @@ async def _iade_sayfa_teshis() -> dict:
         ("ty_iadeler", _it.get_trendyol_claims, {"page": 1, "limit": 20, "platform": "trendyol"}),
         ("hb_iadeler", _it.get_trendyol_claims, {"page": 1, "limit": 20, "platform": "hepsiburada"}),
         ("amazon_iadeler", _it.get_trendyol_claims, {"page": 1, "limit": 20, "platform": "amazon"}),
-        ("site_talepleri", _it.get_trendyol_claims, {"page": 1, "limit": 20, "platform": "facette"}),
+        ("site_talepleri", _it.get_trendyol_claims, {"page": 1, "limit": 20, "platform": "atilla"}),
         ("siparis_durumlari", _st.get_order_statuses, {}),
     ]
     out = {}

@@ -1,5 +1,5 @@
 """
-TEK SEFERLİK SİTE FİYAT GÜNCELLEMESİ — FACETTE_KARLILIK_ANALIZI_v18.xlsx / "Site Karlılık"
+TEK SEFERLİK SİTE FİYAT GÜNCELLEMESİ — ATILLA_KARLILIK_ANALIZI_v18.xlsx / "Site Karlılık"
 =============================================================================
 Kaynak: "YENİ" sütunları — Etikete Yazılacak → `price`, Müşterinin Ödediği → `sale_price`
 (ikisi eşitse indirimli fiyat YOK → sale_price=None). Yalnız dosyada olan ve sitede

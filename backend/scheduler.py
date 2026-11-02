@@ -1520,7 +1520,7 @@ async def _ensure_seo_varsayilan_doldur():
         seed = (_tc.migration_seed(None).get("seo_geo") or {})
         model_default = _tc.TenantConfig().model_dump().get("seo_geo") or {}
         store = ((doc.get("brand") or {}).get("store_name") or "").strip()
-        seed_store = "FACETTE"
+        seed_store = "ATILLA"
         upd = {}
         for k in ("default_title", "default_description", "organization_description",
                   "llms_description", "default_og_image_url", "category_description_template"):
@@ -2268,7 +2268,7 @@ async def _ensure_arsiv_erisim_testi():
         ok, msg = False, ""
         if h.get("ok"):
             key = f"_test/erisim-{uuid.uuid4().hex[:8]}.txt"
-            data = b"facette arsiv erisim testi"
+            data = b"atilla arsiv erisim testi"
             await asyncio.to_thread(r2.archive_put, key, data, "text/plain")
             got, _ = await asyncio.to_thread(r2.archive_get, key)
             ok = got == data
@@ -2342,7 +2342,7 @@ async def sweep_paid_order_side_effects():
 
 
 async def _ensure_guvenlik_uyari_adresleri():
-    """TEK SEFERLİK (kullanıcı, 2026-10-04: "gönderen adres info@facette.com.tr, alıcı
+    """TEK SEFERLİK (kullanıcı, 2026-10-04: "gönderen adres info@atilla.com.tr, alıcı
     belgin@seamoas.com ve kdrgry@gmail.com"): İşletme Kuralları'ndaki güvenlik uyarısı alıcıları ve
     gönderen adresi YALNIZ BOŞSA bu değerlerle doldurulur (panelden girilmiş değere dokunulmaz).
     Değerler kodda sabit DEĞİL — veri olarak ayara yazılır; sonra panelden değiştirilebilir."""
@@ -2495,7 +2495,7 @@ async def _trendyol_delivery_tick():
 
 async def _ensure_zayif_uye_sifre_temizle():
     """TEK SEFERLİK GÜVENLİK (denetim 2026-09-29): panelden şifresiz eklenen üyelere eskiden BİLİNEN
-    sabit şifre ("Facette123!") ya da BOŞ şifre atanıyordu. Panelden açılmış (created_by_admin) ve
+    sabit şifre ("Atilla123!") ya da BOŞ şifre atanıyordu. Panelden açılmış (created_by_admin) ve
     şifresi bu ikisinden biri olan hesapların şifresi rastgele/kullanılamaz yapılır; müşteri
     "Şifremi unuttum" ile yeni şifre alır. Oturumlar token_version ile düşürülür. Sayım dışında
     kişisel veri kaydedilmez."""
@@ -2511,7 +2511,7 @@ async def _ensure_zayif_uye_sifre_temizle():
             checked += 1
             h = u.get("password") or ""
             weak = False
-            for cand in ("Facette123!", ""):
+            for cand in ("Atilla123!", ""):
                 if await asyncio.to_thread(verify_password, cand, h):
                     weak = True
                     break
@@ -3388,7 +3388,7 @@ async def _update_existing_trendyol_order(_db, existing, data, number, restock_s
 
 async def _reconcile_trendyol_terminal(client, days_back=30, slice_days=15):
     """STATUSSUZ uzlaştırma: statussuz çekiş tüm durumları getirir; terminal duruma
-    (iptal/iade) geçmiş ama Facette'te güncellenmemiş siparişleri İptaller/İadeler'e
+    (iptal/iade) geçmiş ama Atilla'da güncellenmemiş siparişleri İptaller/İadeler'e
     yansıtır/ekler. Satıcı/stok iptalleri (claim üretmeyen, status=Cancelled list
     sorgusunda güvenilir gelmeyen) buradan GARANTİ yakalanır. Volume için tarih
     dilimlerine bölünür. TEK SEFERLİK geniş backfill için days_back büyük verilir."""
@@ -3587,7 +3587,7 @@ async def _run_trendyol_status_wide_pass():
 async def _run_trendyol_deep_backfill_once():
     """TEK SEFERLİK derin uzlaştırma — geçmişteki TÜM Trendyol iptallerini (satıcı/stok
     dahil) sisteme taşır: 365 güne kadar STATUSSUZ tarama, terminal duruma geçmiş ama
-    Facette'te güncellenmemiş siparişleri İptaller'e indirir. Yeni flag
+    Atilla'da güncellenmemiş siparişleri İptaller'e indirir. Yeni flag
     (trendyol_terminal_backfill) ile YALNIZCA BİR KEZ çalışır; sonra no-op. Sonrasında
     günlük iptalleri 5 dk'lık anlık auto pull (14 gün, terminal flip) yakalar."""
     try:
@@ -4223,7 +4223,7 @@ async def _run_amazon_auto_orders_pull(lookback_days: int = 7):
                     # (a) PII backfill: adres/isim eksik geldiyse (Restricted sonradan açıldı ya da
                     #     geçici hata) SINIRLI denemeyle tamamla. Placeholder ("Amazon Müşterisi")
                     #     eski siparişler de dahil — needs_pii_refresh bayrağı olmasa bile.
-                    # (b) Ürün eşleştirme: kalemlerde resim yoksa TEK SEFER Facette ürünüyle eşle.
+                    # (b) Ürün eşleştirme: kalemlerde resim yoksa TEK SEFER Atilla ürünüyle eşle.
                     _ship_fn = (existing.get("shipping_address") or {}).get("first_name")
                     _need_pii = (RESTRICTED_ALLOWED and int(existing.get("pii_attempts") or 0) < 5 and
                                  (existing.get("needs_pii_refresh") or _ship_fn in ("", "Amazon", None)))
@@ -4289,7 +4289,7 @@ async def _run_amazon_auto_orders_pull(lookback_days: int = 7):
                 full = await _fetch_amazon_order_full(oid)
                 items = await _fetch_amazon_order_items(oid)
                 data = map_amazon_order(full or o, items)
-                # Ürün eşleştirme: Amazon SellerSKU → Facette ürünü (görsel + gerçek product_id +
+                # Ürün eşleştirme: Amazon SellerSKU → Atilla ürünü (görsel + gerçek product_id +
                 # barkod + beden/renk). Trendyol/HB ile AYNI eşleyici; eşleşen kalemde resim gelir.
                 data = await _amazon_enrich_items(data)
                 # DENETİM H3: getOrderItems rate-limit/timeout ile BOŞ dönerse eskiden
@@ -4337,7 +4337,7 @@ async def _run_amazon_auto_orders_pull(lookback_days: int = 7):
 async def _run_amazon_auto_stock_sync(barcodes=None, stock_codes=None, force=False, manual=False,
                                       mapped_only=False):
     """Scheduler / manuel — Amazon stok+fiyat CANLI push (Trendyol/HB ile simetrik).
-    Amazon SellerSKU = Facette variant.stock_code (yoksa barcode). Otomatik turda YALNIZ stoğu/
+    Amazon SellerSKU = Atilla variant.stock_code (yoksa barcode). Otomatik turda YALNIZ stoğu/
     fiyatı DEĞİŞEN varyantı yollar (amazon_sku_state değişiklik tespiti). Manuel tetik `barcodes`/
     `stock_codes` filtresi verirse yalnız o varyantları, `force=True` ile değişiklik tespitini
     ATLAYARAK yollar. AMAZON_ALLOW_WRITE=0 iken dry-run. Döner: özet dict."""
@@ -5663,7 +5663,7 @@ def _parse_tr_dt(s: str):
 
 
 async def _dhl_cargo_poll_tick():
-    """Her 5 dk: site (facette) siparislerini MNG/DHL e-Commerce API'sinden sorgula.
+    """Her 5 dk: site (atilla) siparislerini MNG/DHL e-Commerce API'sinden sorgula.
       - GONDERI_NO / takip linki olustuysa -> 'shipped' (Kargoya Verildi) + bildirim
       - Teslim edildiyse -> 'delivered' (Teslim Edildi) + delivered_at + bildirim
     Bildirimler Ayarlar > Siparis Durumlari (sms/email) secimine gore gonderilir.
@@ -5704,7 +5704,7 @@ async def _dhl_cargo_poll_tick():
 
     cutoff = (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
     q = {
-        "platform": {"$in": ["facette", "site", None]},
+        "platform": {"$in": ["atilla", "site", None]},
         "status": {"$in": ["confirmed", "processing", "preparing", "ready_to_ship",
                             "shipped", "in_transit", "out_for_delivery"]},
         "$or": [
@@ -6030,7 +6030,7 @@ async def _notify_back_in_stock():
     db.product_stock_flags ile her favorilenen ürünün stok durumu izlenir; bildirim
     YALNIZCA 0→var geçişinde (ve restok döngüsü başına bir kez) atılır. İlk görülmede
     (flag yok → prev=None) bildirim ATILMAZ; bu deploy sonrası toplu spam'i önler.
-    Stok master'ı Facette olduğundan (sipariş/iptal/iade/admin/pazaryeri fark etmez)
+    Stok master'ı Atilla olduğundan (sipariş/iptal/iade/admin/pazaryeri fark etmez)
     bu periyodik kontrol tüm stok-giriş yollarını tek noktadan yakalar.
     """
     import os
@@ -6041,7 +6041,7 @@ async def _notify_back_in_stock():
         logger.warning(f"[scheduler] back-in-stock skip (import): {e}")
         return
     now_iso = datetime.now(timezone.utc).isoformat()
-    site = os.environ.get("SITE_URL", "https://facette.com.tr").rstrip("/")
+    site = os.environ.get("SITE_URL", "https://atilla.com.tr").rstrip("/")
     try:
         # Favori yoksa da "Gelince Haber Ver" (stock_notifications) taraması ÇALIŞMALI — eskiden
         # burada erken dönülüyordu.
@@ -7052,7 +7052,7 @@ def start_scheduler():
         max_instances=1,
         coalesce=True,
     )
-    # Instagram akışı — auto_sync açık + token varsa her 30 dk @facette gönderilerini tazeler.
+    # Instagram akışı — auto_sync açık + token varsa her 30 dk @atilla gönderilerini tazeler.
     try:
         from routes.instagram import auto_sync_instagram
         # Kadir: Instagram feed'i 2 GÜNDE BİR arka planda otomatik tara (elle "şimdi çek" dışında).
@@ -7823,9 +7823,9 @@ def start_scheduler():
         coalesce=True,
     )
     # Ticimax sipariş senkronu KALDIRILDI (kullanıcı, 2026-10-04: "ticimax sipariş senkronunu sil").
-    # Ticimax canlı stok senkronu — KAPALI (Facette stok master'ı; Ticimax stoğu
+    # Ticimax canlı stok senkronu — KAPALI (Atilla stok master'ı; Ticimax stoğu
     # bu sistemi EZMESİN). Kullanıcı kararı: stok yalnızca sipariş/iptal/iade ile
-    # Facette içinde yönetilir. Gerekirse settings.ticimax_stock_sync_enabled=true
+    # Atilla içinde yönetilir. Gerekirse settings.ticimax_stock_sync_enabled=true
     # yapıp elle tetiklenebilir, ama otomatik job artık çalışmaz.
     # _scheduler.add_job(
     #     _ticimax_sync_stock, "interval", hours=2, id="ticimax_stock_sync",
@@ -7837,7 +7837,7 @@ def start_scheduler():
         try:
             from routes.production_hooks import send_stockout_alert_email
             class _SystemAdmin:
-                def get(self, k, *a): return "system@facette.com" if k == "email" else None
+                def get(self, k, *a): return "system@atilla.com" if k == "email" else None
             await send_stockout_alert_email(admin=_SystemAdmin())
             logger.info("[scheduler] daily stockout alert sent")
         except Exception as e:

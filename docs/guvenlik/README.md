@@ -125,7 +125,7 @@ Bu adımlar kodla yapılamaz. Her biri bir test ya da kapı kaydını kapatır.
 
 1. Hesapta **MFA** açık olmalı; üyeler ve API tokenları gözden geçirilir.
 2. Alan adına **Registrar/DNS kilidi** konur ve DNSSEC açılır.
-3. **Transform Rule:** API isteklerine `X-Facette-Edge: <CF_EDGE_SECRET>` başlığı eklenir. Aynı değer Railway'de `CF_EDGE_SECRET` olarak tanımlanır; böylece origin'e doğrudan gelen istek hız sınırını atlatamaz.
+3. **Transform Rule:** API isteklerine `X-Atilla-Edge: <CF_EDGE_SECRET>` başlığı eklenir. Aynı değer Railway'de `CF_EDGE_SECRET` olarak tanımlanır; böylece origin'e doğrudan gelen istek hız sınırını atlatamaz.
 4. **R2:** Uygulama tokenı yalnız ilgili bucket'larla sınırlanır. Arşiv bucket'ı için Object Lock ya da retention kuralı değerlendirilir.
 5. **Resend alan adı doğrulaması:** Resend → Domains'te gönderen alan adı "Verified" olmalı. SPF, DKIM ve MX kayıtları Cloudflare DNS'e eklenir. Doğrulanana kadar uyarılar mağaza mail altyapısından gider; öz-test bunu "ok/magaza_maili" olarak gösterir.
 

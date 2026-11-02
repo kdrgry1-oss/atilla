@@ -166,7 +166,7 @@ def kv_order(user: dict = None, **extra) -> dict:
     o = {
         "id": oid, "order_number": "FC" + oid[:6].upper(), "user_id": (user or {}).get("id"),
         "status": "delivered", "payment_status": "paid", "payment_method": "credit_card",
-        "platform": "facette", "total": 500.0, "subtotal": 500.0, "created_at": kv_iso(-40),
+        "platform": "atilla", "total": 500.0, "subtotal": 500.0, "created_at": kv_iso(-40),
         "delivered_at": kv_iso(-35), "invoice_number": "INV2026000001", "invoice_issued": True,
         "email": (user or {}).get("email", ""), "phone": (user or {}).get("phone", ""),
         "items": [{"product_id": "p1", "product_name": "Elbise", "size": "M", "quantity": 1, "price": 500.0}],

@@ -1,4 +1,4 @@
-# 📱 Facette Mobile App — Capacitor Wrap Kurulum Rehberi
+# 📱 Atilla Mobile App — Capacitor Wrap Kurulum Rehberi
 
 > **Hedef:** Mevcut React admin panelini Android ve iOS native uygulama olarak App Store + Google Play'e yayınlamak.
 >
@@ -62,7 +62,7 @@ yarn add @capacitor/push-notifications @capacitor/app @capacitor/network
 yarn add @capacitor/preferences @capacitor/splash-screen @capacitor/status-bar
 
 # Init (build çıktısı zaten /app/frontend/build)
-npx cap init "Facette" "com.facette.app" --web-dir=build
+npx cap init "Atilla" "com.atilla.app" --web-dir=build
 
 # Platform ekle
 npx cap add android
@@ -76,8 +76,8 @@ npx cap add ios
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.facette.app',
-  appName: 'Facette',
+  appId: 'com.atilla.app',
+  appName: 'Atilla',
   webDir: 'build',
   bundledWebRuntime: false,
   server: {
@@ -178,8 +178,8 @@ export async function setupPushNotifications() {
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     const data = action.notification.data;
     if (data?.deep_link) {
-      // facette://order/123 → /admin/orders/123
-      const path = data.deep_link.replace('facette://', '/');
+      // atilla://order/123 → /admin/orders/123
+      const path = data.deep_link.replace('atilla://', '/');
       window.location.href = path;
     }
   });
@@ -197,8 +197,8 @@ export async function checkAppVersion() {
 export function setupDeepLinks() {
   if (!isNative) return;
   App.addListener('appUrlOpen', (event) => {
-    // facette://order/123
-    const url = event.url.replace('facette://', '/');
+    // atilla://order/123
+    const url = event.url.replace('atilla://', '/');
     window.location.href = url;
   });
 }
@@ -244,8 +244,8 @@ npx cap open android
 
 # Studio içinde:
 # 1) Build > Generate Signed Bundle/APK > Android App Bundle (.aab)
-# 2) Keystore oluştur (ilk kez): /app/keystores/facette.keystore
-#    - alias: facette
+# 2) Keystore oluştur (ilk kez): /app/keystores/atilla.keystore
+#    - alias: atilla
 #    - password: GÜÇLÜ_PAROLA (kaydet!)
 # 3) build/outputs/bundle/release/app-release.aab dosyası → Play Console upload
 ```
@@ -260,7 +260,7 @@ npx cap open ios
 
 # Xcode içinde:
 # 1) Apple ID + Team Selection: Signing & Capabilities
-# 2) Bundle Identifier: com.facette.app
+# 2) Bundle Identifier: com.atilla.app
 # 3) Push Notifications + Background Modes capabilities ekle
 # 4) Product > Archive > Distribute App > App Store Connect
 ```
@@ -273,20 +273,20 @@ npx cap open ios
 
 1. **Apple Developer Account** ($99/yıl): https://developer.apple.com/programs/
 2. **App Store Connect** → My Apps → "+" → New App:
-   - Bundle ID: `com.facette.app`
-   - SKU: `FACETTE001`
+   - Bundle ID: `com.atilla.app`
+   - SKU: `ATILLA001`
    - Primary Language: Türkçe
 3. **Listing bilgileri:**
-   - **App Name:** Facette
+   - **App Name:** Atilla
    - **Subtitle:** Premium Kadın Giyim
-   - **Description:** "Facette ile en yeni moda trendlerini keşfedin..."
+   - **Description:** "Atilla ile en yeni moda trendlerini keşfedin..."
    - **Keywords:** moda, kadın giyim, trendyol, alışveriş
    - **Category:** Shopping
    - **Age Rating:** 4+
 4. **Screenshots:** Her cihaz boyutu için 3-10 adet (6.7", 6.5", 5.5", iPad)
    - Tools: https://www.appscreens.com (otomatik render)
 5. **App Icon:** 1024x1024 PNG, transparent değil
-6. **Privacy Policy URL:** https://facette.com.tr/privacy
+6. **Privacy Policy URL:** https://atilla.com.tr/privacy
 7. **TestFlight:** İlk önce internal testing → external → App Review
 
 ⚠️ **App Review için kritik notlar:**
@@ -298,12 +298,12 @@ npx cap open ios
 
 1. **Google Play Console** ($25 tek seferlik): https://play.google.com/console
 2. **Create app:**
-   - App name: Facette
+   - App name: Atilla
    - Default language: Türkçe
    - App or game: App
    - Free or paid: Free
 3. **Setup:**
-   - Privacy Policy URL: https://facette.com.tr/privacy
+   - Privacy Policy URL: https://atilla.com.tr/privacy
    - App access: All functionality available
    - Ads: No ads (eğer göstermiyorsanız)
    - Content rating: IARC questionnaire
@@ -331,12 +331,12 @@ npx cap open ios
 ```
 [ ] Apple Developer hesabı ($99) → 24-48 saat onay bekleme
 [ ] Google Play Console ($25) → anında aktif
-[ ] Firebase Console'da Facette projesi oluştur (FCM için)
+[ ] Firebase Console'da Atilla projesi oluştur (FCM için)
 [ ] FCM_SERVER_KEY backend .env'e ekle
 [ ] APNs Key (Apple Developer → Keys) — iOS push için
 [ ] Capacitor projesi init + sync (yukarıdaki komutlar)
 [ ] Splash screen + icon assets hazırla (1024x1024 PNG)
-[ ] Privacy Policy + ToS sayfaları yayınla (facette.com.tr/privacy)
+[ ] Privacy Policy + ToS sayfaları yayınla (atilla.com.tr/privacy)
 [ ] TestFlight + Internal Testing'de en az 5 kişi test et
 [ ] Screenshots üret (her cihaz boyutu için)
 [ ] App Store + Play Console submit
@@ -353,7 +353,7 @@ npx cap open ios
 | Backend HTTPS sertifikası hata veriyor | Mobile'da self-signed kabul edilmez. Production'da geçerli sertifika zorunlu (Cloudflare/Let's Encrypt) |
 | Push gelmiyor | FCM server key + APNs key doğru mu? Backend `/api/admin/mobile/devices` cihazı görüyor mu? |
 | Apple Review Reject: "Guideline 4.0 - Design" | Web wrapper algılarsa reject. Splash screen + native scroll + status bar düzgün olmalı |
-| Apple Review: "Test account gerekli" | Demo creds: `demo@facette.com / demo123` ekleyin (review esnasında kullanılır) |
+| Apple Review: "Test account gerekli" | Demo creds: `demo@atilla.com / demo123` ekleyin (review esnasında kullanılır) |
 | Android Build: "minSdkVersion uyumsuz" | `android/variables.gradle` minSdkVersion: 22 yapın |
 | iOS Archive: "No matching profiles" | Xcode > Preferences > Accounts > Download Manual Profiles |
 
@@ -380,5 +380,5 @@ Sorun yaşarsanız:
 
 ---
 
-*Bu rehber Facette Commerce OS v1.0 (Mayıs 2026) için hazırlandı.*
-*Sorularınız için: tech@facette.com.tr*
+*Bu rehber Atilla Commerce OS v1.0 (Mayıs 2026) için hazırlandı.*
+*Sorularınız için: tech@atilla.com.tr*

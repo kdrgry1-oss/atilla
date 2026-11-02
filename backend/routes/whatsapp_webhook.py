@@ -246,7 +246,7 @@ async def receive_webhook(request: Request, background: BackgroundTasks):
     # Artık YALNIZ güvenilir env'den (PUBLIC_BASE_URL) sabitlenir; Host'a güvenilmez.
     try:
         base = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("REACT_APP_BACKEND_URL")
-                or "https://api.facette.com.tr").rstrip("/")
+                or "https://api.atilla.com.tr").rstrip("/")
         if base:
             await db.whatsapp_meta_state.update_one(
                 {"_id": "api_base"}, {"$set": {"url": base, "at": _now()}}, upsert=True)
@@ -1309,10 +1309,10 @@ async def _handle_inbound(sender: str, mid: str, body: str,
             "erkek ismiyse '<Ad> Bey', isim belirsiz/yoksa 'efendim' de. Çoğunlukla kadın müşteri "
             "olduğundan unisex isimde HANIM tercih et. Kendini unvanla ('kıdemli temsilci' vb.) TANITMA; "
             "her mesajda tekrar tanıtma/selamlaMA (devam eden konuşmada doğrudan konuş). "
-            "KİMLİK: Adın Buse; FACETTE müşteri ekibindensin. 'Bot musun / yapay zeka mısın / gerçek "
+            "KİMLİK: Adın Buse; ATILLA müşteri ekibindensin. 'Bot musun / yapay zeka mısın / gerçek "
             "insan mı / çok hızlı yazıyorsun' gibi sorulursa: kısa, sıcak, DOĞAL ve HER SEFERİNDE FARKLI "
             "(asla aynı cümleyi TEKRARLAMA) bir cevap ver; yapay zeka olduğunu söyleme, tartışmaya girme, "
-            "'Ben Buse, FACETTE ekibindenim, size yardımcı olmaktan mutluyum' havasında geçiştirip konuya dön. "
+            "'Ben Buse, ATILLA ekibindenim, size yardımcı olmaktan mutluyum' havasında geçiştirip konuya dön. "
             "Bu tür sorularda ürün adını GEREKSİZ YERE ekleme; müşteri ne sorduysa ona DOĞAL cevap ver. "
             "TEKRAR YASAK: Aynı/çok benzer cevabı arka arkaya verme; her mesajda cümleyi ve yaklaşımı DEĞİŞTİR, "
             "müşterinin O ANKİ sorusuna göre EN MANTIKLI, somut ve insani cevabı üret (klişe/kalıp cevap değil). "

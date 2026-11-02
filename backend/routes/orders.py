@@ -372,10 +372,10 @@ _MARKETPLACE_PLATFORMS = frozenset({
 
 
 def _is_site_order(order: Optional[dict]) -> bool:
-    """Site (vitrin) siparişi mi? create_order platform='facette' yazar; eski kayıtlar 'site'/'web'/boş
+    """Site (vitrin) siparişi mi? create_order platform='atilla' yazar; eski kayıtlar 'site'/'web'/boş
     olabilir. Tek doğruluk kaynağı: platform VE marketplace alanı pazaryeri DEĞİLSE site siparişidir.
     (Ödeme kapıları — değişmez 1/2/3 — buna göre çalışır; 'platform == "site"' karşılaştırması
-    'facette' yazılan gerçek site siparişlerini kaçırıyordu.)"""
+    'atilla' yazılan gerçek site siparişlerini kaçırıyordu.)"""
     if not isinstance(order, dict):
         return False
     plat = str(order.get("platform") or "").strip().lower()
@@ -449,7 +449,7 @@ def _order_search_or(search: str) -> list:
 def _platform_display(order) -> str:
     p = (str(order.get("platform") or order.get("marketplace") or "")).strip().lower()
     return {"trendyol": "Trendyol", "hepsiburada": "Hepsiburada"}.get(
-        p, "Site" if p in ("", "facette", "site") else p.title())
+        p, "Site" if p in ("", "atilla", "site") else p.title())
 
 
 async def _log_order_event(order_id: str, event_type: str, description: str,
@@ -549,7 +549,7 @@ def _spawn(coro):
 
 
 async def _send_admin_new_order_email(order: dict, ship: dict, kind_label: str = "") -> None:
-    """Admin'e (firma iletişim adresi → beyaz-etiket varsayılan info@facette.com.tr) yeni sipariş
+    """Admin'e (firma iletişim adresi → beyaz-etiket varsayılan info@atilla.com.tr) yeni sipariş
     ÖZET maili. OLUŞTURMADA yalnız ödeme-onayı bekleyen ama gerçek aksiyon bekleyen site
     siparişlerinde (havale/EFT, kapıda ödeme) gönderilir. KART siparişi HARİÇ — o, 3DS yarıda
     kalabileceğinden ödeme onaylanınca payment._notify_paid_order_confirmed ile gider (invariant #3).
@@ -1032,11 +1032,11 @@ async def get_orders(
                 query["$or"] = _ors
     
     # Ödeme kaydı bulunmayan (web kart denemesi, hiç ödenmemiş) ayrımı
-    # 'Web siparişi' = platform facette/boş VE marketplace alanı da boş. Eskiden yalnız
+    # 'Web siparişi' = platform atilla/boş VE marketplace alanı da boş. Eskiden yalnız
     # platform'a bakılıyordu; platform'u yazılmamış ama marketplace=trendyol olan pazaryeri
     # siparişleri "web" sayılıp junk süzgecine takılabiliyordu.
     _web_cond = {"$and": [
-        {"$or": [{"platform": "facette"}, {"platform": {"$in": [None, ""]}},
+        {"$or": [{"platform": "atilla"}, {"platform": {"$in": [None, ""]}},
                  {"platform": {"$exists": False}}]},
         {"$or": [{"marketplace": {"$in": [None, ""]}}, {"marketplace": {"$exists": False}}]},
     ]}
@@ -2121,7 +2121,7 @@ async def create_order(
         # Müşterinin checkout'ta bıraktığı GENEL sipariş notu (hediye notundan ayrı).
         "notes": (order_data.get("notes") or "").strip()[:500],
         # Site siparişi: platform İSTEMCİDEN alınmaz (pazaryeri siparişleri kendi içe aktarım yolundan gelir).
-        "platform": "facette",
+        "platform": "atilla",
         # FAZ 4 — hediye seçenekleri
         "gift_note": (order_data.get("gift_note") or "")[:500],
         "gift_wrap": bool(order_data.get("gift_wrap", False)),
@@ -3325,7 +3325,7 @@ async def dispatch_purchase_capi(order_id: str, source: str = "") -> bool:
                 except Exception:
                     pass
         # external_id: üye → customer/user id; misafir → stabil first-party visitor id
-        # (attribution session_id = tarayıcıdaki facette_sid). Tarayıcı Purchase'ı da AYNI
+        # (attribution session_id = tarayıcıdaki atilla_sid). Tarayıcı Purchase'ı da AYNI
         # değeri external_id yaptığından browser↔server eşleşir ve external_id coverage yükselir.
         # marketing.capi_guest_external_id flag'i (varsayılan AÇIK) ile misafir fallback'i kapatılabilir.
         _ext_id = order_doc.get("customer_id") or order_doc.get("user_id")
@@ -3361,7 +3361,7 @@ async def dispatch_purchase_capi(order_id: str, source: str = "") -> bool:
         items_payload = [{
             "item_id": str(it.get("product_id") or it.get("sku") or ""),
             "item_name": it.get("name") or "",
-            "item_brand": it.get("brand") or "FACETTE",
+            "item_brand": it.get("brand") or "ATILLA",
             "item_variant": f"{it.get('size','')} {it.get('color','')}".strip(),
             "price": float(it.get("unit_price") or it.get("price") or 0),
             "quantity": int(it.get("quantity") or 1),
@@ -3382,7 +3382,7 @@ async def dispatch_purchase_capi(order_id: str, source: str = "") -> bool:
                 "discount": float(order_doc.get("discount") or 0),
                 "payment_type": order_doc.get("payment_method") or "",
             },
-            event_source_url="https://www.facette.com.tr",
+            event_source_url="https://www.atilla.com.tr",
         )
         logger.info(f"CAPI purchase gönderildi order={order_number} src={source}")
         return True
@@ -3709,7 +3709,7 @@ async def update_order_status(
                     "order_id": order_doc.get("order_number") or order_id,
                     "coupon": order_doc.get("coupon_code"),
                 },
-                event_source_url="https://www.facette.com.tr",
+                event_source_url="https://www.atilla.com.tr",
             )
         except Exception as _capi_err:
             logger.warning(f"CAPI dispatch failed for order {order_id}: {_capi_err}")
@@ -5870,7 +5870,7 @@ async def create_invoice_for_order(
     _pv = _pii_reveal_doc(order)
     bill = dict(_pv.get("billing_address") or {})
     ship_addr = order.get("shipping_address") or {}
-    # Site (facette) KURUMSAL fatura talebi bilgileri billing_address'te DEĞİL, billing_info'da
+    # Site (atilla) KURUMSAL fatura talebi bilgileri billing_address'te DEĞİL, billing_info'da
     # tutulur (is_corporate/company_name/tax_office/tax_number). Marketplace'te billing_address dolu gelir.
     # billing_address boşsa billing_info'dan tamamla → kurumsal site siparişinde VKN bulunup CheckUser
     # ile e-Fatura'ya yükseltilebilsin. (Aksi halde VKN boş kalıp yanlışlıkla e-Arşiv kesiliyordu.)
@@ -6241,7 +6241,7 @@ async def create_invoice_for_order(
                         f"satış bedeline dahil olup KDV matrahına eklenmiştir.")
 
         # BEYAZ ETİKET: e-fatura tedarikçi bilgisi öncelik — e-fatura sağlayıcı ayarı →
-        # merkezî Firma Bilgileri (company_info) → gömülü FACETTE varsayılanı.
+        # merkezî Firma Bilgileri (company_info) → gömülü ATILLA varsayılanı.
         try:
             from company import get_company as _get_company
             _co = await _get_company(db)
@@ -6253,14 +6253,14 @@ async def create_invoice_for_order(
             issue_date=issue_date,
             issue_time=issue_time,
             supplier_vkn=dogan_settings.get("vkn") or _co.get("tax_number") or "7810816779",
-            supplier_name=dogan_settings.get("supplier_name") or _co.get("company_name") or "FACETTE DIŞ TİC. A.Ş.",
+            supplier_name=dogan_settings.get("supplier_name") or _co.get("company_name") or "ATILLA DIŞ TİC. A.Ş.",
             supplier_district=dogan_settings.get("supplier_district") or "KÜÇÜKÇEKMECE",
             supplier_city=dogan_settings.get("supplier_city") or "İstanbul",
             supplier_street=dogan_settings.get("supplier_street") or _co.get("address") or "İkitelli O.S.B. İmsan San. Sit. D BLOK NO:3",
             supplier_tax_office=dogan_settings.get("supplier_tax_office") or _co.get("tax_office") or "HALKALI VERGİ DAİRESİ BAŞKANLIĞI",
             supplier_phone=dogan_settings.get("supplier_phone") or _co.get("phone") or "",
             supplier_email=dogan_settings.get("supplier_email") or _co.get("email") or "",
-            supplier_website=dogan_settings.get("supplier_website") or _co.get("website") or "facette.com.tr",
+            supplier_website=dogan_settings.get("supplier_website") or _co.get("website") or "atilla.com.tr",
             customer_vkn_or_tckn=customer_vkn,
             customer_name=customer_name,
             customer_district=ship_addr.get("district") or "",
@@ -6506,12 +6506,12 @@ async def create_invoice_for_order(
             issue_date=issue_date,
             issue_time=issue_time,
             supplier_vkn=dogan_settings.get("vkn") or _co.get("tax_number") or "7810816779",
-            supplier_name=dogan_settings.get("supplier_name") or _co.get("company_name") or "FACETTE DIŞ TİC. A.Ş.",
+            supplier_name=dogan_settings.get("supplier_name") or _co.get("company_name") or "ATILLA DIŞ TİC. A.Ş.",
             supplier_district=dogan_settings.get("supplier_district") or "KÜÇÜKÇEKMECE",
             supplier_city=dogan_settings.get("supplier_city") or "İstanbul",
             supplier_street=dogan_settings.get("supplier_street") or _co.get("address") or "İkitelli O.S.B. İmsan San. Sit. D BLOK NO:3",
             supplier_tax_office=dogan_settings.get("supplier_tax_office") or _co.get("tax_office") or "HALKALI VERGİ DAİRESİ BAŞKANLIĞI",
-            supplier_website=dogan_settings.get("supplier_website") or _co.get("website") or "facette.com.tr",
+            supplier_website=dogan_settings.get("supplier_website") or _co.get("website") or "atilla.com.tr",
             customer_vkn=customer_vkn,
             customer_id_scheme=_ef_scheme,
             customer_tax_office=bill.get("tax_office") or "",
@@ -6557,14 +6557,14 @@ async def create_invoice_for_order(
         if not sender_alias:
             # GÖNDERİCİ = GÖNDERİCİ BİRİM (GB) etiketi olmalıdır; POSTA KUTUSU (PK) DEĞİL.
             # Doğan'da iki ayrı etiket vardır:
-            #   • Posta Etiketi (PK)  = urn:mail:defaultpk@facette.com  → ALICI posta kutusu
-            #   • Birim Etiketi (GB)  = urn:mail:defaultgb@facette.com  → GÖNDERİCİ birim
+            #   • Posta Etiketi (PK)  = urn:mail:defaultpk@atilla.com  → ALICI posta kutusu
+            #   • Birim Etiketi (GB)  = urn:mail:defaultgb@atilla.com  → GÖNDERİCİ birim
             # CheckUser invoice_alias PK (defaultpk) döndürür; onu gönderici verince Doğan
             # "Kullanıcının Gönderici ... işlem yetkisi yoktur!" hatası verir. Bu yüzden
             # gönderici birim etiketini (GB) kullanırız. Ticimax+Doğan ayar ekranındaki değer:
-            #   E-Fatura Birim Etiketi: urn:mail:defaultgb@facette.com
+            #   E-Fatura Birim Etiketi: urn:mail:defaultgb@atilla.com
             sender_alias = (dogan_settings.get("sender_unit_alias")
-                            or "urn:mail:defaultgb@facette.com")
+                            or "urn:mail:defaultgb@atilla.com")
         logger.info(f"e-Fatura gönderim: receiver_alias={'dolu' if receiver_alias else 'BOŞ'}, sender_alias={'dolu' if sender_alias else 'BOŞ'}")
         # BL-035: UUID+numara gönderimden ÖNCE siparişe yazılır (zaman aşımında aynısı yeniden kullanılır).
         await _invoice_set_pending(order_id, invoice_uuid, invoice_number, invoice_type, _pending)
@@ -7058,8 +7058,8 @@ async def print_invoice_html(order_id: str, current_user: dict = Depends(require
 </style></head><body>
 <div class="header">
   <div>
-    <div class="brand">FACETTE</div>
-    <div class="meta">Facette E-Ticaret · facette.com.tr</div>
+    <div class="brand">ATILLA</div>
+    <div class="meta">Atilla E-Ticaret · atilla.com.tr</div>
   </div>
   <div style="text-align:right">
     <h1>{'E-ARŞİV FATURA' if order.get('invoice_type')=='e-arsiv' else 'E-FATURA'}</h1>
@@ -7289,7 +7289,7 @@ def _einvoice_pdf_sig_v2(order_id: str, exp: int, key: bytes = None) -> str:
 def _einvoice_pdf_link(order_id: str) -> str:
     import os as _os
     base = (_os.environ.get("PUBLIC_API_URL") or _os.environ.get("BACKEND_URL")
-            or "https://api.facette.com.tr").rstrip("/")
+            or "https://api.atilla.com.tr").rstrip("/")
     exp = int(time.time()) + _EINVOICE_LINK_DAYS * 86400
     return f"{base}/api/orders/{order_id}/einvoice-pdf?exp={exp}&sig={_einvoice_pdf_sig_v2(order_id, exp)}"
 
@@ -7309,7 +7309,7 @@ _MANUAL_INVOICE_LINK_DAYS_CUSTOMER = 30
 def _derived_invoice_link_key() -> bytes:
     import hmac as _hmac, hashlib as _hl
     from .deps import JWT_SECRET as _sec
-    return _hmac.new(str(_sec).encode(), b"facette:manual-invoice-link:v1", _hl.sha256).digest()
+    return _hmac.new(str(_sec).encode(), b"atilla:manual-invoice-link:v1", _hl.sha256).digest()
 
 
 def _manual_invoice_link_key() -> bytes:
@@ -7346,7 +7346,7 @@ def _invoice_sig_ok(sig: str, make) -> bool:
 
 def _manual_invoice_signed_link(order_id: str, days: int = _MANUAL_INVOICE_LINK_DAYS_MARKETPLACE) -> str:
     base = (os.environ.get("PUBLIC_API_URL") or os.environ.get("BACKEND_URL")
-            or "https://api.facette.com.tr").rstrip("/")
+            or "https://api.atilla.com.tr").rstrip("/")
     exp = int(time.time()) + int(days) * 86400
     return (f"{base}/api/orders/{order_id}/manual-invoice-file/signed"
             f"?exp={exp}&sig={_manual_invoice_sig(order_id, exp)}")
@@ -7901,7 +7901,7 @@ async def _get_mng_settings() -> dict:
     _pw_raw = _cargo.get("password") or s.get("password") or _os.environ.get("MNG_PASSWORD", "")
     _pw = _dec(_pw_raw)
     _cust = (_cargo.get("customer_number") or _cargo.get("customer_code")
-             or s.get("customer_code") or "FACETTE DIŞ TİC.A.Ş.")
+             or s.get("customer_code") or "ATILLA DIŞ TİC.A.Ş.")
     # env: cargo config 'prod' → canlı; 'test' → test. is_active: cargo dolu ya da settings.
     _cargo_active = bool(_cargo.get("username") and _cargo.get("password"))
     return {
@@ -7922,11 +7922,11 @@ async def _get_mng_settings() -> dict:
 
 async def _get_sender_info() -> dict:
     """Mağaza/Gönderici + İADE ALICI (şirket) bilgilerini DB'den çeker (settings.id=store_info).
-    store_info boşsa FACETTE şirket adresine düşer → iade gönderisinin alıcı adresi HER ZAMAN dolu
+    store_info boşsa ATILLA şirket adresine düşer → iade gönderisinin alıcı adresi HER ZAMAN dolu
     olur ve MNG/DHL barkodu gerçekten üretilebilir (boş adres yüzünden barkod üretilememe sorunu çözülür)."""
     store = await db.settings.find_one({"id": "store_info"}, {"_id": 0}) or {}
     return {
-        "name": store.get("sender_name") or "FACETTE DIŞ TİCARET A.Ş.",
+        "name": store.get("sender_name") or "ATILLA DIŞ TİCARET A.Ş.",
         "phone": _normalize_phone(store.get("sender_phone") or "5433300310"),
         "address": store.get("sender_address") or "İkitelli OSB Mah. İMSAN D Blok No: 3",
         "city": store.get("sender_city") or "İstanbul",
@@ -9103,7 +9103,7 @@ def _render_cargo_label_html(*, siparis_no, main_barcode, sender_company, sender
         return str(p)
     logo_b64 = ""
     try:
-        logo_path = pathlib.Path(__file__).parent.parent / "static" / "brand" / "facette-logo.png"
+        logo_path = pathlib.Path(__file__).parent.parent / "static" / "brand" / "atilla-logo.png"
         if logo_path.exists():
             logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
     except Exception:
@@ -9170,7 +9170,7 @@ def _render_cargo_label_html(*, siparis_no, main_barcode, sender_company, sender
 <div class="label">
   <div class="main">
     <div class="logo-band">
-      {('<img src="'+logo_src+'" alt="FACETTE"/>') if logo_src else '<div class="logo-fallback">FACETTE</div>'}
+      {('<img src="'+logo_src+'" alt="ATILLA"/>') if logo_src else '<div class="logo-fallback">ATILLA</div>'}
     </div>
     <div class="body-wrap">
     <div class="section-title">Gönderici Bilgileri</div>
@@ -9302,7 +9302,7 @@ async def get_cargo_label(order_id: str, current_user: dict = Depends(require_pe
     tracking_line = ""
     sender = await _get_sender_info()
     mng = await _get_mng_settings()
-    sender_company = mng.get("customer_code") or sender["name"] or "FACETTE"
+    sender_company = mng.get("customer_code") or sender["name"] or "ATILLA"
     sender_addr_line = f"{sender['address']}, {sender['district']}/{sender['city']}".strip(" ,/")
 
     ship = order.get("shipping_address") or {}
@@ -9375,7 +9375,7 @@ async def get_mng_settings(current_user: dict = Depends(require_permission("sett
     import os as _os
     s = await db.settings.find_one({"id": "mng_kargo"}, {"_id": 0}) or {}
     return {
-        "customer_code": s.get("customer_code") or "FACETTE DIS TIC.A.S.",
+        "customer_code": s.get("customer_code") or "ATILLA DIS TIC.A.S.",
         "username": s.get("username") or _os.environ.get("MNG_USERNAME", ""),
         "password": "********" if (s.get("password") or _os.environ.get("MNG_PASSWORD")) else "",
         "tax_no": s.get("tax_no") or "6080712084",
@@ -9393,7 +9393,7 @@ async def save_mng_settings(payload: dict, request: Request,
     payload = payload if isinstance(payload, dict) else {}
     _before = await db.settings.find_one({"id": "mng_kargo"}, {"_id": 0, "password": 0}) or {}
     update = {
-        "customer_code": payload.get("customer_code", "FACETTE DIŞ TİC.A.Ş."),
+        "customer_code": payload.get("customer_code", "ATILLA DIŞ TİC.A.Ş."),
         "username": payload.get("username", ""),
         "tax_no": payload.get("tax_no", ""),
         "is_active": bool(payload.get("is_active", True)),
@@ -9736,7 +9736,7 @@ RETURN_CONTRACT_NO = "490059279"
 def _company_return_address(warehouse: dict) -> str:
     """İade paketinin gideceği ŞİRKET (alıcı) adresini tek satır metne çevirir (müşteriye gösterilir)."""
     w = warehouse or {}
-    parts = [w.get("name") or "FACETTE DIŞ TİCARET A.Ş.",
+    parts = [w.get("name") or "ATILLA DIŞ TİCARET A.Ş.",
              (w.get("address") or "").strip(),
              "/".join([x for x in [w.get("district"), w.get("city")] if x])]
     return " · ".join([p for p in parts if p])
@@ -9800,7 +9800,7 @@ async def _ensure_return_email_template():
     import sys, os
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from email_layout import email_shell, info_row
-    SENTINEL = "<!--facette-email-v4-->"
+    SENTINEL = "<!--atilla-email-v4-->"
     body = SENTINEL + email_shell(
         icon="↩", eyebrow="İADE", title="İade talebin oluşturuldu",
         intro_html=("Merhaba {customer_name}, {order_number} numaralı siparişin için iade talebin oluşturuldu. "

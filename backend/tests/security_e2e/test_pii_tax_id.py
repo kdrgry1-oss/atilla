@@ -261,7 +261,7 @@ async def test_build_initialize_payload_reads_sealed_and_legacy():
     sealed = {**base, "billing_info": pii.seal_doc_tax_ids({"billing_info": {"tax_number": TCKN}})["billing_info"]}
     legacy = {**base, "billing_info": {"tax_number": TCKN}}
     for o in (sealed, legacy):
-        assert _build_initialize_payload(o, "https://www.facette.com.tr/cb")["buyer"]["identityNumber"] == TCKN
+        assert _build_initialize_payload(o, "https://www.atilla.com.tr/cb")["buyer"]["identityNumber"] == TCKN
 
 
 # ═══════════════════════════════════ Doğan UBL ═══════════════════════════════════

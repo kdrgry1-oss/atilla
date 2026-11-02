@@ -47,9 +47,9 @@ async def get_dashboard_stats(
         _pf = (platform or "all").strip().lower()
         if _pf in ("", "all", "hepsi", "tumu", "tümü"):
             plat_match = {}
-        elif _pf in ("site", "facette", "web", "storefront"):
+        elif _pf in ("site", "atilla", "web", "storefront"):
             plat_match = {"$or": [
-                {"platform": {"$in": ["facette", "web", "site", "storefront"]}},
+                {"platform": {"$in": ["atilla", "web", "site", "storefront"]}},
                 {"platform": {"$in": [None, ""]}},
                 {"platform": {"$exists": False}},
             ]}
@@ -225,7 +225,7 @@ async def get_dashboard_stats(
             available_platforms = []
             for r in _pl_agg:
                 _key = r.get("_id")
-                if _key in (None, "", "facette", "web", "site", "storefront"):
+                if _key in (None, "", "atilla", "web", "site", "storefront"):
                     continue  # 'Sadece Site' seçeneği ayrı ekleniyor
                 available_platforms.append({"platform": str(_key), "count": r.get("count", 0)})
         except Exception:

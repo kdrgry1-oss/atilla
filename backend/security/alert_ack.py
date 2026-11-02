@@ -117,7 +117,7 @@ async def escalation_minutes() -> int:
 
 def _derived_ack_key() -> bytes:
     from routes.deps import JWT_SECRET as _sec
-    return hmac.new(str(_sec).encode(), b"facette:security-alert-ack:v1", hashlib.sha256).digest()
+    return hmac.new(str(_sec).encode(), b"atilla:security-alert-ack:v1", hashlib.sha256).digest()
 
 
 def _ack_key() -> bytes:

@@ -97,7 +97,7 @@ def derived_hash_keys(label: bytes) -> list:
 
 def _hash_keys() -> list:
     """[(kid, key_bytes)] — birincil ilk sırada. Kök sırlar DOĞRUDAN kullanılmaz (alan ayrımı)."""
-    return derived_hash_keys(b"facette:pii-tax-id:v1")
+    return derived_hash_keys(b"atilla:pii-tax-id:v1")
 
 
 def primary_hash_kid() -> str:
@@ -114,7 +114,7 @@ def normalize_tax_id(value: Any) -> str:
 
 
 def _hmac_hex(key: bytes, norm: str) -> str:
-    return hmac.new(key, f"facette:pii-tax-id:v1|{norm}".encode(), hashlib.sha256).hexdigest()
+    return hmac.new(key, f"atilla:pii-tax-id:v1|{norm}".encode(), hashlib.sha256).hexdigest()
 
 
 def tax_id_hash(value: Any) -> str:

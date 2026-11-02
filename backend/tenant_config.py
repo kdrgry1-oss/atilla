@@ -274,31 +274,31 @@ def legacy_write_through(config: dict) -> dict:
 
 def migration_seed(main: dict | None, payment: dict | None = None,
                    store_info: dict | None = None) -> dict:
-    """Build the one-time Facette-compatible seed. It does not write to Mongo."""
-    facette_seed = {
-        "brand": {"store_name": "FACETTE", "logo_url": "https://facette.com.tr/logo.png"},
-        "company": {"legal_name": "FACETTE DIŞ TİCARET A.Ş.",
+    """Build the one-time Atilla-compatible seed. It does not write to Mongo."""
+    atilla_seed = {
+        "brand": {"store_name": "ATILLA", "logo_url": "https://atilla.com.tr/logo.png"},
+        "company": {"legal_name": "ATILLA DIŞ TİCARET A.Ş.",
                     "address": "İkitelli O.S.B. İmsan San. Sit. D BLOK NO:3"},
-        "contact": {"email": "info@facette.com.tr", "instagram": "https://www.instagram.com/facette",
-                    "tiktok": "https://www.tiktok.com/@facette"},
-        "domains": {"storefront_url": "https://facette.com.tr"},
-        "catalog_defaults": {"product_brand": "FACETTE"},
+        "contact": {"email": "info@atilla.com.tr", "instagram": "https://www.instagram.com/atilla",
+                    "tiktok": "https://www.tiktok.com/@atilla"},
+        "domains": {"storefront_url": "https://atilla.com.tr"},
+        "catalog_defaults": {"product_brand": "ATILLA"},
         "seo_geo": {
-            "default_title": "FACETTE | Yeni Sezon Kadın Giyim & Moda",
-            "default_description": "FACETTE — kadın modasında yeni sezon koleksiyonu. Zamansız elbise, pantolon, ceket ve aksesuar parçaları.",
+            "default_title": "ATILLA | Yeni Sezon Kadın Giyim & Moda",
+            "default_description": "ATILLA — kadın modasında yeni sezon koleksiyonu. Zamansız elbise, pantolon, ceket ve aksesuar parçaları.",
             "product_title_template": "{product_name} | {store_name}",
             "product_description_template": "{product_name}",
             "category_title_template": "{category_name} | {store_name}",
             "category_description_template": "{category_name} kategorisindeki yeni sezon ürünleri {store_name}'te keşfedin.",
-            "organization_description": "FACETTE kadın giyim ve moda markasıdır.",
-            "llms_description": "FACETTE, Türkiye merkezli bir kadın giyim ve moda markasıdır.",
-            "default_og_image_url": "https://facette.com.tr/og-image.jpg",
+            "organization_description": "ATILLA kadın giyim ve moda markasıdır.",
+            "llms_description": "ATILLA, Türkiye merkezli bir kadın giyim ve moda markasıdır.",
+            "default_og_image_url": "https://atilla.com.tr/og-image.jpg",
         },
         "commerce": {"order_numbering": {"prefix": "FC", "manual_prefix": "MNL",
                                            "format": "{prefix}{timestamp}{random5}"}},
     }
     return TenantConfig.model_validate(
-        _deep_merge(_deep_merge(TenantConfig().model_dump(), facette_seed),
+        _deep_merge(_deep_merge(TenantConfig().model_dump(), atilla_seed),
                     legacy_aliases(main, payment, store_info), skip_empty=True)
     ).model_dump()
 

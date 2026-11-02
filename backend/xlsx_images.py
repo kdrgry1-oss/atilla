@@ -121,7 +121,7 @@ async def fetch_images(urls: Iterable[str], size: str = "medium",
         return {}
     out: Dict[str, bytes] = {}
     sem = asyncio.Semaphore(max(1, concurrency))
-    headers = {"User-Agent": "Mozilla/5.0 (FacetteExcel/1.0)"}
+    headers = {"User-Agent": "Mozilla/5.0 (AtillaExcel/1.0)"}
 
     async def _convert(raw: bytes):
         return await fit_canvas_isolated(raw, size)

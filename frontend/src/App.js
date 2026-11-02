@@ -123,8 +123,8 @@ function StorefrontScope({ children }) {
 function App() {
   useEffect(() => {
     // UTM/referrer yakalama — render'ı bloklamaması için mount sonrası.
-    if (typeof window !== "undefined" && !window.__FACETTE_TRACKED__) {
-      window.__FACETTE_TRACKED__ = true;
+    if (typeof window !== "undefined" && !window.__ATILLA_TRACKED__) {
+      window.__ATILLA_TRACKED__ = true;
       trackVisit();
     }
     // Capacitor native bootstrap (web mode'da no-op)

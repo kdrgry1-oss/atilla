@@ -12,7 +12,7 @@ const BLOCK_TYPES = [
 ];
 
 export default function Themes() {
-  const [list,setList]=useState([]), [data,setData]=useState({company:{name:"Facette"},categories:[],products:[]});
+  const [list,setList]=useState([]), [data,setData]=useState({company:{name:"Atilla"},categories:[],products:[]});
   const [loading,setLoading]=useState(true), [editing,setEditing]=useState(null), [preview,setPreview]=useState(null);
   const [viewport,setViewport]=useState("desktop"), [versions,setVersions]=useState([]), [showHistory,setShowHistory]=useState(false);
   const active=useMemo(()=>list.find(t=>t.is_active),[list]);
@@ -50,7 +50,7 @@ function ThemeCard({theme,data,viewport,onPreview,onEdit,onApply,onDelete}) { re
 
 function MiniPreview({theme,data,viewport,page="home"}) { const products=data.products||[], cats=data.categories||[], company=data.company||{}; return <div className={`tg-preview tg-${viewport}`} data-layout={theme.settings?.layout||"editorial"} style={themeCssVariables(theme.settings?.tokens)}>
   <header><div className="tg-mark">{company.logo_url?<img src={company.logo_url} alt=""/>:company.name}</div><nav>{cats.slice(0,4).map(c=><span key={c.id}>{c.name}</span>)}</nav><b>⌕　♡　▢</b></header>
-  {page==="home"&&<><section className="tg-hero" style={{backgroundImage:`linear-gradient(#0004,#0004),url(${theme.blocks?.find(b=>b.type==="hero_fullscreen")?.image||themeImage(products[0])})`}}><small>FACETTE SEÇKİSİ</small><h3>{theme.blocks?.find(b=>b.type==="hero_fullscreen")?.title||"Yeni sezon"}</h3><button>KEŞFET</button></section><PreviewGrid products={products}/></>}
+  {page==="home"&&<><section className="tg-hero" style={{backgroundImage:`linear-gradient(#0004,#0004),url(${theme.blocks?.find(b=>b.type==="hero_fullscreen")?.image||themeImage(products[0])})`}}><small>ATILLA SEÇKİSİ</small><h3>{theme.blocks?.find(b=>b.type==="hero_fullscreen")?.title||"Yeni sezon"}</h3><button>KEŞFET</button></section><PreviewGrid products={products}/></>}
   {page==="category"&&<><div className="tg-page-title"><small>KOLEKSİYON</small><h3>{cats[0]?.name||"Tüm ürünler"}</h3></div><PreviewGrid products={products}/></>}
   {page==="product"&&<ProductPreview product={products[0]}/>}
   {!products.length&&page!=="home"&&<div className="tg-empty">Katalogda gösterilebilir ürün bulunamadı.</div>}

@@ -11,7 +11,7 @@ const jwtOf = (payload) => `${b64url({ alg: "HS256", typ: "JWT" })}.${b64url(pay
 
 function fakeEnv() {
   const cacheNames = ["workbox-precache", "api-cache"];
-  const idbNames = ["facette-offline", "localforage"];
+  const idbNames = ["atilla-offline", "localforage"];
   const prefs = { token: "x", device_id: "ios-1", cached_orders: "[]" };
   const regs = [{ unregister: jest.fn().mockResolvedValue(true) }];
   return {
@@ -45,7 +45,7 @@ describe("wipeLocalStaffData (ADM-15)", () => {
     window.localStorage.setItem("token", jwtOf({ typ: "staff" }));
     window.localStorage.setItem("menuOrder:u1", "[]");
     window.localStorage.setItem("admin_orders_view", "{\"page\":3}");
-    window.localStorage.setItem("facette_last_address", "{\"city\":\"X\"}");
+    window.localStorage.setItem("atilla_last_address", "{\"city\":\"X\"}");
     window.localStorage.setItem(KEEP_LOCAL_KEYS[0], "{\"analytics\":true}");
     window.sessionStorage.setItem("report_assistant_msgs", "[\"ciro\"]");
     const env = fakeEnv();
@@ -58,7 +58,7 @@ describe("wipeLocalStaffData (ADM-15)", () => {
     expect(window.sessionStorage.length).toBe(0);
     expect(env.caches.delete).toHaveBeenCalledWith("workbox-precache");
     expect(env.caches.delete).toHaveBeenCalledWith("api-cache");
-    expect(env.indexedDB.deleteDatabase).toHaveBeenCalledWith("facette-offline");
+    expect(env.indexedDB.deleteDatabase).toHaveBeenCalledWith("atilla-offline");
     expect(env.indexedDB.deleteDatabase).toHaveBeenCalledWith("localforage");
     expect(env._regs[0].unregister).toHaveBeenCalled();
     expect(Object.keys(env.preferences._store)).toEqual(["device_id"]);

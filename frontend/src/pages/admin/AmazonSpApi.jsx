@@ -150,7 +150,7 @@ export default function AmazonSpApi({ embedded = false }) {
     }
   };
 
-  // TEŞHİS: bir sipariş no ver → Amazon ham SKU/isim + Facette eşleşme denemesi + panel kaydı.
+  // TEŞHİS: bir sipariş no ver → Amazon ham SKU/isim + Atilla eşleşme denemesi + panel kaydı.
   const [diagNo, setDiagNo] = useState("");
   const [diag, setDiag] = useState(null);
   const [diagLoading, setDiagLoading] = useState(false);
@@ -419,7 +419,7 @@ export default function AmazonSpApi({ embedded = false }) {
           </pre>
         )}
         <p className="text-[11px] text-gray-400 mt-2">
-          match_report'ta <b>matched:false</b> ise Amazon SellerSKU'n Facette stok kodu/barkoduyla eşleşmiyor →
+          match_report'ta <b>matched:false</b> ise Amazon SellerSKU'n Atilla stok kodu/barkoduyla eşleşmiyor →
           bu yüzden resim/stok gelmiyor. Sonucu bana gönder, eşlemeyi ona göre kurayım.
         </p>
       </div>

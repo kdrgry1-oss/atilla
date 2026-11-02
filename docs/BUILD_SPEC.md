@@ -1,4 +1,4 @@
-# FACETTE E-Commerce & ERP Platform — Build Specification
+# ATILLA E-Commerce & ERP Platform — Build Specification
 
 > **Hedef:** Bu doküman, sistemin sıfırdan inşa edilmesi için tüm fonksiyonel, teknik ve operasyonel gereksinimleri içerir. Tek başına bir yazılımcı/ekibe verildiğinde, başka bir kaynağa ihtiyaç duymadan ürünü teslim edebilmelidir.
 >
@@ -34,7 +34,7 @@
 
 ### 0.1 Tek Cümlede Ne İnşa Ediyoruz?
 
-> "Facette" üst-segment kadın giyim markası için, Ticimax altyapısını tamamlayan / dönüştüren; **müşteri storefront'u + admin/ERP paneli + pazaryeri (Trendyol/Hepsiburada) entegrasyonu**'nu tek çatı altında toplayan, üretici (B2B) ve son müşteri (B2C) hesaplarını yöneten bir e-ticaret platformu inşa edilecek.
+> "Atilla" üst-segment kadın giyim markası için, Ticimax altyapısını tamamlayan / dönüştüren; **müşteri storefront'u + admin/ERP paneli + pazaryeri (Trendyol/Hepsiburada) entegrasyonu**'nu tek çatı altında toplayan, üretici (B2B) ve son müşteri (B2C) hesaplarını yöneten bir e-ticaret platformu inşa edilecek.
 
 ### 0.2 Neden Bu Sistem?
 
@@ -46,8 +46,8 @@
 
 ### 0.3 Domain ve Marka
 
-- Marka: **FACETTE** (kadın giyim — bluz, etek, takım, ceket, pantolon, elbise).
-- Domain: `facette.com.tr`.
+- Marka: **ATILLA** (kadın giyim — bluz, etek, takım, ceket, pantolon, elbise).
+- Domain: `atilla.com.tr`.
 - Yıllık ürün sayısı: ~500 SKU (parent), 1500-2000 varyant (renk × beden).
 - Aylık sipariş hacmi (hedef): 2.000-5.000.
 - Aktif müşteri: 10.000+ (mevcut Ticimax veritabanından göç edilecek).
@@ -525,8 +525,8 @@
   "color": "Haki",
   "stock_code": "FCSS2000002",           // idx (multiple products share)
   "sku": "FCSS2000002",
-  "brand": "FACETTE",
-  "vendor": "FACETTE",                   // tedarikçi adı
+  "brand": "ATILLA",
+  "vendor": "ATILLA",                   // tedarikçi adı
   "category_id": "uuid",                 // FK categories, idx
   "category_name": "Takım",
   "breadcrumb": "GİYİM > Üst Giyim > Takım",
@@ -876,7 +876,7 @@ from zeep import Client, Settings
 from zeep.transports import Transport
 
 client = Client(
-    "https://www.facette.com.tr/Servis/UrunServis.svc?wsdl",
+    "https://www.atilla.com.tr/Servis/UrunServis.svc?wsdl",
     settings=Settings(strict=False, xml_huge_tree=True),
     transport=Transport(timeout=90, operation_timeout=180),
 )
@@ -1338,6 +1338,6 @@ Beklenen: P95 < 1s, error rate < %1.
 ---
 
 **Doküman sürümü: 1.0 — 26 Şubat 2026**
-**Hazırlayan: Facette Tech Team**
+**Hazırlayan: Atilla Tech Team**
 
 > Bu doküman, yazılımcının/ajansın projeyi sıfırdan inşa etmesi için yeterli teknik ve fonksiyonel bilgiyi içerir. Belirsiz noktalar için müşteri ile sprint sonu demo'larda toplanıp netleştirilmesi önerilir.

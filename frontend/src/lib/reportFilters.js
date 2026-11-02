@@ -110,7 +110,7 @@ export function filterReportChannels(items, source) {
   const wanted = source === "site" ? "site" : source.toLocaleLowerCase("tr");
   return (items || []).filter((row) => {
     const value = String(row?.source || row?.channel || "").trim().toLocaleLowerCase("tr");
-    return wanted === "site" ? ["site", "facette", "site (kendi)"].includes(value) : value === wanted;
+    return wanted === "site" ? ["site", "atilla", "site (kendi)"].includes(value) : value === wanted;
   });
 }
 

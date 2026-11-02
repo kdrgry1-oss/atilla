@@ -90,7 +90,7 @@ async def send_stockout_alert_email(admin=Depends(require_permission("manufactur
     if not items:
         return {"ok": False, "message": "Uyarılacak ürün yok", "params": params}
     _val = f"{s['total_production_value']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    lines = [f"Facette Stok Tükenme Uyarısı\n",
+    lines = [f"Atilla Stok Tükenme Uyarısı\n",
              f"Parametre: son {velocity_days} gün satış hızı, {horizon_days} gün tükenme ufku, "
              f"{target_cover_days} gün hedef stok",
              f"🔴 Kritik (≤14g): {s['critical']}",

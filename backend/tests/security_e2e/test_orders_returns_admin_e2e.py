@@ -311,7 +311,7 @@ async def test_bulk_status_requires_update_status_permission(pay_http, pay_env):
 
 _BUG_SITE_PLATFORM = (  # FIXED: routes/orders.py::_is_site_order (kept for documentation)
     "BUG (invariant 1/2/3): routes/orders.py::update_order_status W11874 guard only fires when "
-    "(order.platform or 'site') == 'site', but create_order stores platform='facette' — so the guard "
+    "(order.platform or 'site') == 'site', but create_order stores platform='atilla' — so the guard "
     "NEVER matches a site order. Staff with orders.update_status can set an UNPAID card order "
     "(awaiting_payment/failed) to 'confirmed' (single or bulk-status): it leaves the auto-cancel "
     "sweep, becomes invoiceable/shippable and the 'confirmed' customer notification is dispatched.")
@@ -342,7 +342,7 @@ async def test_unpaid_card_order_cannot_be_confirmed_via_bulk_status(pay_http, p
 
 async def test_unpaid_card_order_confirm_guard_works_for_legacy_site_platform(pay_http, pay_env):
     """The guard itself is correct when platform == 'site' (legacy docs) → proves the root cause
-    is only the 'facette' vs 'site' platform value."""
+    is only the 'atilla' vs 'site' platform value."""
     o = await pay_card_order(pay_http)
     await pay_set("orders", {"id": o["id"]}, {"platform": "site"})
     _, hdr = await pay_staff(["orders.update_status"])

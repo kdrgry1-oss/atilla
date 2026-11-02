@@ -4,7 +4,7 @@
  * =============================================================================
  *
  * NE İŞE YARAR?
- *   Facette admin panelinde ürünlerin listelenmesi, filtrelenmesi, oluşturulması,
+ *   Atilla admin panelinde ürünlerin listelenmesi, filtrelenmesi, oluşturulması,
  *   düzenlenmesi, çoğaltılması, silinmesi ve pazaryerlerine (Trendyol) aktarılması
  *   için kullanılan ana ekran. Ürüne bağlı varyantlar, özellikler (attributes),
  *   görseller, ölçü tablosu ve SEO alanları da bu ekrandaki modal üzerinden
@@ -71,8 +71,8 @@ import { sanitizeHtml } from "../../lib/sanitizeHtml";
 import { FIT_SIZE_OPTIONS, isStandardSized, sortFitSizes, fitSizesText } from "../../lib/fitSizes";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-// API.replace('/api','') HATALIYDI: "https://api.facette.com.tr/api" icinde ilk "/api"
-// "https://api"deki //api'dir → "https:/.facette.com.tr/api" (bozuk). Origin'i dogru turet:
+// API.replace('/api','') HATALIYDI: "https://api.atilla.com.tr/api" icinde ilk "/api"
+// "https://api"deki //api'dir → "https:/.atilla.com.tr/api" (bozuk). Origin'i dogru turet:
 // REACT_APP_BACKEND_URL zaten /api'siz taban; yine de sondaki /api'yi guvenle ayikla.
 const BACKEND_ORIGIN = String(process.env.REACT_APP_BACKEND_URL || "").replace(/\/+$/, "").replace(/\/api$/, "");
 // Gorsel URL normalizasyonu: relatif yollari mutlaklastir + gecmiste kaydedilmis bozuk
@@ -192,7 +192,7 @@ function DescriptionEditor({ value, onChange, onGenerate, generating }) {
 
 
 
-const PRODUCTS_VIEW_KEY = "facette_products_view";
+const PRODUCTS_VIEW_KEY = "atilla_products_view";
 const _loadProductsView = () => { try { return JSON.parse(localStorage.getItem(PRODUCTS_VIEW_KEY) || "{}") || {}; } catch (e) { return {}; } };
 
 export default function AdminProducts() {
@@ -388,13 +388,13 @@ export default function AdminProducts() {
 
   const [formData, setFormData] = useState({
     name: "", slug: "", description: "", short_description: "",
-    price: 0, sale_price: null, category_name: "", categories: [], brand: "FACETTE",
+    price: 0, sale_price: null, category_name: "", categories: [], brand: "ATILLA",
     images: [], is_active: false, is_featured: false, is_new: false, coming_soon: false,
     stock: 0, stock_code: "", season: "", barcode: "", sku: "",
     urun_karti_id: "", urun_id: "",
     // Ticimax fields
     variation_code: "", gtip_code: "", unit: "ADET", keywords: "",
-    supplier: "", manufacturer: "FACETTE", max_installment: 9, purchase_price: 0, member_price_1: null,
+    supplier: "", manufacturer: "ATILLA", max_installment: 9, purchase_price: 0, member_price_1: null,
     // FAZ 7 — İmalat modülü entegrasyonu için ek alanlar
     collection: "", color: "",
     vat_rate: 10,
@@ -595,7 +595,7 @@ export default function AdminProducts() {
             stock_code: p.stock_code || "",
             season: p.season || "",
             purchase_price: Number(p.purchase_price || 0),
-            manufacturer: p.manufacturer || "FACETTE",
+            manufacturer: p.manufacturer || "ATILLA",
             mfg_record_id: p.mfg_record_id || "",
             is_active: false, // satışa açmadan önce kalan bilgiler girilecek
             // Varyant id ürünler arası BENZERSİZ olmalı (Meta katalog content_id'si). Eski
@@ -1425,7 +1425,7 @@ export default function AdminProducts() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      // FACETTE SABİT VARSAYILANLAR — her kayıtta boş kalanlar doldurulur (kullanıcı değeri ezilmez).
+      // ATILLA SABİT VARSAYILANLAR — her kayıtta boş kalanlar doldurulur (kullanıcı değeri ezilmez).
       const attrObj = {
         "Yaş Grubu": "Yetişkin", "Menşei": "TR", "Cinsiyet": "Kadın",
         "Koleksiyon": "Casual/Günlük", "Ortam": "Casual/Günlük",
@@ -1890,7 +1890,7 @@ export default function AdminProducts() {
         const extras = all.filter(id => !leaf.includes(id) && !anc.has(id) && byId.has(id));
         return [...leaf, ...extras];
       })(),
-      brand: product.brand || "FACETTE",
+      brand: product.brand || "ATILLA",
       images: product.images || [],
       is_active: product.is_active ?? true,
       is_featured: product.is_featured ?? false,
@@ -1909,7 +1909,7 @@ export default function AdminProducts() {
       unit: product.unit || "ADET",
       keywords: product.keywords || "",
       supplier: product.supplier || "",
-      manufacturer: product.manufacturer || "FACETTE",
+      manufacturer: product.manufacturer || "ATILLA",
       max_installment: product.max_installment || 9,
       purchase_price: product.purchase_price || 0,
       member_price_1: product.member_price_1 ?? null,
@@ -1978,12 +1978,12 @@ export default function AdminProducts() {
     setMemberPriceManual(false); setMultiSizes([]); setMultiColors([]);
     setFormData({
       name: "", slug: "", description: "", short_description: "",
-      price: 0, sale_price: null, category_name: "", categories: [], brand: "FACETTE",
+      price: 0, sale_price: null, category_name: "", categories: [], brand: "ATILLA",
       images: [], is_active: false, is_featured: false, is_new: false, coming_soon: false,
       stock: 0, stock_code: "", season: "", barcode: "", sku: "", fit_sizes: [],
       urun_karti_id: "", urun_id: "",
       variation_code: "", gtip_code: "", unit: "ADET", keywords: "",
-      supplier: "", manufacturer: "FACETTE", max_installment: 9, purchase_price: 0, member_price_1: null,
+      supplier: "", manufacturer: "ATILLA", max_installment: 9, purchase_price: 0, member_price_1: null,
     // FAZ 7 — İmalat modülü entegrasyonu için ek alanlar
     collection: "", color: "",
       market_price: 0, vat_rate: 10, vat_included: true, currency: "TRY",
@@ -3033,7 +3033,7 @@ export default function AdminProducts() {
                           type="text"
                           value={formData.manufacturer}
                           onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                          placeholder="FACETTE"
+                          placeholder="ATILLA"
                           className="w-full border-gray-200 border px-3 py-2 rounded-lg focus:border-black outline-none transition-all"
                         />
                       </div>
@@ -3381,22 +3381,22 @@ export default function AdminProducts() {
                     "Persona": "Fashion Forward", "Performans": "Cool & Comfort",
                     "Sürdürülebilirlik Detayı": "Hayır",
                   };
-                  // 🏭 GPSR üretici/ithalatçı — backend facette_defaults.company_field_for_attr AYNASI.
-                  // TEK otorite backend'dir (push'ta facette_company_value uygular); bu yalnız KARTTA
+                  // 🏭 GPSR üretici/ithalatçı — backend atilla_defaults.company_field_for_attr AYNASI.
+                  // TEK otorite backend'dir (push'ta atilla_company_value uygular); bu yalnız KARTTA
                   // dolu göstermek içindir — formData'ya YAZMAZ, push'a karışmaz. Üretici/İthalatçı
                   // Adı→firma, ...Mail→e-posta, ...Adres→adres.
-                  const FACETTE_COMPANY = {
-                    company_name: "FACETTE DIŞ TİCARET A.Ş.",
-                    email: "info@facette.com.tr",
+                  const ATILLA_COMPANY = {
+                    company_name: "ATILLA DIŞ TİCARET A.Ş.",
+                    email: "info@atilla.com.tr",
                     address: "İkitelli O.S.B. İmsan San. Sit. D BLOK NO:3",
                   };
                   const _companyValFor = (name) => {
                     const nm = _attrNorm(name);
                     if (!/uretici|ithalatc|imalatc/.test(nm)) return "";
-                    if (/mail|posta|email/.test(nm)) return FACETTE_COMPANY.email;
-                    if (/adres/.test(nm)) return FACETTE_COMPANY.address;
+                    if (/mail|posta|email/.test(nm)) return ATILLA_COMPANY.email;
+                    if (/adres/.test(nm)) return ATILLA_COMPANY.address;
                     if (/\bad[i]?\b|ism|unvan|firma/.test(nm) || nm === "uretici" || nm === "ithalatci")
-                      return FACETTE_COMPANY.company_name;
+                      return ATILLA_COMPANY.company_name;
                     return "";
                   };
 

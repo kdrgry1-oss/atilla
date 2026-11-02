@@ -337,22 +337,22 @@ async def test_review_cannot_self_approve_or_forge_author_and_rating_is_strict(p
 
 # ═════════════════════════════════════ SHOP09 ════════════════════════════════════════════════
 BAD_TARGETS = ["https://evil.example/x", "//evil.example/x", "/\\evil.example", "\\\\evil.example",
-               "https://www.facette.com.tr@evil.example/", "http://evil.example",
-               "https://evil.example\\@www.facette.com.tr/", "/ok\n//evil", "https:evil.example"]
+               "https://www.atilla.com.tr@evil.example/", "http://evil.example",
+               "https://evil.example\\@www.atilla.com.tr/", "/ok\n//evil", "https:evil.example"]
 # Legacy rows written straight into the DB may hold anything (the create endpoint would have
 # prefixed scheme-less values with "/" — e.g. "javascript:x" became the harmless "/javascript:x").
 BAD_LEGACY = BAD_TARGETS + ["javascript:alert(1)", "data:text/html,x", " //evil.example",
-                            "ftp://www.facette.com.tr/x"]
+                            "ftp://www.atilla.com.tr/x"]
 
 
 async def test_seo_redirect_targets_must_be_same_site(pay_http, pay_env, monkeypatch):
-    monkeypatch.setenv("FRONTEND_PUBLIC_URL", "https://www.facette.com.tr")
+    monkeypatch.setenv("FRONTEND_PUBLIC_URL", "https://www.atilla.com.tr")
     _, shdr = await pay_staff(super_admin=True)
     for i, bad in enumerate(BAD_TARGETS):
         r = await pay_http.post("/api/admin/seo/redirects", json={"from_path": f"/eski-{i}", "to_path": bad},
                                 headers=shdr)
         assert r.status_code == 400, (bad, r.text)
-    for i, good in enumerate(["/yeni-sayfa", "yeni-kategori", "https://www.facette.com.tr/kampanya",
+    for i, good in enumerate(["/yeni-sayfa", "yeni-kategori", "https://www.atilla.com.tr/kampanya",
                               "javascript:alert(1)"]):   # → stored as the relative path "/javascript:alert(1)"
         r = await pay_http.post("/api/admin/seo/redirects", json={"from_path": f"/ok-{i}", "to_path": good},
                                 headers=shdr)
@@ -360,7 +360,7 @@ async def test_seo_redirect_targets_must_be_same_site(pay_http, pay_env, monkeyp
         rr = await pay_http.get("/api/seo/resolve-redirect", params={"path": f"/ok-{i}"})
         assert rr.json()["found"] is True
         to = rr.json()["to"]
-        assert to.startswith("/") and not to.startswith("//") or to.startswith("https://www.facette.com.tr/")
+        assert to.startswith("/") and not to.startswith("//") or to.startswith("https://www.atilla.com.tr/")
     # legacy unsafe rows (written before the check) are kept but never followed
     from routes import deps
     for i, bad in enumerate(BAD_LEGACY):
@@ -375,8 +375,8 @@ async def test_payment_return_url_cannot_redirect_off_site(pay_http, pay_env):
     """3DS return path: whatever return_url the client sends, the browser lands on our own host."""
     from urllib.parse import urlsplit
     from pay_harness import CALLBACK_URL, CARD, mock_3ds_init, pay_card_order
-    for i, bad in enumerate(BAD_TARGETS + ["https://evil.example%5C@www.facette.com.tr/x",
-                                           "https://www.facette.com.tr.evil.example/odeme"]):
+    for i, bad in enumerate(BAD_TARGETS + ["https://evil.example%5C@www.atilla.com.tr/x",
+                                           "https://www.atilla.com.tr.evil.example/odeme"]):
         o = await pay_card_order(pay_http, pid=f"pr{i}")
         pay_env.iyzico.routes.clear()
         mock_3ds_init(pay_env.iyzico)
@@ -391,7 +391,7 @@ async def test_payment_return_url_cannot_redirect_off_site(pay_http, pay_env):
         loc = r.headers["location"]
         assert "\\" not in loc and "\n" not in loc
         host = urlsplit(loc.replace("\\", "/")).hostname
-        assert host == "www.facette.com.tr", (bad, loc)
+        assert host == "www.atilla.com.tr", (bad, loc)
         assert "token" not in loc.lower()
 
 
@@ -400,7 +400,7 @@ async def test_referral_share_url_is_built_server_side(pay_http, pay_env):
     from routes import deps
     await deps.db.settings.update_one({"id": "tenant_config"},
                                       {"$set": {"id": "tenant_config",
-                                                "domains": {"storefront_url": "https://www.facette.com.tr"}}},
+                                                "domains": {"storefront_url": "https://www.atilla.com.tr"}}},
                                       upsert=True)
     try:
         import company
@@ -413,4 +413,4 @@ async def test_referral_share_url_is_built_server_side(pay_http, pay_env):
                                                          "Host": "evil.example"})
     assert r.status_code == 200, r.text
     assert "evil.example" not in r.text
-    assert r.json()["share_url"].startswith("https://www.facette.com.tr/kayit?ref=")
+    assert r.json()["share_url"].startswith("https://www.atilla.com.tr/kayit?ref=")

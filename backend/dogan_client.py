@@ -211,7 +211,7 @@ class DoganClient:
         """Authenticate and get session ID. Raises on failure."""
         try:
             client = _get_cached_client(self.auth_wsdl, self.transport, self.zeep_settings)
-            header = {"SESSION_ID": "", "APPLICATION_NAME": "FACETTE"}
+            header = {"SESSION_ID": "", "APPLICATION_NAME": "ATILLA"}
             result = client.service.Login(
                 REQUEST_HEADER=header,
                 USER_NAME=self.username,
@@ -249,7 +249,7 @@ class DoganClient:
             return
         try:
             client = _get_cached_client(self.auth_wsdl, self.transport, self.zeep_settings)
-            header = {"SESSION_ID": self.session_id, "APPLICATION_NAME": "FACETTE"}
+            header = {"SESSION_ID": self.session_id, "APPLICATION_NAME": "ATILLA"}
             client.service.Logout(REQUEST_HEADER=header)
             self.session_id = None
         except Exception as e:
@@ -268,7 +268,7 @@ class DoganClient:
     def _make_header(self, compressed="N"):
         return {
             "SESSION_ID": self.session_id,
-            "APPLICATION_NAME": "FACETTE",
+            "APPLICATION_NAME": "ATILLA",
             "COMPRESSED": compressed,
         }
 
@@ -1037,7 +1037,7 @@ class DoganClient:
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>1</cbc:PaymentMeansCode>
     <cbc:PaymentDueDate>{issue_date}</cbc:PaymentDueDate>
-    <cbc:InstructionNote>Odeme Tipi : {escape(payment_method)} - Web Adresi : {escape(supplier_website or 'facette.com.tr')}</cbc:InstructionNote>
+    <cbc:InstructionNote>Odeme Tipi : {escape(payment_method)} - Web Adresi : {escape(supplier_website or 'atilla.com.tr')}</cbc:InstructionNote>
   </cac:PaymentMeans>
   {''.join(allowance_charges_xml)}
   <cac:TaxTotal>
@@ -1491,7 +1491,7 @@ class DoganClient:
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode>1</cbc:PaymentMeansCode>
     <cbc:PaymentDueDate>{issue_date}</cbc:PaymentDueDate>
-    <cbc:InstructionNote>Odeme Tipi : {escape(payment_method)} - Web Adresi : {escape(supplier_website or 'facette.com.tr')}</cbc:InstructionNote>
+    <cbc:InstructionNote>Odeme Tipi : {escape(payment_method)} - Web Adresi : {escape(supplier_website or 'atilla.com.tr')}</cbc:InstructionNote>
   </cac:PaymentMeans>
   {''.join(allowance_charges_xml)}
   <cac:TaxTotal>
@@ -1524,7 +1524,7 @@ class DoganClient:
                                 supplier_street: str = "",
                                 supplier_country: str = "Türkiye",
                                 supplier_tax_office: str = "HALKALI VERGİ DAİRESİ BAŞKANLIĞI",
-                                supplier_website: str = "facette.com.tr",
+                                supplier_website: str = "atilla.com.tr",
                                 customer_vkn: str,
                                 customer_name: str,
                                 customer_street: str = "",

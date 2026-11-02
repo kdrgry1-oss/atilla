@@ -1,6 +1,6 @@
 """
 =============================================================================
-newsletter.py — "Facette Kulübü" bülten aboneliği
+newsletter.py — "Atilla Kulübü" bülten aboneliği
 =============================================================================
 Footer üstündeki bülten bloğu ve genel e-posta abonelikleri için basit,
 tekilleştirilmiş kayıt. İzin (İYS/EPOSTA) NetGSM entegratörü üzerinden
@@ -60,7 +60,7 @@ async def subscribe(payload: dict, request: Request):
     if existing:
         # Zaten kayıtlı — başarı döndür; kodu yine göster (mail kaybolmuş olabilir).
         return {"success": True, "already": True, "coupon_code": _cv.get("coupon_code") or None,
-                "message": "Zaten Facette Kulübü üyesisiniz." + _kod_msg}
+                "message": "Zaten Atilla Kulübü üyesisiniz." + _kod_msg}
 
     await db.newsletter_subscribers.insert_one({
         "id": generate_id(),
@@ -95,7 +95,7 @@ async def subscribe(payload: dict, request: Request):
                 {"email": email}, {"$set": {"welcome_sent_at": datetime.now(timezone.utc).isoformat()}})
 
     return {"success": True, "already": False, "coupon_code": _cv.get("coupon_code") or None,
-            "message": "Facette Kulübü'ne hoş geldiniz!" + _kod_msg
+            "message": "Atilla Kulübü'ne hoş geldiniz!" + _kod_msg
                        + (" (e-postana da gönderdik)" if _kod_msg else "")}
 
 

@@ -23,7 +23,7 @@ export const AUTH_CODE_HEADER = "x-auth-code";
 export const SESSION_REVOKED_CODE = "session_revoked";
 
 // Kişisel/işletme verisi taşımayan cihaz tercihleri — silinmez (KVKK çerez izni kaydı).
-export const KEEP_LOCAL_KEYS = ["facette_cookie_consent"];
+export const KEEP_LOCAL_KEYS = ["atilla_cookie_consent"];
 // Capacitor Preferences'ta kalan tek anahtar: rastgele kurulum kimliği (kişisel veri değil).
 export const KEEP_PREF_KEYS = ["device_id"];
 

@@ -4,7 +4,7 @@
  * anahtarını (pay_token) burada saklar ve sipariş sayfalarında X-Order-Token başlığıyla gönderir.
  * Aynı cihazda 14 gün tutulur; en çok son 10 sipariş.
  */
-const STORE = "facette_order_tokens";
+const STORE = "atilla_order_tokens";
 const TTL_MS = 14 * 24 * 3600 * 1000;
 
 function _read() {

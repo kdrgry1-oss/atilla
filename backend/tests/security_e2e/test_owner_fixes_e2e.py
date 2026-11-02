@@ -2,7 +2,7 @@
   * gift-card-only (C2) order sends the admin "Yeni Sipariş" mail exactly once;
   * legacy PLAINTEXT (data_b64) receipts are encrypted before going to the private archive;
   * coupon_redemptions duplicates are cleaned up and the (coupon_id, order_id) unique index created;
-  * _is_site_order treats facette/site/web/empty as site, marketplaces as not.
+  * _is_site_order treats atilla/site/web/empty as site, marketplaces as not.
 """
 import base64
 
@@ -80,7 +80,7 @@ async def test_coupon_redemption_duplicates_cleaned_then_unique_index(pay_env):
 
 async def test_is_site_order_helper():
     from routes.orders import _is_site_order
-    for p in ("facette", "site", "web", "", None):
+    for p in ("atilla", "site", "web", "", None):
         assert _is_site_order({"platform": p}) is True, p
     for p in ("trendyol", "hepsiburada", "amazon", "temu", "n11", "ticimax"):
         assert _is_site_order({"platform": p}) is False, p

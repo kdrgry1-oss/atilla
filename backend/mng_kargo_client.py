@@ -421,7 +421,7 @@ def list_shipments_by_date(*, username: str, password: str, start, end, dates=No
                   _has_trk = any(rows_here[i].get("tracking") for i in range(min(200, len(rows_here))))
                   d.setdefault("by_variant", {})
                   d["by_variant"][_variant_tag] = f"{len(rows_here)} satır, takipNo={'VAR' if _has_trk else 'yok'}, alanlar: " + ",".join(_keys[:24])
-                  # PII'siz istatistik: gönderici çeşitliliği, 'facette' geçen satır, tarih aralığı, takip no'lu satır
+                  # PII'siz istatistik: gönderici çeşitliliği, 'atilla' geçen satır, tarih aralığı, takip no'lu satır
                   try:
                       import unicodedata as _ud2
                       def _nm(x):
@@ -436,7 +436,7 @@ def list_shipments_by_date(*, username: str, password: str, start, end, dates=No
                       d.setdefault("rapor_stats", {})[rv] = {
                           "rows": len(rows_here), "senders_distinct": len(_senders),
                           "senders_top": [f"{k[:3]}***({len(k)}) x{v}" for k, v in _top],
-                          "rows_facette": sum(v for k, v in _senders.items() if "facette" in k),
+                          "rows_atilla": sum(v for k, v in _senders.items() if "atilla" in k),
                           "rows_with_tracking": sum(1 for r in rows_here if r.get("tracking")),
                           "rows_with_name": sum(1 for r in rows_here if r.get("name")),
                           "date_min": _dates[0] if _dates else "", "date_max": _dates[-1] if _dates else "",
@@ -754,7 +754,7 @@ def create_shipment(
     vergi_no: str = "",
     kapida_odeme: int = 0,
     mal_bedeli_odeme: str = "",
-    platform_adi: str = "FACETTE",
+    platform_adi: str = "ATILLA",
     platform_kodu: str = "",
 ) -> Dict:
     """

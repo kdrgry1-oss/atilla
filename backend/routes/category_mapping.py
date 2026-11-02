@@ -956,11 +956,11 @@ async def upload_attribute_cache(
 # ─────────────────────────────────────────────────────────────────────────────
 def _resolve_company_value(attr_name: str, company: dict):
     """Trendyol/MP attribute adindan sirket bilgisini esler.
-    ISIM-ESLEME tek kaynaktan gelir: facette_defaults.company_field_for_attr.
+    ISIM-ESLEME tek kaynaktan gelir: atilla_defaults.company_field_for_attr.
     Deger settings.main.company_info'dan (company_name/email/address)."""
     if not attr_name or not company:
         return None
-    from facette_defaults import company_field_for_attr
+    from atilla_defaults import company_field_for_attr
     field = company_field_for_attr(attr_name)
     if not field:
         return None
@@ -2179,7 +2179,7 @@ async def get_advanced_attributes(
             "default_mappings": mapping.get("default_mappings", {}),
             "value_mappings": mapping.get("value_mappings", {}),
             "hint": ("Amazon productType zorunlu (kırmızı) + opsiyonel alanları. Listeleme için "
-                     "zorunlu alanlar Facette ürün alanlarından otomatik doldurulur; eksikleri "
+                     "zorunlu alanlar Atilla ürün alanlarından otomatik doldurulur; eksikleri "
                      "Amazon aktarım sonucu (issues) gösterir."),
         }
 

@@ -1,5 +1,5 @@
 const EXPLICIT_SELECTOR = [
-  "[data-facette-contact-fab]",
+  "[data-atilla-contact-fab]",
   "[data-testid='whatsapp-fab']",
   "[data-whatsapp-fab]",
   ".whatsapp-float",
@@ -31,12 +31,12 @@ export function findWhatsAppFabs(root = document) {
 }
 
 function restore(node) {
-  if (node.getAttribute("data-facette-wa-suppressed") !== "true") return;
-  const previous = node.getAttribute("data-facette-wa-display");
+  if (node.getAttribute("data-atilla-wa-suppressed") !== "true") return;
+  const previous = node.getAttribute("data-atilla-wa-display");
   if (previous) node.style.display = previous;
   else node.style.removeProperty("display");
-  node.removeAttribute("data-facette-wa-display");
-  node.removeAttribute("data-facette-wa-suppressed");
+  node.removeAttribute("data-atilla-wa-display");
+  node.removeAttribute("data-atilla-wa-suppressed");
   node.removeAttribute("aria-hidden");
 }
 
@@ -48,10 +48,10 @@ export function enforceSingleWhatsAppFab(root = document, preferred = null) {
       restore(node);
       return;
     }
-    if (node.getAttribute("data-facette-wa-suppressed") !== "true") {
-      if (node.style.display) node.setAttribute("data-facette-wa-display", node.style.display);
+    if (node.getAttribute("data-atilla-wa-suppressed") !== "true") {
+      if (node.style.display) node.setAttribute("data-atilla-wa-display", node.style.display);
       node.style.setProperty("display", "none", "important");
-      node.setAttribute("data-facette-wa-suppressed", "true");
+      node.setAttribute("data-atilla-wa-suppressed", "true");
       node.setAttribute("aria-hidden", "true");
     }
   });
@@ -59,5 +59,5 @@ export function enforceSingleWhatsAppFab(root = document, preferred = null) {
 }
 
 export function restoreSuppressedWhatsAppFabs(root = document) {
-  root.querySelectorAll("[data-facette-wa-suppressed='true']").forEach(restore);
+  root.querySelectorAll("[data-atilla-wa-suppressed='true']").forEach(restore);
 }

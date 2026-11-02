@@ -5,10 +5,10 @@ describe("WhatsApp FAB singleton", () => {
 
   test("keeps the preferred global FAB and suppresses later theme duplicates", () => {
     document.body.innerHTML = `
-      <a data-facette-contact-fab href="https://wa.me/905000000000" style="position:fixed"></a>
+      <a data-atilla-contact-fab href="https://wa.me/905000000000" style="position:fixed"></a>
       <a class="whatsapp-float" href="https://api.whatsapp.com/send?phone=905111111111"></a>
       <a href="https://wa.me/?text=share">share link</a>`;
-    const preferred = document.querySelector("[data-facette-contact-fab]");
+    const preferred = document.querySelector("[data-atilla-contact-fab]");
     const result = enforceSingleWhatsAppFab(document, preferred);
     expect(result.total).toBe(2);
     expect(result.suppressed).toBe(1);

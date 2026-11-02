@@ -48,7 +48,7 @@ class SocialSettingsReq(BaseModel):
     google_enabled: bool = False
     google_client_id: Optional[str] = ""       # OAuth Web client ID; secret değildir
     apple_enabled: bool = False
-    apple_client_id: Optional[str] = ""       # Services ID, ör. com.facette.web
+    apple_client_id: Optional[str] = ""       # Services ID, ör. com.atilla.web
     apple_team_id: Optional[str] = ""
     apple_key_id: Optional[str] = ""
     apple_private_key: Optional[str] = ""     # PEM
@@ -219,7 +219,7 @@ async def _upsert_social_user(provider: str, provider_id: str, email: str, name:
     first_name, _, last_name = (name or "").partition(" ")
     new_user = {
         "id": generate_id(),
-        "email": (email or f"{provider}_{provider_id}@facette.com").lower(),
+        "email": (email or f"{provider}_{provider_id}@atilla.com").lower(),
         "first_name": first_name or "",
         "last_name": last_name or "",
         "password": "",  # sosyal girişli

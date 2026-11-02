@@ -63,11 +63,11 @@ async def validate_config(cfg: dict) -> dict:
 async def send_test_email(cfg: dict, to: str, subject: str, html: str,
                           reply_to: str = "", tags: list | None = None) -> dict:
     payload: dict[str, Any] = {
-        "sender": {"name": cfg.get("from_name") or "Facette", "email": cfg.get("from_email")},
+        "sender": {"name": cfg.get("from_name") or "Atilla", "email": cfg.get("from_email")},
         "to": [{"email": to}],
         "subject": subject,
         "htmlContent": html,
-        "tags": list(tags or ["facette-email-marketing-test"]),
+        "tags": list(tags or ["atilla-email-marketing-test"]),
     }
     if reply_to:
         payload["replyTo"] = {"email": reply_to}
@@ -152,12 +152,12 @@ async def create_and_send_campaign(cfg: dict, *, name: str, subject: str,
                                    html: str, tag: str = "") -> dict:
     payload: dict[str, Any] = {
         "name": name,
-        "sender": {"name": cfg.get("from_name") or "Facette", "email": cfg.get("from_email")},
+        "sender": {"name": cfg.get("from_name") or "Atilla", "email": cfg.get("from_email")},
         "subject": subject,
         "htmlContent": html,
         "recipients": {"listIds": [int(cfg["list_id"])]},
         "mirrorActive": True,
-        "tag": tag or "facette-email-marketing",
+        "tag": tag or "atilla-email-marketing",
     }
     if cfg.get("reply_to"):
         payload["replyTo"] = cfg["reply_to"]

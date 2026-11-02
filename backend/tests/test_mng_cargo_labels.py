@@ -17,7 +17,7 @@ import re
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@facette.com"
+ADMIN_EMAIL = "admin@atilla.com"
 ADMIN_PASSWORD = "admin123"
 
 # Existing order ID for testing
@@ -125,7 +125,7 @@ class TestCargoLabelEndpoint:
         
         # Check for sender section
         assert "Gönderici Bilgileri" in html_content, "Should have 'Gönderici Bilgileri' section"
-        assert "FACETTE" in html_content, "Should contain FACETTE company name"
+        assert "ATILLA" in html_content, "Should contain ATILLA company name"
         print("PASS: Cargo label has sender information")
     
     def test_cargo_label_has_receiver_info(self, auth_headers):

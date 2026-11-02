@@ -1,4 +1,4 @@
-/* FACETTE storefront design system. Deliberately scoped: admin UI is untouched. */
+/* ATILLA storefront design system. Deliberately scoped: admin UI is untouched. */
 .storefront-shell {
   --sf-ink: #11100f;
   --sf-ink-soft: #383532;
@@ -76,7 +76,7 @@
   opacity: 0.48;
 }
 
-.storefront-shell [data-facette-contact-fab="true"] {
+.storefront-shell [data-atilla-contact-fab="true"] {
   display: flex !important;
 }
 

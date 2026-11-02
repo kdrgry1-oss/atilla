@@ -1,12 +1,12 @@
-# Facette Müşteri Mobil Uygulaması — Adım Adım Kurulum & Yayınlama
+# Atilla Müşteri Mobil Uygulaması — Adım Adım Kurulum & Yayınlama
 
 Bu rehber, **müşteriye görünen tüm storefront'u** (anasayfa, kategoriler, ürün detay, sepet,
 iyzico ödemesi, hesabım, siparişler, iade, sipariş takip, arama…) **iOS + Android** native
 uygulaması olarak App Store ve Google Play'e çıkarmanı sağlar.
 
 > **Mimari:** Ayrı bir kod yazmıyoruz. Uygulama, mevcut React storefront'un **customer** build'ini
-> Capacitor kabuğuyla sarar. Admin native uygulaması (`tr.com.facette.admin`) hiç etkilenmez;
-> müşteri app ayrı bir kimliktir (`tr.com.facette.app`).
+> Capacitor kabuğuyla sarar. Admin native uygulaması (`tr.com.atilla.admin`) hiç etkilenmez;
+> müşteri app ayrı bir kimliktir (`tr.com.atilla.app`).
 
 ---
 
@@ -58,14 +58,14 @@ Bu adımdan sonra `mobile-customer/ios` ve `mobile-customer/android` klasörleri
 ## 2) Uygulama kimliği & sürüm
 
 - **iOS (Xcode):** `mobile-customer/ios/App/App.xcodeproj` → hedef **App** → *General*:
-  - Bundle Identifier: `tr.com.facette.app`
-  - Display Name: `Facette`
+  - Bundle Identifier: `tr.com.atilla.app`
+  - Display Name: `Atilla`
   - Version: `1.0.0`, Build: `1`
   - *Signing & Capabilities* → Team: Apple Developer hesabın; "Automatically manage signing" açık.
   - *Signing & Capabilities* → **+ Capability → Push Notifications** ekle.
   - *+ Capability → Background Modes* → "Remote notifications" işaretle.
 - **Android (Android Studio):** `mobile-customer/android` aç.
-  - `android/app/build.gradle` → `applicationId "tr.com.facette.app"`, `versionCode 1`, `versionName "1.0.0"`.
+  - `android/app/build.gradle` → `applicationId "tr.com.atilla.app"`, `versionCode 1`, `versionName "1.0.0"`.
 
 Her yeni yüklemede **Build/versionCode'u artır** (Apple ve Google aynı numarayı reddeder).
 
@@ -92,9 +92,9 @@ Kod tarafı **hazır**: kullanıcı giriş yapınca cihaz `/api/app/devices/regi
 Eksik olan sadece Firebase yapılandırması:
 
 1. [Firebase Console](https://console.firebase.google.com) → yeni proje (veya mevcut).
-2. **Android app** ekle → paket adı `tr.com.facette.app` → `google-services.json` indir →
+2. **Android app** ekle → paket adı `tr.com.atilla.app` → `google-services.json` indir →
    `mobile-customer/android/app/google-services.json` içine koy.
-3. **iOS app** ekle → bundle `tr.com.facette.app` → `GoogleService-Info.plist` indir →
+3. **iOS app** ekle → bundle `tr.com.atilla.app` → `GoogleService-Info.plist` indir →
    Xcode'da `App` hedefine sürükle.
 4. iOS için **APNs Auth Key** (.p8) oluştur (Apple Developer → Keys) → Firebase → Project
    Settings → Cloud Messaging → Apple app → APNs key yükle.
@@ -129,10 +129,10 @@ Xcode'da:
 2. **Product → Archive**.
 3. Archive bitince **Distribute App → App Store Connect → Upload**.
 4. [App Store Connect](https://appstoreconnect.apple.com) → **+ Yeni App** → bundle
-   `tr.com.facette.app` → adı "Facette".
+   `tr.com.atilla.app` → adı "Atilla".
 5. **TestFlight**'ta önce kendin test et (build işlenmesi ~15 dk).
 6. App bilgileri: ekran görüntüleri (6.7" ve 5.5" zorunlu), açıklama, kategori (Shopping),
-   gizlilik politikası URL'i (facette.com.tr/gizlilik), yaş sınırı.
+   gizlilik politikası URL'i (atilla.com.tr/gizlilik), yaş sınırı.
 7. **Submit for Review.**
 
 > **Apple 4.2 (minimum işlevsellik) uyarısı:** Apple, "sadece web sitesini saran" uygulamaları
@@ -188,7 +188,7 @@ kritik bir güncellemeyi zorunlu kılabilirsin.
 ## 9) Sık karşılaşılan sorunlar
 
 - **Beyaz ekranda kalıyor:** `frontend`'i `build:customer` ile derlemeyi unuttun; `cap sync`
-  yeniden çalıştır. `REACT_APP_BACKEND_URL` build sırasında `https://api.facette.com.tr` olmalı.
+  yeniden çalıştır. `REACT_APP_BACKEND_URL` build sırasında `https://api.atilla.com.tr` olmalı.
 - **API'ye bağlanmıyor:** cleartext kapalı (https zorunlu) — backend'in canlı https olduğundan emin ol.
 - **Geri tuşu app'i kapatıyor (Android):** düzeltildi (`setupBackButton`) — kökte değilsen SPA'da geri gider.
 - **Çentik/status bar üst üste biniyor:** config'te `overlaysWebView:false`. Yine olursa

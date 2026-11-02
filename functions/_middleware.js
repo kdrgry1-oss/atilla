@@ -1,5 +1,5 @@
 /**
- * FACETTE — Edge SEO Middleware  (Cloudflare Pages Function)
+ * ATILLA — Edge SEO Middleware  (Cloudflare Pages Function)
  * ----------------------------------------------------------------------------
  * AMAÇ:
  *   Ürün (/urun/<slug>) ve kategori (/kategori/<slug>) sayfalarında BOT'a
@@ -17,10 +17,10 @@
  */
 
 const CONFIG = {
-  API: "https://api.facette.com.tr/api",
-  ORIGIN: "https://facette.com.tr",
-  SITE_NAME: "FACETTE",
-  DEFAULT_IMAGE: "https://facette.com.tr/og-image.jpg",
+  API: "https://api.atilla.com.tr/api",
+  ORIGIN: "https://atilla.com.tr",
+  SITE_NAME: "ATILLA",
+  DEFAULT_IMAGE: "https://atilla.com.tr/og-image.jpg",
   PRODUCT_PREFIX: "/urun/",
   CATEGORY_PREFIX: "/kategori/",
 };
@@ -170,7 +170,7 @@ async function categorySeo(slug, canonical) {
     title: name + " | " + CONFIG.SITE_NAME,
     description:
       name +
-      " kategorisinde yeni sezon FACETTE parçaları. Hızlı kargo, güvenli ödeme, kolay iade.",
+      " kategorisinde yeni sezon ATILLA parçaları. Hızlı kargo, güvenli ödeme, kolay iade.",
     canonical,
     image,
     type: "website",

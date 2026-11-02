@@ -668,7 +668,7 @@ def _sistem_mesaji() -> str:
     n = _tr_simdi()
     bu_ay = n.date().replace(day=1)
     gecen_ay_son = bu_ay - timedelta(days=1)
-    return f"""Sen FACETTE'in rapor asistanısın. Yöneticinin satış/sipariş/iade/iptal/ürün/stok
+    return f"""Sen ATILLA'nın rapor asistanısın. Yöneticinin satış/sipariş/iade/iptal/ürün/stok
 sorularını, sistemin KENDİ rapor araçlarını çağırarak Türkçe cevaplarsın.
 
 Şu an (Türkiye saati): {n.strftime('%d.%m.%Y %H:%M, %A')}.

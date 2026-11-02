@@ -1,4 +1,4 @@
-# Codemagic — Facette iOS (App Store) bulut derleme tarifi.
+# Codemagic — Atilla iOS (App Store) bulut derleme tarifi.
 # Yerel Xcode/Mac GEREKMEZ: Codemagic bulut Mac'te güncel Xcode ile derler ve
 # doğrudan TestFlight'a yükler.
 #
@@ -7,13 +7,13 @@
 #      (App Store Connect'ten indirdiğin .p8 + Key ID + Issuer ID).
 #      Bu entegrasyona verdiğin İSİM aşağıdaki `app_store_connect: CodemagicKey`
 #      ile AYNI olmalı.
-#   2) App Store Connect'teki uygulamanın (Facette Admin) Bundle ID'si `tr.com.facette.admin`
+#   2) App Store Connect'teki uygulamanın (Atilla Admin) Bundle ID'si `tr.com.atilla.admin`
 #      olmalı (farklıysa aşağıdaki bundle_identifier'ı ona göre değiştir).
-# NOT: Canlı backend adresi (api.facette.com.tr) yaml'a GÖMÜLÜ (gizli değil) — env var GEREKMEZ.
+# NOT: Canlı backend adresi (api.atilla.com.tr) yaml'a GÖMÜLÜ (gizli değil) — env var GEREKMEZ.
 
 workflows:
-  ios-facette:
-    name: Facette iOS (App Store)
+  ios-atilla:
+    name: Atilla iOS (App Store)
     instance_type: mac_mini_m2
     max_build_duration: 90
     integrations:
@@ -22,7 +22,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "App.xcworkspace"
         XCODE_SCHEME: "App"
-        BUNDLE_ID: "tr.com.facette.admin"
+        BUNDLE_ID: "tr.com.atilla.admin"
       node: 20
       xcode: latest
       cocoapods: default
@@ -36,8 +36,8 @@ workflows:
           # paketine koyabiliyordu. yarn.lock güncellemesi yalnız gözden geçirilmiş commit ile gelir.
           yarn install --frozen-lockfile --non-interactive
           # Canlı API adresi (Cloudflare'dekiyle aynı) — doğrudan gömülü, env var gerekmez.
-          echo "REACT_APP_BACKEND_URL=https://api.facette.com.tr" > .env
-          # Bu iOS uygulaması YÖNETİM PANELİDİR (bundle tr.com.facette.admin): açılışta /admin.
+          echo "REACT_APP_BACKEND_URL=https://api.atilla.com.tr" > .env
+          # Bu iOS uygulaması YÖNETİM PANELİDİR (bundle tr.com.atilla.admin): açılışta /admin.
           # Eksikse varsayılan "customer" hedefi vitrini açıyordu (lib/native.js appTarget).
           echo "REACT_APP_APP_TARGET=admin" >> .env
           # Yayın kapısıyla aynı: uyarılar hata sayılır (Cloudflare Pages da CI=true derler).
@@ -91,7 +91,7 @@ workflows:
           keychain add-certificates
 
           # 2) Hesaptaki TÜM bundle id'leri listele (platform filtresi OLMADAN) ve
-          #    tr.com.facette.admin'un resource id'sini çöz. fetch-signing-files'ın
+          #    tr.com.atilla.admin'un resource id'sini çöz. fetch-signing-files'ın
           #    platform=IOS filtresi mevcut (universal) bundle'ı göremiyordu.
           app-store-connect bundle-ids list --json > /tmp/bids.json 2>/dev/null || app-store-connect list-bundle-ids --json > /tmp/bids.json 2>/dev/null || echo "[]" > /tmp/bids.json
           echo "=== HESAPTAKI BUNDLE ID'LER (identifier | platform | resourceId) ==="

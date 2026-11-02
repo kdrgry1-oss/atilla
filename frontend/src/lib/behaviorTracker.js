@@ -1,14 +1,14 @@
 /**
  * Birinci taraf davranış izleyici (Hotjar/Clarity benzeri) — ısı haritası, kaydırma, süre, görüntüleme.
  *
- * GİZLİLİK: YALNIZ çerez onayında "analitik" izni verilmişse gönderir (facette_cookie_consent.analytics).
+ * GİZLİLİK: YALNIZ çerez onayında "analitik" izni verilmişse gönderir (atilla_cookie_consent.analytics).
  * Kişisel veri yok: rastgele sekme-oturum kimliği (sessionStorage), göreli tıklama konumu, öğe etiketi,
  * form alanı içeriği ASLA alınmaz. Panel (/admin), panel önizleme iframe'i ve personel oturumu izlenmez.
  */
 import { isStaffToken } from "./staffDataWipe";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const CONSENT_KEY = "facette_cookie_consent";
+const CONSENT_KEY = "atilla_cookie_consent";
 const FLUSH_MS = 10000;
 const MAX_QUEUE = 40;
 

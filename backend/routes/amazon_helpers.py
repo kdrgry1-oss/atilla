@@ -169,7 +169,7 @@ def build_amazon_seller_sku(variant: dict, product: dict, color: str = "") -> st
 
 
 def pick_existing_amazon_sku(rows: list[dict], generated_sku: str) -> dict | None:
-    """Ayni Facette varyantina ait Amazon SKU kayitlarindan korunacak olani sec.
+    """Ayni Atilla varyantina ait Amazon SKU kayitlarindan korunacak olani sec.
 
     Eski kurulumlarda renk buyuk/kucuk harfi veya farkli bir SKU kalibi kullanilmis
     olabilir. EAN'i Amazon'da zaten bir ASIN'e baglanmis bu SKU'yu yeni bir SKU ile

@@ -280,7 +280,7 @@ async def _spapi_get(path: str, params: dict = None) -> dict:
 
 
 # ============================== SİPARİŞ İÇE-AKTARIM (panele düşürme) ==============================
-# NOT: Bu yol Amazon siparişlerini Facette paneline (db.orders) YAZAR — Trendyol/Hepsiburada
+# NOT: Bu yol Amazon siparişlerini Atilla paneline (db.orders) YAZAR — Trendyol/Hepsiburada
 # ile AYNI pazaryeri deseni. Pazaryeri siparişi ZATEN ödemeyi almış DIŞ sipariştir; panele
 # payment_method="marketplace", payment_status="paid", status="confirmed" (Amazon işlem
 # durumuna göre) düşer. Müşteri-yönlü iyzico ödeme akışı (CLAUDE.md değişmezleri) bundan
@@ -292,7 +292,7 @@ from .marketplace_order_mapping import amazon_internal_status
 
 
 def _amz_status_of(status_raw: str) -> str:
-    """Amazon OrderStatus -> Facette operasyonel durumu.
+    """Amazon OrderStatus -> Atilla operasyonel durumu.
     Yalnız açık allowlist satış sayılır; bekleyen/bilinmeyen durumlar pending kalır.
     (Amazon Orders API 'Delivered' döndürmez; teslim ayrı izlenir.)"""
     return amazon_internal_status(status_raw)[0]
@@ -370,7 +370,7 @@ async def _fetch_amazon_order_items(order_id: str) -> list:
 
 
 def _amz_addr(node: dict, fallback_name: str, email: str) -> dict:
-    """Amazon ShippingAddress -> Facette adres bloğu. Ad 'Name' tek alandır → ilk/soyad ayrılır."""
+    """Amazon ShippingAddress -> Atilla adres bloğu. Ad 'Name' tek alandır → ilk/soyad ayrılır."""
     node = node or {}
     full_name = (node.get("Name") or fallback_name or "").strip()
     # SON kelime = soyad, öncekiler = ad ("Mehmet Ali Kaya" → ad="Mehmet Ali", soyad="Kaya").
@@ -397,7 +397,7 @@ def _amz_addr(node: dict, fallback_name: str, email: str) -> dict:
 
 
 def map_amazon_order(o: dict, items: list) -> dict:
-    """Amazon Orders API sipariş + kalemlerini Facette db.orders şemasına eşler
+    """Amazon Orders API sipariş + kalemlerini Atilla db.orders şemasına eşler
     (map_trendyol_order deseniyle hizalı)."""
     from datetime import datetime, timezone
     order_id = o.get("AmazonOrderId")
@@ -428,7 +428,7 @@ def map_amazon_order(o: dict, items: list) -> dict:
             "price": unit,
             "size": "",
             "color": "",
-            "barcode": sku,   # Facette stok eşlemesi variants.barcode ile yapılır
+            "barcode": sku,   # Atilla stok eşlemesi variants.barcode ile yapılır
             "sku": sku,
             "asin": it.get("ASIN", "") or "",
             "currency": (it.get("ItemPrice") or {}).get("CurrencyCode") or "TRY",
@@ -490,7 +490,7 @@ def map_amazon_order(o: dict, items: list) -> dict:
 async def _amazon_barcodes_for_asin(asin: str) -> list:
     """ASIN → ürünün harici barkodları (EAN/UPC/GTIN) — Catalog Items API 2022-04-01.
     Amazon'a MANUEL listelenen ürünlerde SellerSKU keyfi olabilir; ama listelemede verilen
-    harici ürün barkodu (EAN/UPC) Facette variants.barcode ile eşleşir. Sonuç ASIN bazında
+    harici ürün barkodu (EAN/UPC) Atilla variants.barcode ile eşleşir. Sonuç ASIN bazında
     cache'lenir (amazon_asin_cache) — tekrar çağrı yapılmaz."""
     asin = (asin or "").strip()
     if not asin:
@@ -525,20 +525,20 @@ async def _amazon_barcodes_for_asin(asin: str) -> list:
 
 
 async def _amazon_enrich_items(order_data: dict) -> dict:
-    """Amazon sipariş kalemlerini Facette ürünleriyle eşler. SIRA:
-    1) SellerSKU (barcode/sku/product_id alanlarında) → Facette kod eşleşmesi (stok_kodu/barkod).
-    2) Eşleşmezse ASIN → harici barkod (EAN/UPC, Catalog Items) → Facette variants.barcode.
-    Eşleşen kalemde: görsel + gerçek product_id + Facette barkodu (stok düşümü için) + beden/renk.
+    """Amazon sipariş kalemlerini Atilla ürünleriyle eşler. SIRA:
+    1) SellerSKU (barcode/sku/product_id alanlarında) → Atilla kod eşleşmesi (stok_kodu/barkod).
+    2) Eşleşmezse ASIN → harici barkod (EAN/UPC, Catalog Items) → Atilla variants.barcode.
+    Eşleşen kalemde: görsel + gerçek product_id + Atilla barkodu (stok düşümü için) + beden/renk.
     Eşleşmeyen kalem 'matched:False' kalır (stok düşmez, log'da görünür)."""
-    from .integrations_common import _facette_match_for_codes, _facette_product_image
+    from .integrations_common import _atilla_match_for_codes, _atilla_product_image
     for it in (order_data.get("items") or []):
         codes = [it.get("barcode"), it.get("sku"), it.get("product_id")]
-        m = await _facette_match_for_codes([c for c in codes if c])
+        m = await _atilla_match_for_codes([c for c in codes if c])
         if not m and it.get("asin"):
             bcs = await _amazon_barcodes_for_asin(it.get("asin"))
             if bcs:
                 it["amazon_barcodes"] = bcs
-                m = await _facette_match_for_codes(bcs)
+                m = await _atilla_match_for_codes(bcs)
         if not m:
             it["matched"] = False
             continue
@@ -554,10 +554,10 @@ async def _amazon_enrich_items(order_data: dict) -> dict:
                 break
         it["marketplace_sku"] = it.get("sku") or it.get("product_id")
         it["product_id"] = prod.get("id")
-        it["facette_product_id"] = prod.get("id")
+        it["atilla_product_id"] = prod.get("id")
         # KRİTİK: stok düşümü variants.barcode ile yapılır → eşleşen gerçek barkodu yaz.
         it["barcode"] = vbar or prod.get("barcode") or matched_code or it.get("barcode")
-        img = _facette_product_image(prod)
+        img = _atilla_product_image(prod)
         if img:
             it["image"] = img
         if prod.get("name"):
@@ -612,7 +612,7 @@ async def _amazon_push_stock_price(sku: str, quantity: int, price=None, currency
 
 
 # ============================== ÜRÜN LİSTELEME (Amazon'a aktarma) ==============================
-# Amazon'da "kategori" yerine PRODUCT TYPE vardır (Product Type Definitions API). Facette
+# Amazon'da "kategori" yerine PRODUCT TYPE vardır (Product Type Definitions API). Atilla
 # kategorisi → Amazon productType eşlemesi category_mappings (marketplace="amazon-tr") içinde
 # default_mappings.product_type olarak saklanır. Listeleme: Listings Items 2021-08-01 PUT.
 # ALLOW_WRITE=0 iken dry-run (would_send) — canlı yazma AMAZON_ALLOW_WRITE=1 ile.
@@ -760,18 +760,18 @@ async def _amazon_product_type_schema(product_type: str) -> dict:
 
 def _amazon_image_url(u: str) -> str:
     """Amazon WebP KABUL ETMEZ (yalnız JPEG/PNG/TIFF/GIF). Ürün görsellerimiz R2'de
-    WebP → Amazon sessizce düşürüyordu. cdn.facette.com.tr veya .webp uzantılı görselleri
+    WebP → Amazon sessizce düşürüyordu. cdn.atilla.com.tr veya .webp uzantılı görselleri
     backend JPEG proxy'sine (/api/upload/to-jpeg) yönlendir; zaten JPEG/PNG olanlar kalır."""
     try:
         from urllib.parse import urlparse, quote
         pu = urlparse(u)
         host = pu.hostname or ""
         is_webp = pu.path.lower().endswith(".webp")
-        if host == "cdn.facette.com.tr" or is_webp:
+        if host == "cdn.atilla.com.tr" or is_webp:
             # Amazon ERROR 20015 ("dosya türü desteklenmiyor"): uzantısız ?src= URL'i reddediliyordu →
             # .jpg UZANTILI proxy yolu (/api/upload/jpeg/<b64>.jpg). İçerik yine JPEG'e çevrilir.
             import base64
-            base = _public_base() or "https://api.facette.com.tr"
+            base = _public_base() or "https://api.atilla.com.tr"
             tok = base64.urlsafe_b64encode(u.encode("utf-8")).decode("ascii").rstrip("=")
             return f"{base}/api/upload/jpeg/{tok}.jpg"
     except Exception:
@@ -1030,7 +1030,7 @@ def _amz_closure_of(text: str) -> str:
     return "Kapamasız"
 
 
-# Facette ürün alanından OTOMATİK dolan attribute'lar — kullanıcı default'u bunları EZMEZ.
+# Atilla ürün alanından OTOMATİK dolan attribute'lar — kullanıcı default'u bunları EZMEZ.
 _AMZ_AUTO_FILLED = {"item_name", "brand", "product_description", "bullet_point",
                     "main_product_image_locator", "purchasable_offer", "fulfillment_availability",
                     "condition_type", "externally_assigned_product_identifier", "size", "color"}
@@ -1071,7 +1071,7 @@ def _amz_collect_local_values(product: dict, variant: dict) -> dict:
 def _amazon_listing_attributes(product, variant, product_type, mp, price, qty, brand_default,
                                default_attrs: dict = None, attr_mappings: list = None,
                                list_price: float = None) -> dict:
-    """Facette ürün+varyant → Amazon Listings attribute'ları (giyim odaklı ortak set).
+    """Atilla ürün+varyant → Amazon Listings attribute'ları (giyim odaklı ortak set).
     Eksik/zorunlu alanları Amazon PUT yanıtındaki issues[] söyler → çağıran gösterir."""
     name = (product.get("name") or "").strip()
     desc = clean_amazon_text(product.get("description") or name)
@@ -1082,7 +1082,7 @@ def _amazon_listing_attributes(product, variant, product_type, mp, price, qty, b
     if barcode.isdigit() and len(barcode) == 12 and barcode[:3] in ("868", "869"):
         _cs = sum(int(c) * (3 if i % 2 else 1) for i, c in enumerate(barcode))
         barcode = barcode + str((10 - _cs % 10) % 10)
-    brand = (product.get("brand") or brand_default or "").strip() or "Facette"
+    brand = (product.get("brand") or brand_default or "").strip() or "Atilla"
     bullets = []
     for b in (product.get("features") or product.get("bullet_points") or []):
         if isinstance(b, str) and b.strip():
@@ -1128,7 +1128,7 @@ def _amazon_listing_attributes(product, variant, product_type, mp, price, qty, b
     _clr = _amazon_color_of(product, variant)
     if _clr:
         attrs["color"] = [{"value": _clr, "language_tag": "tr_TR", "marketplace_id": mp}]
-    # Site-alanı eşleştirmeleri (attribute_mappings): kullanıcı bir Amazon alanını Facette
+    # Site-alanı eşleştirmeleri (attribute_mappings): kullanıcı bir Amazon alanını Atilla
     # özelliğine eşlediyse, ürünün o özellik DEĞERİNİ gönder (varsayılandan ÖNCE gelir).
     if attr_mappings:
         _locals = _amz_collect_local_values(product, variant)
@@ -1396,7 +1396,7 @@ async def _amazon_put_listing(seller: str, mp: str, pt: str, sku: str, attrs: di
 
 
 async def sync_products_to_amazon(payload: dict, current_user: dict) -> dict:
-    """Facette ürünlerini Amazon'a LİSTELER (Listings Items PUT). payload:
+    """Atilla ürünlerini Amazon'a LİSTELER (Listings Items PUT). payload:
       { barcodes?, stock_codes?, product_ids?, default_product_type?, limit? }
     Güvenlik: filtre VERİLMEDEN tüm katalog listelenmez (kaza önleme) — limit zorunlu değilse
     yalnız filtreli çalışır. ALLOW_WRITE=0 iken dry-run (Amazon'a gitmez, would_send + attribute
@@ -1436,7 +1436,7 @@ async def sync_products_to_amazon(payload: dict, current_user: dict) -> dict:
         ]
         products = await _amz_drop_inactive_copies(products)
 
-    # Amazon'da daha once baska bir SKU kalibiyla acilmis fakat EAN ile ayni Facette
+    # Amazon'da daha once baska bir SKU kalibiyla acilmis fakat EAN ile ayni Atilla
     # varyantina eslenmis kaydi koru. Yeni SKU uretmek ayni EAN icin ikinci teklif ve
     # ikinci varyant ailesi olusturup 8541/13013 hatalarina yol aciyordu.
     _mapped_rows = {}
@@ -1462,7 +1462,7 @@ async def sync_products_to_amazon(payload: dict, current_user: dict) -> dict:
         return bool(pick_existing_amazon_sku(_mapped_rows.get(key) or [], generated))
 
     # Aynı EAN ile Amazon kataloğunda zaten var olan SKU'larda model_name zorunlu;
-    # fakat Facette adıyla tekrar yazılırsa 8541 katalog çakışması oluşur. Listings API
+    # fakat Atilla adıyla tekrar yazılırsa 8541 katalog çakışması oluşur. Listings API
     # kaydındaki gerçek katalog değerini alıp yalnız bu alanda koruyoruz. Okuma başarısız
     # olursa yeni ürün model adını bırakmak, alanı boş göndermekten güvenlidir.
     _catalog_model_cache: dict[str, str] = {}
@@ -1929,9 +1929,9 @@ async def spapi_pull_orders_now(
 async def spapi_diagnose_order(order_number: str, current_user: dict = Depends(require_permission("integrations.view", any_in_area=True))):
     """TEŞHİS — tek Amazon siparişini uçtan uca açar: (1) config bayrakları, (2) panelde kayıtlı
     sipariş (isim/kalem/eşleşme/resim), (3) Amazon'un DÖNDÜRDÜĞÜ ham isim + SellerSKU/ASIN,
-    (4) her SellerSKU için Facette ürün eşleşme denemesi (neden resim/stok gelmiyor GÖRÜLÜR).
+    (4) her SellerSKU için Atilla ürün eşleşme denemesi (neden resim/stok gelmiyor GÖRÜLÜR).
     'Trendyol'da nasıl oluyorsa' problemini kesin teşhis için."""
-    from .integrations_common import _facette_match_for_codes, _facette_product_image
+    from .integrations_common import _atilla_match_for_codes, _atilla_product_image
 
     out = {
         "order_number": order_number,
@@ -1989,18 +1989,18 @@ async def spapi_diagnose_order(order_number: str, current_user: dict = Depends(r
                 "QuantityOrdered": it.get("QuantityOrdered"),
             } for it in (items or [])],
         }
-        # Her SellerSKU için Facette eşleşme denemesi (import ile AYNI aday kodlar)
+        # Her SellerSKU için Atilla eşleşme denemesi (import ile AYNI aday kodlar)
         match_report = []
         for it in (items or []):
             sku = it.get("SellerSKU") or ""
             asin = it.get("ASIN") or ""
-            m = await _facette_match_for_codes([sku])
+            m = await _atilla_match_for_codes([sku])
             via = "sku"
             asin_barcodes = []
             if not m and asin:
                 asin_barcodes = await _amazon_barcodes_for_asin(asin)
                 if asin_barcodes:
-                    m = await _facette_match_for_codes(asin_barcodes)
+                    m = await _atilla_match_for_codes(asin_barcodes)
                     if m:
                         via = "asin_barcode"
             if m:
@@ -2009,12 +2009,12 @@ async def spapi_diagnose_order(order_number: str, current_user: dict = Depends(r
                     "SellerSKU": sku, "ASIN": asin, "matched": True,
                     "matched_via": via, "method": how, "matched_code": code,
                     "asin_barcodes": asin_barcodes,
-                    "facette_product_id": prod.get("id"),
-                    "facette_name": prod.get("name"),
-                    "has_image": bool(_facette_product_image(prod)),
+                    "atilla_product_id": prod.get("id"),
+                    "atilla_name": prod.get("name"),
+                    "has_image": bool(_atilla_product_image(prod)),
                 })
             else:
-                # Eşleşmedi → Facette'te bu koda benzer ne var? (ilk 3 örnek barkod/stok_kodu)
+                # Eşleşmedi → Atilla'da bu koda benzer ne var? (ilk 3 örnek barkod/stok_kodu)
                 sample = []
                 async for p in db.products.find(
                     {"is_active": True}, {"_id": 0, "name": 1, "variants.barcode": 1, "variants.stock_code": 1}
@@ -2024,9 +2024,9 @@ async def spapi_diagnose_order(order_number: str, current_user: dict = Depends(r
                 match_report.append({
                     "SellerSKU": sku, "ASIN": asin, "matched": False,
                     "asin_barcodes": asin_barcodes,
-                    "hint": ("Ne SellerSKU ne de ASIN barkodu (EAN/UPC) Facette variants.barcode/"
+                    "hint": ("Ne SellerSKU ne de ASIN barkodu (EAN/UPC) Atilla variants.barcode/"
                              "stock_code ile eşleşti. asin_barcodes boşsa Amazon katalogda barkod yok."),
-                    "facette_ornek_kodlar": sample[:4],
+                    "atilla_ornek_kodlar": sample[:4],
                 })
         out["match_report"] = match_report
     except Exception as e:
@@ -2169,7 +2169,7 @@ async def spapi_product_type_schema(product_type: str, current_user: dict = Depe
 @router.post("/products/sync")
 async def spapi_products_sync(payload: dict = Body(default={}),
                               current_user: dict = Depends(require_permission("integrations.amazon"))):
-    """Facette ürünlerini Amazon'a listeler (dry-run/canlı — AMAZON_ALLOW_WRITE)."""
+    """Atilla ürünlerini Amazon'a listeler (dry-run/canlı — AMAZON_ALLOW_WRITE)."""
     return await sync_products_to_amazon(payload or {}, current_user)
 
 
@@ -2314,7 +2314,7 @@ async def amazon_listing_report(product_id: str = Query(None), barcode: str = Qu
             out["image_fetch_check"].append(row)
         if any((r.get("amazonbot") or {}).get("status") == 403 for r in out["image_fetch_check"]):
             out["notes"].append("GÖRSEL ENGELİ: Amazon'un görsel botu görsel URL'lerinden 403 alıyor (Cloudflare bot kuralı). "
-                                "Cloudflare → Security → WAF'ta cdn.facette.com.tr ve api.facette.com.tr/api/upload/to-jpeg için "
+                                "Cloudflare → Security → WAF'ta cdn.atilla.com.tr ve api.atilla.com.tr/api/upload/to-jpeg için "
                                 "'Skip' kuralı (User-Agent contains 'Amazon') gerekir; aksi halde görseller aktarılmaz.")
     # ── Her SKU için canlı listeleme ──
     seen = set()

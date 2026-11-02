@@ -115,7 +115,7 @@ def _unsub_token(email: str) -> str:
     try:
         from .deps import JWT_SECRET as _sec
     except Exception:
-        _sec = "facette"
+        _sec = "atilla"
     return "u" + hmac.new(str(_sec).encode(), (email or "").strip().lower().encode(), hashlib.sha256).hexdigest()[:28]
 
 
@@ -254,7 +254,7 @@ async def _site_base() -> str:
             return url
     except Exception:
         pass
-    return (os.environ.get("SITE_URL") or "https://facette.com.tr").rstrip("/")
+    return (os.environ.get("SITE_URL") or "https://atilla.com.tr").rstrip("/")
 
 
 # ── Sağlayıcı ayarları ──────────────────────────────────────────────────────
@@ -412,7 +412,7 @@ async def send_test(payload: dict, current_user: dict = Depends(require_permissi
             subject = _subject
         html = _wrap(subject, _body, unsub_url="")
     else:
-        subject = f"Facette — {provider.upper()} Test"
+        subject = f"Atilla — {provider.upper()} Test"
         html = _wrap(subject, f"<p>Bu bir <b>{provider.upper()}</b> test e-postasıdır. Bu mail size ulaştıysa pazarlama kanalı çalışıyor. 🎉</p>", unsub_url="")
     if provider == "brevo":
         r = await send_brevo_test(cfg, to, subject, html, cfg.get("reply_to") or "")
@@ -495,21 +495,21 @@ def _inject_unsub_into_full(html: str, unsub_html: str) -> str:
 
 
 def _wrap(subject: str, body_html: str, unsub_url: str) -> str:
-    """Kampanya HTML'ini FACETTE marka kabuğuna sarar (işlemsel maillerle aynı görünüm) +
+    """Kampanya HTML'ini ATILLA marka kabuğuna sarar (işlemsel maillerle aynı görünüm) +
     abonelikten-çık satırı ekler (İYS/KVKK gereği ticari e-postada zorunlu).
 
-    ÇİFT-FACETTE FİKSİ: İçerik TAM BİR HTML BELGESİ ise (kullanıcı kendi FACETTE logo/footer'ı
-    olan komple sayfayı yapıştırmış) panel kabuğu (render_email = ikinci FACETTE header+footer)
+    ÇİFT-ATILLA FİKSİ: İçerik TAM BİR HTML BELGESİ ise (kullanıcı kendi ATILLA logo/footer'ı
+    olan komple sayfayı yapıştırmış) panel kabuğu (render_email = ikinci ATILLA header+footer)
     EKLENMEZ; HTML olduğu gibi gönderilir, YALNIZ abonelikten-çık satırı </body> öncesine enjekte
-    edilir. İç-gövde/parça ise eski davranış: render_email ile FACETTE kabuğuna sarılır."""
+    edilir. İç-gövde/parça ise eski davranış: render_email ile ATILLA kabuğuna sarılır."""
     unsub = ""
     if unsub_url:
         unsub = (f'<p style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:24px">'
-                 f'Bu e-postayı Facette Kulübü üyesi olduğunuz için aldınız. '
+                 f'Bu e-postayı Atilla Kulübü üyesi olduğunuz için aldınız. '
                  f'<a href="{unsub_url}" style="color:#9a9a9a;text-decoration:underline">Abonelikten çık</a></p>')
     body = body_html or ""
     if _is_full_html_document(body):
-        # Tam belge → kabuk YOK (çift FACETTE önlenir), abonelikten-çık VAR.
+        # Tam belge → kabuk YOK (çift ATILLA önlenir), abonelikten-çık VAR.
         return _inject_unsub_into_full(body, unsub)
     content = body + unsub
     try:
@@ -520,7 +520,7 @@ def _wrap(subject: str, body_html: str, unsub_url: str) -> str:
 
 
 def _add_utm(html: str, campaign_id: str) -> str:
-    """Kampanya HTML'indeki facette.com.tr linklerine utm_source=email&utm_medium=newsletter&
+    """Kampanya HTML'indeki atilla.com.tr linklerine utm_source=email&utm_medium=newsletter&
     utm_campaign=<kampanya id> ekler → müşteri tıklayıp sipariş verirse order.attribution.campaign
     bu id'yi taşır (dönüşüm raporu). Abonelikten-çık / api linklerine dokunmaz."""
     import re as _re
@@ -535,7 +535,7 @@ def _add_utm(html: str, campaign_id: str) -> str:
         except Exception:
             return m.group(0)
         host = (u.hostname or "").lower()
-        if not host.endswith("facette.com.tr") or host.startswith("api.") or "/api/" in (u.path or ""):
+        if not host.endswith("atilla.com.tr") or host.startswith("api.") or "/api/" in (u.path or ""):
             return m.group(0)
         q = dict(parse_qsl(u.query, keep_blank_values=True))
         if "utm_campaign" in q:
@@ -773,10 +773,10 @@ async def _run_brevo_campaign(campaign_id: str):
         return
     result = await create_and_send_campaign(
         cfg,
-        name=f"Facette · {camp.get('subject') or campaign_id} · {campaign_id[:8]}",
+        name=f"Atilla · {camp.get('subject') or campaign_id} · {campaign_id[:8]}",
         subject=subject,
         html=html,
-        tag=f"facette-{campaign_id[:12]}",
+        tag=f"atilla-{campaign_id[:12]}",
     )
     if not result.get("success"):
         await db.email_campaigns.update_one({"id": campaign_id}, {"$set": {
@@ -1039,7 +1039,7 @@ async def campaign_send_missing(campaign_id: str, current_user: dict = Depends(r
 
 # ── HAZIR KAMPANYA ŞABLONLARI (email_templates) + ÖNİZLEME ─────────────────────
 # Şablonlar YALNIZ iç gövde HTML'i tutar; gönderim/önizlemede _wrap → render_email
-# ile FACETTE marka kabuğuna (logo + sosyal footer + abonelikten-çık) sarılır.
+# ile ATILLA marka kabuğuna (logo + sosyal footer + abonelikten-çık) sarılır.
 # Placeholder'lar: {customer_name} (bildirim sistemiyle AYNI — per-alıcı otomatik dolar),
 # {kod}/{indirim}/URUN_LINKI/GORSEL_URL (kampanya-seviyesi, admin editörde doldurur).
 _BTN_STYLE = ("display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;"
@@ -1071,16 +1071,16 @@ _IMG_PLACEHOLDER = (
 )
 
 
-# Hazır (builtin) şablonlar — kadın giyim, sade/şık FACETTE sesi. builtin_key idempotent anahtar.
+# Hazır (builtin) şablonlar — kadın giyim, sade/şık ATILLA sesi. builtin_key idempotent anahtar.
 _SEED_EMAIL_TEMPLATES = [
     {
         # İLK KAMPANYA — markanın ilk e-posta gönderimi için önerilen (listede EN ÜSTTE).
         "builtin_key": "ilk-kampanya", "name": "İlk Kampanya / Kulübe Merhaba",
-        "category": "Tanıtım", "recommended": True, "subject": "Facette Kulübü'ne Hoş Geldiniz",
+        "category": "Tanıtım", "recommended": True, "subject": "Atilla Kulübü'ne Hoş Geldiniz",
         "html": _seed_body(
-            "Merhaba {customer_name},<br><br>Biz FACETTE — zamansız kesimler ve yumuşak dokularla, "
+            "Merhaba {customer_name},<br><br>Biz ATILLA — zamansız kesimler ve yumuşak dokularla, "
             "günlük şıklığı sade bir dille anlatan bir kadın giyim markasıyız. "
-            "Facette Kulübü'ne katıldığınız için çok mutluyuz.<br><br>"
+            "Atilla Kulübü'ne katıldığınız için çok mutluyuz.<br><br>"
             "Yeni koleksiyonlar, özel kampanyalar ve size özel fırsatlar ilk olarak burada. "
             "Tanışmamıza özel <b>{kod}</b> koduyla ilk alışverişinizde küçük bir hoş geldin "
             "hediyesi sizi bekliyor.",
@@ -1090,7 +1090,7 @@ _SEED_EMAIL_TEMPLATES = [
         "builtin_key": "yeni-sezon", "name": "Yeni Sezon / Koleksiyon Lansmanı",
         "category": "Koleksiyon", "subject": "Yeni Sezon Geldi",
         "html": _seed_body(
-            "Merhaba {customer_name},<br>Yeni sezon parçalarımız FACETTE'de. Zamansız kesimler, "
+            "Merhaba {customer_name},<br>Yeni sezon parçalarımız ATILLA'da. Zamansız kesimler, "
             "yumuşak dokular ve sezonun en sevilen tonları seni bekliyor.",
             "Koleksiyonu Keşfet", _IMG_PLACEHOLDER),
     },
@@ -1104,7 +1104,7 @@ _SEED_EMAIL_TEMPLATES = [
     },
     {
         "builtin_key": "hosgeldin", "name": "Hoş Geldin / Yeni Üye",
-        "category": "Üyelik", "subject": "FACETTE'ye Hoş Geldin",
+        "category": "Üyelik", "subject": "ATILLA'ya Hoş Geldin",
         "html": _seed_body(
             "Merhaba {customer_name},<br>Aramıza hoş geldin. İlk siparişine özel <b>{kod}</b> "
             "(HOSGELDIN) koduyla tanışma indirimini kullanabilirsin.",
@@ -1130,7 +1130,7 @@ _SEED_EMAIL_TEMPLATES = [
         "builtin_key": "vip-erken-erisim", "name": "VIP / Kulüp Erken Erişim",
         "category": "VIP", "subject": "Sana Özel Erken Erişim",
         "html": _seed_body(
-            "Merhaba {customer_name},<br>Facette Kulübü üyelerine özel: yeni koleksiyona <b>herkesten "
+            "Merhaba {customer_name},<br>Atilla Kulübü üyelerine özel: yeni koleksiyona <b>herkesten "
             "önce</b> eriş. Sınırlı sayıda — senin için ayrı tuttuk.",
             "Erken Erişimi Aç"),
     },
@@ -1373,7 +1373,7 @@ async def preview_email(payload: dict, current_user: dict = Depends(require_perm
     subject = str(p.get("subject") or "").strip()
     html = str(p.get("html") or "")
     # Önizlemede örnek abonelikten-çık linki (gerçek gönderimde aboneye özel üretilir).
-    full = _wrap(subject, html, "https://facette.com.tr/ornek-abonelikten-cik")
+    full = _wrap(subject, html, "https://atilla.com.tr/ornek-abonelikten-cik")
     return {"html": full, "subject": subject}
 
 
@@ -1473,7 +1473,7 @@ async def brevo_webhook(payload: dict, request: Request):
 
 # ── SES BOUNCE / ŞİKÂYET BİLDİRİMİ (AWS SNS webhook) ──────────────────────────
 # AWS kurulumu: SES → Configuration set → Event destination → SNS topic →
-#   Subscription: HTTPS → https://api.facette.com.tr/api/email-marketing/ses-webhook?key=<SECRET>
+#   Subscription: HTTPS → https://api.atilla.com.tr/api/email-marketing/ses-webhook?key=<SECRET>
 # SECRET: ortam değişkeni SES_WEBHOOK_SECRET ya da settings.email_ses.webhook_secret.
 # GÜVENLİK fail-closed: secret yoksa/yanlışsa 403. (Aksi halde herkes sahte bounce
 # gönderip abonelerinizi kara listeye attırabilirdi.)
@@ -1678,7 +1678,7 @@ async def unsubscribe_confirm(request: Request, e: str = "", t: str = ""):
 # alıcı tekrar reddedilir. KULLANICI DEĞİŞİKLİĞİ KALICIDIR: ret zamanından SONRA verilmiş açık
 # rıza (bülten consent_at / profil marketing_consent_at / İYS ONAY) varsa kişiye dokunulmaz.
 SUPPRESSION_ARCHIVE_PREFIX = "kvkk-suppression/"
-_OPTOUT_HMAC_DOMAIN = "facette:marketing-optout:email:v1|"
+_OPTOUT_HMAC_DOMAIN = "atilla:marketing-optout:email:v1|"
 _CONSENT_OPTOUT_KINDS = {"iys_ret", "newsletter_unsub", "profile_unsub"}
 
 

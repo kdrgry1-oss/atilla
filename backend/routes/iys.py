@@ -125,7 +125,7 @@ async def otp_send(payload: dict, request: Request):
         "tries": 0, "used": False, "created_at": _now().isoformat(),
     }
     await db.otp_verifications.insert_one(rec)
-    msg = f"Facette dogrulama kodunuz: {code} . Kod {_OTP_TTL_MIN} dakika gecerlidir."
+    msg = f"Atilla dogrulama kodunuz: {code} . Kod {_OTP_TTL_MIN} dakika gecerlidir."
     res = await _send_sms(phone, msg)
     if not res.get("success"):
         # Kod kaydı kalır; sağlayıcı hatasını müşteriye sade ver.
@@ -364,7 +364,7 @@ async def report_pending_batch(max_batches: int = 20, batch_size: int = 100) -> 
 async def _report_to_netgsm_iys(consent: dict):
     """İzin/RED kaydını NetGSM İYS'ye (POST https://api.netgsm.com.tr/iys/add) bildirir.
 
-    NetGSM, Facette'in İYS entegratörüdür — "NetGSM bizim adımıza yolluyor". İzinler SMS için
+    NetGSM, Atilla'nın İYS entegratörüdür — "NetGSM bizim adımıza yolluyor". İzinler SMS için
     kullanılan AYNI NetGSM kimlik bilgileriyle (usercode/password) NetGSM'in İYS ucuna POST edilir;
     NetGSM İYS'ye iletir. Ayrı resmî İYS API kullanıcısı GEREKMEZ. Marka kodu (brandCode) = İYS
     marka kodu (ör. 754607).

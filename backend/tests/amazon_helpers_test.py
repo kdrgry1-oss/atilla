@@ -20,19 +20,19 @@ def test_canonical_color_prefers_variant_then_product_and_attributes():
 
 def test_variant_images_are_first_deduplicated_and_limited_to_amazon_slots():
     product = {
-        "main_image": "https://cdn.facette.com.tr/product-main.webp",
-        "images": [f"https://cdn.facette.com.tr/p-{i}.webp" for i in range(12)],
+        "main_image": "https://cdn.atilla.com.tr/product-main.webp",
+        "images": [f"https://cdn.atilla.com.tr/p-{i}.webp" for i in range(12)],
     }
     variant = {
-        "main_image": "https://cdn.facette.com.tr/color-main.webp",
-        "images": ["https://cdn.facette.com.tr/color-main.webp",
-                   "https://cdn.facette.com.tr/color-side.webp"],
+        "main_image": "https://cdn.atilla.com.tr/color-main.webp",
+        "images": ["https://cdn.atilla.com.tr/color-main.webp",
+                   "https://cdn.atilla.com.tr/color-side.webp"],
     }
     images = amazon_helpers.amazon_image_candidates(product, variant)
     assert images[:3] == [
-        "https://cdn.facette.com.tr/color-main.webp",
-        "https://cdn.facette.com.tr/color-side.webp",
-        "https://cdn.facette.com.tr/product-main.webp",
+        "https://cdn.atilla.com.tr/color-main.webp",
+        "https://cdn.atilla.com.tr/color-side.webp",
+        "https://cdn.atilla.com.tr/product-main.webp",
     ]
     assert len(images) == 9
 
@@ -40,16 +40,16 @@ def test_variant_images_are_first_deduplicated_and_limited_to_amazon_slots():
 def test_size_table_is_sent_to_amazon_after_product_images_but_video_is_not():
     product = {
         "images": [
-            "https://cdn.facette.com.tr/front.webp",
-            {"url": "https://cdn.facette.com.tr/size-chart.webp", "is_size_table": True},
-            {"url": "https://cdn.facette.com.tr/catwalk.mp4", "is_video": True},
-            {"url": "https://cdn.facette.com.tr/side.webp"},
+            "https://cdn.atilla.com.tr/front.webp",
+            {"url": "https://cdn.atilla.com.tr/size-chart.webp", "is_size_table": True},
+            {"url": "https://cdn.atilla.com.tr/catwalk.mp4", "is_video": True},
+            {"url": "https://cdn.atilla.com.tr/side.webp"},
         ]
     }
     assert amazon_helpers.amazon_image_candidates(product) == [
-        "https://cdn.facette.com.tr/front.webp",
-        "https://cdn.facette.com.tr/side.webp",
-        "https://cdn.facette.com.tr/size-chart.webp",
+        "https://cdn.atilla.com.tr/front.webp",
+        "https://cdn.atilla.com.tr/side.webp",
+        "https://cdn.atilla.com.tr/size-chart.webp",
     ]
 
 

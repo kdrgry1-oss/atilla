@@ -40,8 +40,8 @@
 - backend/scripts/recompute_site_gp.py — geçmiş GP yeniden-hesaplama (DRY-RUN varsayılan).
 
 ## Deploy
-    cd ~/Downloads/facette_deploy
-    unzip -o ~/Downloads/facette_iade_vade.zip
+    cd ~/Downloads/atilla_deploy
+    unzip -o ~/Downloads/atilla_iade_vade.zip
     git add -A
     git commit -m "Iade tutari=odenen tutar + kargo musteriden kes; taksit vade farki fatura/iade"
     git push

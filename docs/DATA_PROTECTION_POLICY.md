@@ -1,10 +1,10 @@
-# Facette — Veri Koruma Politikası (Data Protection Policy)
+# Atilla — Veri Koruma Politikası (Data Protection Policy)
 
 _Amazon Selling Partner API — Data Protection Policy (DPP) uyumu için._
 Son güncelleme: 2026-06-04
 
 ## 1. Kapsam
-Bu politika, Facette'in Amazon SP-API üzerinden eriştiği tüm **Amazon Bilgileri**
+Bu politika, Atilla'nın Amazon SP-API üzerinden eriştiği tüm **Amazon Bilgileri**
 (sipariş, alıcı PII'si dahil) ile site/pazaryeri siparişlerindeki kişisel verilerin
 işlenmesi, saklanması, korunması ve imhasını kapsar.
 

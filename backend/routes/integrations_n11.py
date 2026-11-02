@@ -8,7 +8,7 @@ Uçlar (prefix /integrations):
   GET  /n11/categories          → yaprak kategoriler (arama)
   GET  /n11/categories/{id}/attributes
   GET  /n11/products            → n11'deki satıcı ürünleri (sayfalı)
-  POST /n11/stock/sync          → n11'deki ürünlerin STOĞUNU Facette stoğuyla günceller (fiyat DEĞİL)
+  POST /n11/stock/sync          → n11'deki ürünlerin STOĞUNU Atilla stoğuyla günceller (fiyat DEĞİL)
   POST /n11/orders/import       → sipariş paketlerini panele aktarır (Hepsiburada ile aynı kurallar)
 
 Sipariş kuralları (HB/Trendyol ile aynı): bir n11 sipariş no = panelde tek sipariş; ilk
@@ -23,8 +23,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from .deps import db, logger, generate_id, require_permission
 from .integrations_common import (
     _decrement_stock_for_imported_order,
-    _facette_match_for_codes,
-    _facette_product_image,
+    _atilla_match_for_codes,
+    _atilla_product_image,
     log_integration_event,
 )
 
@@ -220,7 +220,7 @@ def _variant_stock(prod: dict, code: str) -> Optional[int]:
 
 
 async def run_n11_stock_sync(client=None) -> dict:
-    """n11'de LİSTELİ ürünlerin stoğunu Facette stoğuna eşitler (yalnız quantity; fiyat dokunulmaz).
+    """n11'de LİSTELİ ürünlerin stoğunu Atilla stoğuna eşitler (yalnız quantity; fiyat dokunulmaz).
     Eşleşmeyen n11 ürünü atlanır (sıfırlanmaz). Değişmeyen stok gönderilmez."""
     client = client or await _get_n11_client()
     listed = await _all_n11_products(client)
@@ -229,7 +229,7 @@ async def run_n11_stock_sync(client=None) -> dict:
         sc = str(p.get("stockCode") or "").strip()
         if not sc:
             continue
-        m = await _facette_match_for_codes([sc, p.get("barcode")])
+        m = await _atilla_match_for_codes([sc, p.get("barcode")])
         if not m:
             unmatched += 1
             continue
@@ -265,7 +265,7 @@ async def n11_stock_sync(current_user: dict = Depends(require_permission("integr
         raise HTTPException(status_code=502, detail=f"n11 stok senkronu başarısız: {_err_text(e)}")
     msg = f"n11'de {out['listed']} ürün tarandı, {out['updated']} ürünün stoğu güncellendi"
     if out["unmatched"]:
-        msg += f", {out['unmatched']} ürün Facette ile eşleşmedi"
+        msg += f", {out['unmatched']} ürün Atilla ile eşleşmedi"
     return {"success": True, **out, "message": msg + "."}
 
 
@@ -369,7 +369,7 @@ def map_n11_order(order_number: str, packages: List[dict]) -> dict:
 
 async def _n11_enrich_items(order: dict) -> dict:
     for it in order.get("items") or []:
-        m = await _facette_match_for_codes([it.get("stock_code"), it.get("barcode")])
+        m = await _atilla_match_for_codes([it.get("stock_code"), it.get("barcode")])
         if not m:
             it["matched"] = False
             continue
@@ -382,9 +382,9 @@ async def _n11_enrich_items(order: dict) -> dict:
                 it["color"] = it.get("color") or v.get("color") or ""
                 break
         it["product_id"] = prod.get("id")
-        it["facette_product_id"] = prod.get("id")
+        it["atilla_product_id"] = prod.get("id")
         it["barcode"] = vbar or prod.get("barcode") or it.get("barcode")
-        img = _facette_product_image(prod)
+        img = _atilla_product_image(prod)
         if img:
             it["image"] = img
         it["matched"] = True
@@ -621,7 +621,7 @@ async def _resolve_push_product(code: str) -> dict:
     code = (code or "").strip()
     prod = await db.products.find_one({"id": code}, {"_id": 0}) if code else None
     if not prod and code:
-        m = await _facette_match_for_codes([code])
+        m = await _atilla_match_for_codes([code])
         prod = m[0] if m else None
     if not prod:
         raise HTTPException(status_code=404, detail="Ürün bulunamadı (barkod / stok kodu / ürün id).")

@@ -1,4 +1,4 @@
-# Mimari karar kayıtları — Facette durumu
+# Mimari karar kayıtları — Atilla durumu
 
 4 Ekim 2026 · Build `8c34c16c` · Kaynak: güvenlik paketi `mimari-karar-kayitlari.md` (ADR-01…10)
 

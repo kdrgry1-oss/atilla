@@ -38,8 +38,8 @@ async def _asgi_get(path, headers, on_body=None):
     scope = {"type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"}, "http_version": "1.1",
              "method": "GET", "scheme": "https", "path": raw, "raw_path": raw.encode(),
              "query_string": qs.encode(), "root_path": "",
-             "headers": [(k.lower().encode(), v.encode()) for k, v in {**headers, "host": "www.facette.com.tr"}.items()],
-             "client": ("203.0.113.10", 40000), "server": ("www.facette.com.tr", 443)}
+             "headers": [(k.lower().encode(), v.encode()) for k, v in {**headers, "host": "www.atilla.com.tr"}.items()],
+             "client": ("203.0.113.10", 40000), "server": ("www.atilla.com.tr", 443)}
     msgs = []
     state = {"sent": False}
     forever = asyncio.Event()

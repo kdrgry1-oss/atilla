@@ -55,7 +55,7 @@ async def send_welcome_email(db, email: str, first_name: str = "") -> dict:
             db, "welcome", to_email=email,
             variables={
                 "customer_name": (first_name or "").strip() or "değerli müşterimiz",
-                "site_url": os.environ.get("SITE_URL", "https://facette.com.tr").rstrip("/"),
+                "site_url": os.environ.get("SITE_URL", "https://atilla.com.tr").rstrip("/"),
                 **cv,
             },
             channels=["email"],

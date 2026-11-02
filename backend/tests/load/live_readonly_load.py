@@ -1,6 +1,6 @@
 """Canlı, salt-okunur kısa yük ölçümü (T18/SHOP02) — kullanıcı onaylı. Sipariş/ödeme YOK."""
 import asyncio, time, statistics, json, httpx, random
-B = "https://api.facette.com.tr/api"
+B = "https://api.atilla.com.tr/api"
 HEAVY = ["/products?search=elbise&limit=48", "/products?limit=96&sort=price_asc", "/products?search=pantolon&limit=48",
          "/products?limit=48&sort=newest", "/categories", "/page-blocks"]
 CONC, DUR = 15, 90
@@ -31,7 +31,7 @@ async def heavy_worker(c, stop, stats):
             stats.append((float("nan"), type(e).__name__))
 
 async def main():
-    async with httpx.AsyncClient(timeout=30, headers={"user-agent": "facette-guvenlik-yuk-olcumu/1"}) as c:
+    async with httpx.AsyncClient(timeout=30, headers={"user-agent": "atilla-guvenlik-yuk-olcumu/1"}) as c:
         p = (await c.get(f"{B}/products", params={"limit": 1})).json()
         prod = (p.get("products") or p.get("items") or p)[0] if not isinstance(p, list) else p[0]
         item = {"id": prod["id"], "price": float(prod.get("sale_price") or prod.get("price") or 100),

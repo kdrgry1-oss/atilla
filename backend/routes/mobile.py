@@ -32,14 +32,14 @@ DEFAULT_APP_VERSION = {
         "min_version": "1.0.0",
         "latest_version": "1.0.0",
         "force_update": False,
-        "store_url": "https://apps.apple.com/app/facette/idTBD",
+        "store_url": "https://apps.apple.com/app/atilla/idTBD",
         "release_notes": "İlk sürüm",
     },
     "android": {
         "min_version": "1.0.0",
         "latest_version": "1.0.0",
         "force_update": False,
-        "store_url": "https://play.google.com/store/apps/details?id=com.facette.app",
+        "store_url": "https://play.google.com/store/apps/details?id=com.atilla.app",
         "release_notes": "İlk sürüm",
     },
 }
@@ -182,8 +182,8 @@ async def app_config():
         "support": cfg.get("support") or {
             "whatsapp": "",
             "phone": "",
-            "email": "destek@facette.com.tr",
+            "email": "destek@atilla.com.tr",
         },
-        "deep_link_scheme": "facette",  # facette://order/123
+        "deep_link_scheme": "atilla",  # atilla://order/123
         "min_supported_versions": {"ios": "1.0.0", "android": "1.0.0"},
     }

@@ -13,7 +13,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // Web Sitesi (site iadeleri) en başta, sonra Trendyol. Yeni bir pazaryeri
 // entegrasyonu aktifleştiğinde (örn. Hepsiburada claim çekimi) buraya eklenir.
 const PLATFORMS = [
-  { key: "facette", label: "Web Sitesi", badge: "W", color: "bg-gray-800" },
+  { key: "atilla", label: "Web Sitesi", badge: "W", color: "bg-gray-800" },
   { key: "trendyol", label: "Trendyol", badge: "T", color: "bg-orange-500" },
   { key: "hepsiburada", label: "Hepsiburada", badge: "H", color: "bg-amber-600" },
   { key: "amazon", label: "Amazon", badge: "A", color: "bg-yellow-600" },
@@ -125,7 +125,7 @@ export default function Returns() {
   const [exporting, setExporting] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [platform, setPlatform] = useState("facette");
+  const [platform, setPlatform] = useState("atilla");
   // Web Sitesi sekmesi doğrudan sipariş bazlı iade akışını (RooftrReturns) gösterir; alt-sekme yok.
   const [statusTab, setStatusTab] = useState("all");
   const [tabCounts, setTabCounts] = useState({});
@@ -192,7 +192,7 @@ export default function Returns() {
   // GİDER PUSULASI NO İLE BUL: numara hangi kaynaktaysa (site/TY/HB/Amazon) o sekmeye geçip siparişi getirir.
   const [gpFind, setGpFind] = useState("");
   const [siteSearch, setSiteSearch] = useState({ q: "", k: 0 });
-  const PLATFORM_LABEL = { facette: "Web Sitesi", trendyol: "Trendyol", hepsiburada: "Hepsiburada", amazon: "Amazon" };
+  const PLATFORM_LABEL = { atilla: "Web Sitesi", trendyol: "Trendyol", hepsiburada: "Hepsiburada", amazon: "Amazon" };
   const findByGp = async () => {
     const no = String(gpFind || "").trim().replace(/^#/, "");
     if (!no) return;
@@ -202,10 +202,10 @@ export default function Returns() {
       const rows = data?.results || [];
       if (!rows.length) { toast.error(`#${no} numaralı gider pusulası bulunamadı`); return; }
       const hit = rows.find((r) => r.display_number === no) || rows[0];
-      const src = PLATFORM_LABEL[hit.source] ? hit.source : "facette";
+      const src = PLATFORM_LABEL[hit.source] ? hit.source : "atilla";
       setGpFrom(""); setGpTo(""); setStatusTab("all"); setPage(1); setSelectedIds(new Set());
       setPlatform(src);
-      if (src === "facette") setSiteSearch((p) => ({ q: hit.order_number, k: p.k + 1 }));
+      if (src === "atilla") setSiteSearch((p) => ({ q: hit.order_number, k: p.k + 1 }));
       else setSearch(hit.order_number);
       const msg = `#${hit.display_number} → ${PLATFORM_LABEL[src]} · sipariş ${hit.order_number || "?"}`;
       if (hit.cancelled) toast.warning(`${msg} (bu pusula İPTAL edilmiş)`);
@@ -223,7 +223,7 @@ export default function Returns() {
     const seq = ++claimsSeq.current;
     // Web Sitesi sekmesi kendi verisini gömülü <SiteReturns/> ile customer_returns'ten
     // ceker; bu yuzden Trendyol claims endpoint'ini cagirmaya gerek yok.
-    if (platform === "facette") {
+    if (platform === "atilla") {
       setClaims([]); setTotal(0); setTabCounts({}); setStats({}); setLoading(false);
       return;
     }
@@ -985,7 +985,7 @@ export default function Returns() {
         </div>
 
         {/* Web Sitesi sekmesi: doğrudan sipariş bazlı iade akışı (alt-sekme yok — üstte zaten "Web Sitesi" yazıyor) */}
-        {platform === "facette" && <RooftrReturns key={`site-${siteSearch.k}`} initialSearch={siteSearch.q} embedded gpStart={gpStart} dateFrom={gpFrom} dateTo={gpTo}
+        {platform === "atilla" && <RooftrReturns key={`site-${siteSearch.k}`} initialSearch={siteSearch.q} embedded gpStart={gpStart} dateFrom={gpFrom} dateTo={gpTo}
           onGiderCreated={(gp) => { setGpData(gp); setGpModalOpen(true); /* önizleme: numara YAZDIR'da atanır, burada advance YOK */ }}
           onBulkGider={(gps, nextNo) => { setBulkPrintData(gps); const nn = pad6(nextNo); setGpStart(nn); localStorage.setItem("gp_next_no", nn); setTimeout(() => window.print(), 500); }} />}
 
@@ -1487,7 +1487,7 @@ function GiderPusulasiSlip({ data, overlay, offX = 0, offY = 0, guides = false }
       {Gt(5, 4, 1.7, "No: 3  34307 Küçükçekmece/İST.")}
       {Gt(5, 7.5, 1.7, "Halkalı V.D.: 781 081 6779")}
       {Gt(5, 11, 1.7, "Ticaret Sicil No: 203113-5")}
-      {Gt(5, 14.5, 1.7, "iletisim@facette.com.tr")}
+      {Gt(5, 14.5, 1.7, "iletisim@atilla.com.tr")}
       <div style={{ position: "absolute", left: "52mm", top: "4mm", width: "13mm", height: "13mm", border: "0.3mm solid " + G, borderRadius: "50%", textAlign: "center", fontSize: "1.4mm", color: G, lineHeight: "13mm" }}>T.C.</div>
       {Gt(48, 27, 1.9, "İL KODU: 34", { fontWeight: 700 })}
       {Gt(52, 34, 2.0, "SERİ A", { fontWeight: 700 })}

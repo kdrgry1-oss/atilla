@@ -82,7 +82,7 @@ def test_product_push_preview_missing_then_push(kv_client, kv_users, kv_db, monk
     kv_run(kv_db.marketplace_accounts.insert_one({"key": "n11", "enabled": True,
         "credentials": {"api_key": "k", "api_secret": "s"},
         "transfer_rules": {"price_field": "price", "sale_price_field": "sale_price", "commission_type": "none"}}))
-    kv_run(kv_db.products.insert_one({"id": "p-push", "name": "Keten Gömlek Uzun Kollu", "brand": "FACETTE",
+    kv_run(kv_db.products.insert_one({"id": "p-push", "name": "Keten Gömlek Uzun Kollu", "brand": "ATILLA",
         "price": 1000, "sale_price": 800, "vat_rate": 10, "description": "<p>Keten gömlek açıklaması uzun</p>",
         "images": ["https://cdn.example.com/a.jpg"],
         "variants": [{"barcode": "8680000000011", "size": "M", "color": "Beyaz", "stock": 4}]}))
@@ -124,5 +124,5 @@ def test_product_push_preview_missing_then_push(kv_client, kv_users, kv_db, monk
     js = r.json()
     assert js["success"] is True, js
     a = {x["id"]: x for x in sent["skus"][0]["attributes"]}
-    assert a[1]["customValue"] == "FACETTE" and a[50]["valueId"] == 501 and a[60]["valueId"] == 601 and a[70]["valueId"] == 701
+    assert a[1]["customValue"] == "ATILLA" and a[50]["valueId"] == 501 and a[60]["valueId"] == 601 and a[70]["valueId"] == 701
     assert sent["skus"][0]["stockCode"] == "8680000000011" and sent["skus"][0]["quantity"] == 4

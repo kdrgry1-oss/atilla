@@ -1,4 +1,4 @@
-package com.facette.app;
+package com.atilla.app;
 
 import com.getcapacitor.BridgeActivity;
 

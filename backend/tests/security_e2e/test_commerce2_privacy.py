@@ -67,7 +67,7 @@ async def test_canary_card_never_persists_or_logs(pay_http, pay_env, caplog):
         mock()
         r = await pay_http.post("/api/payment/3ds/initialize",
                                 json={"order_id": order["id"], "callback_url": CALLBACK_URL,
-                                      "return_url": "https://www.facette.com.tr/odeme", "card": card,
+                                      "return_url": "https://www.atilla.com.tr/odeme", "card": card,
                                       "pay_token": _PT.get(order["id"], "")})
         responses.append(r)
         return r

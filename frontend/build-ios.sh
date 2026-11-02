@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# build-ios.sh — Facette iOS Build & Archive Script (Mac üzerinde çalışır)
+# build-ios.sh — Atilla iOS Build & Archive Script (Mac üzerinde çalışır)
 # =============================================================================
 # Usage:
 #   bash build-ios.sh           # Sadece sync + Xcode aç
@@ -31,19 +31,19 @@ if [ "$MODE" = "archive" ]; then
   xcodebuild -workspace App.xcworkspace \
     -scheme App \
     -configuration Release \
-    -archivePath ./build/Facette.xcarchive \
+    -archivePath ./build/Atilla.xcarchive \
     -destination 'generic/platform=iOS' \
     DEVELOPMENT_TEAM="$TEAM_ID" \
     archive
 
   xcodebuild -exportArchive \
-    -archivePath ./build/Facette.xcarchive \
+    -archivePath ./build/Atilla.xcarchive \
     -exportPath ./build/ipa \
     -exportOptionsPlist ../ExportOptions.plist
 
   echo ""
-  echo "✅ IPA oluşturuldu: ios/App/build/ipa/Facette.ipa"
-  echo "   App Store Connect upload: xcrun altool --upload-app -f Facette.ipa -u YOUR_APPLE_ID -p APP_SPECIFIC_PASSWORD"
+  echo "✅ IPA oluşturuldu: ios/App/build/ipa/Atilla.ipa"
+  echo "   App Store Connect upload: xcrun altool --upload-app -f Atilla.ipa -u YOUR_APPLE_ID -p APP_SPECIFIC_PASSWORD"
 else
   echo "Xcode açılıyor — manuel olarak Product > Archive yap"
   npx cap open ios

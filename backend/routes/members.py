@@ -795,7 +795,7 @@ async def member_360_print(mid: str, start: Optional[str] = None, end: Optional[
 .kl{{font-size:9px;color:#777;text-transform:uppercase}} .kv{{font-size:13px;font-weight:700}}
 table{{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:4px}} th{{background:#111;color:#fff;text-align:left;padding:5px 7px}} td{{border-bottom:1px solid #eee;padding:5px 7px}}
 .chips{{font-size:11px;color:#333;line-height:1.7}}</style></head><body>
-<div class="h"><div class="brand">FACETTE</div><div style="text-align:right"><div class="t">MÜŞTERİ 360 RAPORU</div><div class="sub">Dönem: {rng}</div></div></div>
+<div class="h"><div class="brand">ATILLA</div><div style="text-align:right"><div class="t">MÜŞTERİ 360 RAPORU</div><div class="sub">Dönem: {rng}</div></div></div>
 <div class="who"><div class="n">{esc(name)}</div><div class="m">{esc(m.get('email'))}{(' · '+esc(m.get('phone'))) if m.get('phone') else ''} · Segment: {esc(a['rfm']['segment'])}</div></div>
 <div class="grid">{kpi_html}</div>
 <div style="font-size:9px;color:#888;margin-top:4px">RFM: R = Recency (Yakınlık — son siparişten bu yana) · F = Frequency (Sıklık — sipariş sayısı) · M = Monetary (Parasal — toplam harcama); her biri 1–5 puan.</div>
@@ -818,7 +818,7 @@ async def create_member(payload: dict, current_user: dict = Depends(require_perm
         raise HTTPException(status_code=400, detail="E-posta gerekli")
     if await db.users.find_one({"email": email}):
         raise HTTPException(status_code=409, detail="E-posta zaten kayıtlı")
-    # GÜVENLİK (denetim 2026-09-29): şifre verilmezse eskiden BİLİNEN sabit "Facette123!" (form boş
+    # GÜVENLİK (denetim 2026-09-29): şifre verilmezse eskiden BİLİNEN sabit "Atilla123!" (form boş
     # gönderince de BOŞ şifre) atanıyordu. Artık rastgele güçlü geçici şifre üretilir, yanıtta
     # YALNIZ BİR KEZ döner.
     import secrets as _sec

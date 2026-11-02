@@ -64,7 +64,7 @@ function _normVal(s) {
   return x.replace(/[^a-z0-9]/g, "");
 }
 
-// FACETTE sabit varsayılan değerleri (backend/facette_defaults.py FACETTE_FIXED_ATTR_DEFAULTS ile
+// ATILLA sabit varsayılan değerleri (backend/atilla_defaults.py ATILLA_FIXED_ATTR_DEFAULTS ile
 // uyumlu). Bu özelliklere DEĞER EŞLEŞTİRMESİ GEREKMEZ — her üründe bu sabit değer gönderilir.
 const FIXED_DEFAULT_VALUES = {
   "menşei": "Türkiye", "cinsiyet": "Kadın", "yaş grubu": "Yetişkin",
@@ -88,7 +88,7 @@ const AMZ_TR = {
   purchasable_offer: "Fiyat", fulfillment_availability: "Stok", condition_type: "Ürün Durumu",
   externally_assigned_product_identifier: "Barkod (EAN/UPC)",
 };
-// Facette ürün alanından OTOMATİK dolan → kullanıcı elle girmez.
+// Atilla ürün alanından OTOMATİK dolan → kullanıcı elle girmez.
 const AMZ_AUTO_FILLED = new Set([
   "item_name", "brand", "product_description", "bullet_point", "main_product_image_locator",
   "purchasable_offer", "fulfillment_availability", "condition_type",
@@ -101,15 +101,15 @@ const AMZ_DEFAULT_SUGGEST = {
 };
 // Amazon alanlarının Türkçe AÇIKLAMASI — kullanıcı ne olduğunu görüp mantıklı seçsin.
 const AMZ_DESC = {
-  item_name: "Ürün başlığı — Facette ürün adından otomatik gelir.",
-  brand: "Marka adı — Facette markadan otomatik.",
-  product_description: "Ürün açıklaması — Facette açıklamasından otomatik.",
+  item_name: "Ürün başlığı — Atilla ürün adından otomatik gelir.",
+  brand: "Marka adı — Atilla markadan otomatik.",
+  product_description: "Ürün açıklaması — Atilla açıklamasından otomatik.",
   bullet_point: "Madde madde öne çıkan özellikler (5 adede kadar).",
   fabric_type: "Kumaş içeriği (ör. %100 Pamuk, Polyester).",
   country_of_origin: "Menşei — üretildiği/ithal edildiği ülke (ör. Türkiye).",
   material: "Ana malzeme.",
-  color: "Renk — Facette varyant renginden otomatik.",
-  size: "Beden — Facette varyant bedeninden otomatik.",
+  color: "Renk — Atilla varyant renginden otomatik.",
+  size: "Beden — Atilla varyant bedeninden otomatik.",
   department: "Bölüm/hedef grup (womens=Kadın, mens=Erkek, girls=Kız çocuk).",
   target_gender: "Hedef cinsiyet (female=Kadın, male=Erkek, unisex).",
   age_range_description: "Yaş grubu (adult=Yetişkin, child=Çocuk).",
@@ -659,7 +659,7 @@ export function AdvancedAttributeMatchModal({ open, onClose, marketplace, catego
                         <td className="px-4 py-2.5 space-y-2">
                           {amzAuto ? (
                             <span className="inline-block text-[11px] bg-green-50 text-green-700 border border-green-200 rounded px-2 py-1">
-                              ✓ Otomatik — Facette ürün alanından doldurulur (eşleştirme gerekmez)
+                              ✓ Otomatik — Atilla ürün alanından doldurulur (eşleştirme gerekmez)
                             </span>
                           ) : (
                           <>

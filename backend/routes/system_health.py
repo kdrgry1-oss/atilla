@@ -26,7 +26,7 @@ router = APIRouter(prefix="/admin/system", tags=["system-health"])
 def _is_super(user: dict) -> bool:
     if not user:
         return False
-    return bool(user.get("is_super_admin")) or user.get("email") == "admin@facette.com"
+    return bool(user.get("is_super_admin")) or user.get("email") == "admin@atilla.com"
 
 
 @router.get("/health")
@@ -92,7 +92,7 @@ async def fire_test_alert(admin=Depends(require_permission("admin.logs"))):
     result = await send_alert(
         kind="manual_test",
         level="warning",
-        title="Facette Monitoring Test",
+        title="Atilla Monitoring Test",
         body=f"Bu bir test alarmıdır. Tetikleyen: {admin.get('email')}",
         fingerprint=f"manual_test_{admin.get('id')}",
         meta={"triggered_by": admin.get("email")},

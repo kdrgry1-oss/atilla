@@ -119,7 +119,7 @@ def _is_unpaid_site_cancel(o: dict) -> bool:
 # takma adlarını kabul ediyor ama aksiyon tarafı (_src_allows) kanal anahtarını düz
 # karşılaştırıyordu → takma adla sorguda TÜM iptal/iadeler düşüyor, net = brüt oluyordu.
 _ALL_SOURCE_ALIASES = ("", "all", "toplu", "hepsi", "tum", "tumu", "tümü")
-_SITE_SOURCE_ALIASES = ("site", "facette", "web", "kendi", "storefront")
+_SITE_SOURCE_ALIASES = ("site", "atilla", "web", "kendi", "storefront")
 _SOURCE_ALIASES = {"ty": "trendyol", "hb": "hepsiburada", "amz": "amazon"}
 
 
@@ -160,7 +160,7 @@ def _channel_expr() -> dict:
     return {"$cond": [
         {"$in": [platform, _MARKETPLACES]}, platform,
         {"$cond": [{"$in": [marketplace, _MARKETPLACES]}, marketplace,
-                    {"$cond": [{"$in": [platform, ["", "facette", "web"]]}, "site", platform]}]},
+                    {"$cond": [{"$in": [platform, ["", "atilla", "web"]]}, "site", platform]}]},
     ]}
 
 
@@ -295,7 +295,7 @@ def _effective_date_expr() -> dict:
     $in eksik değeri [None, ""] içinde saymaz → koşul false → eksik alanın kendisi
     döner ve hesaplanan tarih NULL olur.
 
-    Site (facette) ve Hepsiburada siparişlerinde marketplace_order_date alanı HİÇ
+    Site (atilla) ve Hepsiburada siparişlerinde marketplace_order_date alanı HİÇ
     BULUNMADIĞI için etkin tarihleri null oluyordu; bu yüzden bu siparişler HİÇBİR
     tarih aralığına girmiyor ve satış özetinden tamamen düşüyorlardı (yalnız Eylül
     2026'da 466 sipariş / ~997.356 TL). Trendyol'da alan dolu olduğu için yalnız
@@ -1080,7 +1080,7 @@ def _orphan_channel(g: dict) -> str:
     sv = str(g.get("source") or "").strip().lower()
     if sv in _MARKETPLACES:
         return sv
-    if sv in ("site", "facette", "web", "storefront"):
+    if sv in ("site", "atilla", "web", "storefront"):
         return "site"
     if g.get("claim_id"):
         return "trendyol"
@@ -2138,7 +2138,7 @@ def _row_velocity(row: dict) -> dict:
 def _row_has_platform(row: dict, platform: str) -> bool:
     """Ekrandaki productReportScope(p, platform).hasPlatformData karşılığı."""
     want = str(platform or "").strip().lower()
-    if want in ("site", "facette", "web", "kendi"):
+    if want in ("site", "atilla", "web", "kendi"):
         want = "site"
     for x in ((row or {}).get("platform_metrics") or []) + \
              ((row or {}).get("platform_breakdown") or []) + \
@@ -3067,7 +3067,7 @@ async def profitability(
         _days_range = max(1, (_d1 - _d0).days + 1)
     except Exception:
         _days_range = 30
-    _CH_ALIAS = {"facette": "site", "": "site", "web": "site", "admin_manual": "manual", "admin": "manual"}
+    _CH_ALIAS = {"atilla": "site", "": "site", "web": "site", "admin_manual": "manual", "admin": "manual"}
     from collections import defaultdict as _dd
 
     # Ana satış gerçekliği ürün raporunun kanonik motorudur. Ayrı bir item pipeline'ı
@@ -3598,7 +3598,7 @@ async def cancel_return_products(
             if cq <= 0 and rq <= 0:
                 continue
             platform = str(part.get("platform") or "site").lower()
-            if platform == "facette":
+            if platform == "atilla":
                 platform = "site"
             key = (product.get("name") or "Ürün", platform)
             dst = canonical_rows.setdefault(key, {
@@ -3663,7 +3663,7 @@ async def cancel_return_products(
             "_sub": {"$first": "$_sub"}, "_coupon": {"$first": "$_coupon"}, "_pdisc": {"$first": "$_pdisc"},
         }},
     ]
-    _SRC = {"site": "Site", "facette": "Site", "trendyol": "Trendyol", "hepsiburada": "Hepsiburada", "temu": "Temu", "n11": "n11", "amazon": "Amazon"}
+    _SRC = {"site": "Site", "atilla": "Site", "trendyol": "Trendyol", "hepsiburada": "Hepsiburada", "temu": "Temu", "n11": "n11", "amazon": "Amazon"}
     rows: dict = {}
     _agg = [r async for r in db.orders.aggregate(pipeline)]
     # KISMİ İADE: yalnız gerçekten iade edilen kalem İade'ye yazılır (ürün raporunun
@@ -3672,8 +3672,8 @@ async def cancel_return_products(
         list({r["_id"].get("on") for r in _agg
               if r["_id"].get("kind") == "return" and r["_id"].get("on")}))
     for r in _agg:
-        # 'facette' etiketi de Site'dır (DENETİM HATA-3 eki) — aynı ürünün iki satırı birleşsin
-        _pl = "site" if (r["_id"]["plat"] or "site") in ("site", "facette") else r["_id"]["plat"]
+        # 'atilla' etiketi de Site'dır (DENETİM HATA-3 eki) — aynı ürünün iki satırı birleşsin
+        _pl = "site" if (r["_id"]["plat"] or "site") in ("site", "atilla") else r["_id"]["plat"]
         key = (r["_id"]["name"], _pl)
         d = rows.setdefault(key, {"name": r["_id"]["name"],
                                   "platform": _SRC.get(_pl, _pl or "Site"),
@@ -3737,9 +3737,9 @@ async def cancel_return_by_source(
             "n11": "n11", "amazon": "Amazon", _UNKNOWN_CH: "Bilinmeyen"}
     by_ch: dict = {}
     for o in orders:
-        # Alanlardan herhangi biri bilinen pazaryeriyse onu seç; aksi halde Facette/web/
+        # Alanlardan herhangi biri bilinen pazaryeriyse onu seç; aksi halde Atilla/web/
         # boş değerlerin tamamı Site'dır. ``platform or marketplace`` kullanmak, örn.
-        # platform="facette" + marketplace="trendyol" eski kaydını yanlışlıkla Site'a atardı.
+        # platform="atilla" + marketplace="trendyol" eski kaydını yanlışlıkla Site'a atardı.
         platform = str(o.get("platform") or "").strip().lower()
         marketplace = str(o.get("marketplace") or "").strip().lower()
         key = platform if platform in _MARKETPLACES else (

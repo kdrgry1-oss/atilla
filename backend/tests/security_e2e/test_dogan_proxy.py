@@ -12,9 +12,9 @@ def test_no_proxy_by_default(monkeypatch):
 
 
 def test_proxy_applied_to_dogan_session_only(monkeypatch):
-    monkeypatch.setenv("DOGAN_PROXY_URL", "http://facette:gizli123@203.0.113.7:8443")
+    monkeypatch.setenv("DOGAN_PROXY_URL", "http://atilla:gizli123@203.0.113.7:8443")
     c = DoganClient(username="u", password="p", is_test=False)
-    assert c.transport.session.proxies["https"] == "http://facette:gizli123@203.0.113.7:8443"
+    assert c.transport.session.proxies["https"] == "http://atilla:gizli123@203.0.113.7:8443"
     assert dogan_proxy_display() == "203.0.113.7:8443"
     assert "gizli123" not in dogan_proxy_display()
 

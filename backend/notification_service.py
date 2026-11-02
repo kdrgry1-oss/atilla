@@ -485,7 +485,7 @@ async def _email_send(db, to: str, subject: str, html: str,
 async def _order_sender(db, event: str) -> Dict:
     """Sipariş yaşam-döngüsü maillerinin (order_*) gönderen kimliğini çözer.
     Panelden (Ayarlar → E-posta) ayarlanan `order_from_email` doluysa sipariş
-    mailleri o adresten gider (ör. siparis@facette.com.tr); pazarlama/işlemsel
+    mailleri o adresten gider (ör. siparis@atilla.com.tr); pazarlama/işlemsel
     itibar ayrımı korunur. Boşsa varsayılan gönderen kullanılır (davranış değişmez).
     Yalnız `order_` ile başlayan MÜŞTERİ olayları için; admin/şifre/pazarlama hariç."""
     if not str(event or "").startswith("order_"):
@@ -660,8 +660,8 @@ async def send_notification(
     # beyaz-etiket kurulumda seed tıklanmadıysa müşteri hesabına giremiyordu). Kritik
     # event'lerde şablon yoksa aşağıdaki varsayılan gövdeyle yine de gönderilir.
     _CRITICAL_DEFAULT_SMS = {
-        "password_reset_otp": "Facette dogrulama kodunuz: {otp_code} (5 dk gecerli).",
-        "login_verification_code": "Facette giris dogrulama kodunuz: {otp_code} (5 dk gecerli).",
+        "password_reset_otp": "Atilla dogrulama kodunuz: {otp_code} (5 dk gecerli).",
+        "login_verification_code": "Atilla giris dogrulama kodunuz: {otp_code} (5 dk gecerli).",
     }
     def _tpl_on(_tpl) -> bool:
         # Şablon VARSA (WhatsApp/email için de güvenli): aktif olmalı VEYA kritik event.

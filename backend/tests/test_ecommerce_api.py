@@ -1,5 +1,5 @@
 """
-E-Commerce API Tests for Facette Fashion Platform
+E-Commerce API Tests for Atilla Fashion Platform
 Tests: Auth, Products, Categories, Orders, Admin Dashboard
 """
 import pytest
@@ -9,7 +9,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@facette.com"
+ADMIN_EMAIL = "admin@atilla.com"
 ADMIN_PASSWORD = "admin123"
 TEST_USER_EMAIL = "TEST_user@example.com"
 TEST_USER_PASSWORD = "testpass123"

@@ -1,5 +1,5 @@
 """
-Ticimax SOAP Web Service Client  –  facette.com.tr
+Ticimax SOAP Web Service Client  –  atilla.com.tr
 WS Key (UyeKodu): TICIMAX_API_KEY environment variable
 
 Gerçek WSDL imzaları (doğrulanmış):
@@ -23,7 +23,7 @@ from typing import List, Dict, Optional, Any
 warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
-TICIMAX_DOMAIN  = os.environ.get("TICIMAX_DOMAIN") or "facette.ticimaxeticaret.com"
+TICIMAX_DOMAIN  = os.environ.get("TICIMAX_DOMAIN") or "atilla.ticimaxeticaret.com"
 TICIMAX_API_KEY = os.environ.get("TICIMAX_API_KEY", "").strip()
 RATE_LIMIT_SLEEP = 13   # Ticimax rate limit: 12 sn, biz 13 sn bekliyoruz
 

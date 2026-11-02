@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>tr</string>
 	<key>CFBundleDisplayName</key>
-        <string>Facette</string>
+        <string>Atilla</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>tr</string>
@@ -17,10 +17,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>tr.com.facette.admin</string>
+			<string>tr.com.atilla.admin</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>facette</string>
+				<string>atilla</string>
 			</array>
 		</dict>
 	</array>

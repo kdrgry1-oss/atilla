@@ -318,17 +318,17 @@ async def temu_egress_ip(current_user=Depends(require_permission("integrations.v
 
 @router.post("/products")
 async def temu_create_product(req: ProductCreateReq, current_user=Depends(require_permission("integrations.temu"))):
-    # 🎯 FACETTE SABİT VARSAYILANLAR (gap-fill): ürünün taşımadığı ortak özellikleri
+    # 🎯 ATILLA SABİT VARSAYILANLAR (gap-fill): ürünün taşımadığı ortak özellikleri
     # (Menşei/Cinsiyet/Yaş Grubu/Ortam/Ek Özellik/Kutu Durumu/Persona/Performans +
     # Üretici/İthalatçı GPSR) Temu attribute'larına ekle. Mevcut değer DOKUNULMAZ.
-    from facette_defaults import FACETTE_FIXED_ATTR_DEFAULTS, FACETTE_COMPANY, _norm as _fnorm
+    from atilla_defaults import ATILLA_FIXED_ATTR_DEFAULTS, ATILLA_COMPANY, _norm as _fnorm
     from .integrations_common import db_attr_default_map, _normalize_attr_key
     attrs_in = dict(req.attributes or {})
     _have = {_fnorm(k) for k in attrs_in}
     # TEK OTORİTE DB VARSAYILANLARI (Özellik Ayar Kartı) — Trendyol/HB ile aynı kaynak.
-    # DB'de değer varsa onu kullan (kullanıcı düzenledi); yoksa statik FACETTE sabiti fallback.
+    # DB'de değer varsa onu kullan (kullanıcı düzenledi); yoksa statik ATILLA sabiti fallback.
     _db_defs = await db_attr_default_map()
-    for k, v in FACETTE_FIXED_ATTR_DEFAULTS.items():
+    for k, v in ATILLA_FIXED_ATTR_DEFAULTS.items():
         if _fnorm(k) not in _have:
             _dv = _db_defs.get(_normalize_attr_key(k))
             attrs_in[k] = _dv if _dv else v
@@ -339,9 +339,9 @@ async def temu_create_product(req: ProductCreateReq, current_user=Depends(requir
         _co = await _get_company(_db)
     except Exception:
         _co = {}
-    for label, val in (("Üretici Adı", _co.get("company_name") or FACETTE_COMPANY["company_name"]),
-                       ("Üretici Mail Adresi", _co.get("email") or FACETTE_COMPANY["email"]),
-                       ("Üretici Adres Bilgisi", _co.get("address") or FACETTE_COMPANY["address"])):
+    for label, val in (("Üretici Adı", _co.get("company_name") or ATILLA_COMPANY["company_name"]),
+                       ("Üretici Mail Adresi", _co.get("email") or ATILLA_COMPANY["email"]),
+                       ("Üretici Adres Bilgisi", _co.get("address") or ATILLA_COMPANY["address"])):
         if _fnorm(label) not in _have:
             attrs_in[label] = val
     payload = {

@@ -1,4 +1,4 @@
-"""Production security & observability layer for Facette.
+"""Production security & observability layer for Atilla.
 
 Submodules:
 - crypto:        Fernet (AES-128-CBC + HMAC-SHA256) encryption for secrets/PII

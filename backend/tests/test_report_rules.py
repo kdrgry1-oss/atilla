@@ -198,11 +198,11 @@ def test_product_platform_metrics_keep_all_and_trendyol_scopes_separate():
 
 def test_payment_report_group_keeps_marketplace_over_default_payment_method():
     assert payment_report_group_key({
-        "platform": "facette", "marketplace": "Trendyol",
+        "platform": "atilla", "marketplace": "Trendyol",
         "payment_method": "marketplace",
     }) == "trendyol"
     assert payment_report_group_key({
-        "platform": "facette", "payment_method": "bank_transfer",
+        "platform": "atilla", "payment_method": "bank_transfer",
     }) == "bank_transfer"
 
 

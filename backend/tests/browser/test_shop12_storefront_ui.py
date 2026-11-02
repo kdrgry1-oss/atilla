@@ -116,7 +116,7 @@ def _context(browser, viewport, mobile=False):
         opts.update(is_mobile=True, has_touch=True, device_scale_factor=2)
     ctx = browser.new_context(**opts)
     # Çerez bandı kararı önceden verilmiş say (POST /consent/log tetiklenmesin; bant düğmeleri örtmesin).
-    ctx.add_init_script("try{localStorage.setItem('facette_cookie_consent',JSON.stringify("
+    ctx.add_init_script("try{localStorage.setItem('atilla_cookie_consent',JSON.stringify("
                         "{necessary:true,analytics:false,marketing:false,v:1}))}catch(e){}")
     guard = ApiGuard()
     ctx.route("**/*", guard.handle)

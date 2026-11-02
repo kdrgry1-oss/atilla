@@ -98,7 +98,7 @@ export default function EmailMarketing() {
   const visualRef = useRef(null);
   const lastEditorHtml = useRef("");   // editörün DIŞARI yazdığı son html (dış değişimi ayırt et)
   const htmlRef = useRef(null);        // HTML-mod textarea (imleç konumuna görsel eklemek için)
-  // ── Serbest GÖRSEL EKLE (herhangi bir dosya → R2/cdn.facette.com.tr; katalog/ürün DEĞİL) ──
+  // ── Serbest GÖRSEL EKLE (herhangi bir dosya → R2/cdn.atilla.com.tr; katalog/ürün DEĞİL) ──
   const imgFileRef = useRef(null);     // gizli file input
   const [imgUploading, setImgUploading] = useState(false);
   const [lastImageUrl, setLastImageUrl] = useState("");   // son yüklenen cdn URL (kopyalanabilir gösterim)
@@ -144,7 +144,7 @@ export default function EmailMarketing() {
   const insertPlaceholder = (ph) => { if (ph) exec("insertText", ph); };
 
   // ── Serbest görsel: dosya seç → mevcut R2 ucuna yükle (POST /api/upload/image, multipart `file`)
-  // → dönen cdn.facette.com.tr URL'iyle e-posta-güvenli <img> ekle. DB'de yalnız URL referansı
+  // → dönen cdn.atilla.com.tr URL'iyle e-posta-güvenli <img> ekle. DB'de yalnız URL referansı
   // tutulur (base64/DB-bloat YOK; optimizasyon backend'de WebP). Görsel modda imleç konumuna
   // insertHTML; HTML modda textarea imleç konumuna metin olarak eklenir. Ürün seçiciyle İLGİSİZ.
   const insertImageSnippet = (url) => {
@@ -651,7 +651,7 @@ export default function EmailMarketing() {
                   className="p-4 text-sm text-gray-800 leading-relaxed focus:outline-none overflow-auto bg-white"
                   style={{ minHeight: 360, maxHeight: 460 }} />
                 <div className="text-[11px] text-gray-400 px-3 py-1.5 border-t bg-gray-50">
-                  Yalnız iç gövdeyi düzenlersiniz; FACETTE başlık/footer gönderimde otomatik eklenir. Placeholder'lar düz metindir.
+                  Yalnız iç gövdeyi düzenlersiniz; ATILLA başlık/footer gönderimde otomatik eklenir. Placeholder'lar düz metindir.
                 </div>
               </div>
             ) : (

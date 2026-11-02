@@ -199,7 +199,7 @@ export function AuthProvider({ children }) {
     const wasStaff = isStaffToken(_lsGet("token")) || Boolean(user?.is_admin) || ADMIN_APP;
     if (wasStaff) wipeLocalStaffData();
     _lsDel("token");
-    _lsDel("facette_last_address");
+    _lsDel("atilla_last_address");
     delete axios.defaults.headers.common["Authorization"];
     setToken(null);
     setUser(null);

@@ -1,5 +1,5 @@
 """
-Generates Capacitor icon + splash assets using a stylized 'F' (Facette).
+Generates Capacitor icon + splash assets using a stylized 'F' (Atilla).
 Outputs:
   - resources/icon.png (1024x1024) — used by @capacitor/assets
   - resources/icon-foreground.png (1024x1024) — Android adaptive foreground (transparent)
@@ -14,7 +14,7 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 
 # Brand palette
 BG = (15, 15, 17)          # near-black
-ACCENT = (212, 175, 55)    # gold (facette luxury)
+ACCENT = (212, 175, 55)    # gold (atilla luxury)
 WHITE = (255, 255, 255)
 
 

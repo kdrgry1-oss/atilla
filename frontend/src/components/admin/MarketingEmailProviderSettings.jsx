@@ -78,9 +78,9 @@ export default function MarketingEmailProviderSettings() {
           <div className="grid md:grid-cols-2 gap-3">
             {field("Brevo API anahtarı", "brevo_api_key", "password", "xkeysib-...")}
             {field("Brevo kişi listesi ID", "brevo_list_id", "number", "12")}
-            {field("Doğrulanmış gönderen adresi", "brevo_from_email", "email", "bulten@facette.com.tr")}
-            {field("Gönderen adı", "brevo_from_name", "text", "Facette")}
-            {field("Yanıt adresi", "brevo_reply_to", "email", "info@facette.com.tr")}
+            {field("Doğrulanmış gönderen adresi", "brevo_from_email", "email", "bulten@atilla.com.tr")}
+            {field("Gönderen adı", "brevo_from_name", "text", "Atilla")}
+            {field("Yanıt adresi", "brevo_reply_to", "email", "info@atilla.com.tr")}
             {field("Webhook güvenlik anahtarı", "brevo_webhook_secret", "password", "uzun-rastgele-bir-anahtar")}
           </div>
           <p className="text-[11px] text-gray-500">Brevo webhook adresi: <code>/api/email-marketing/brevo-webhook?key=GÜVENLİK_ANAHTARI</code> · unsubscribe, spam ve hard bounce olaylarını seçin.</p>
@@ -91,11 +91,11 @@ export default function MarketingEmailProviderSettings() {
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!cfg.ses_enabled} onChange={(e) => setCfg((p) => ({ ...p, ses_enabled: e.target.checked }))} className="accent-black" /> SES aktif</label>
             <div className="grid md:grid-cols-2 gap-3">
               {field("AWS Bölgesi", "ses_region", "text", "eu-west-1")}
-              {field("Doğrulanmış gönderen", "ses_from_email", "email", "bulten@facette.com.tr")}
+              {field("Doğrulanmış gönderen", "ses_from_email", "email", "bulten@atilla.com.tr")}
               {field("IAM Access Key ID", "ses_access_key")}
               {field("IAM Secret Access Key", "ses_secret_key", "password", "••••••")}
-              {field("Gönderen adı", "ses_from_name", "text", "Facette")}
-              {field("Yanıt adresi", "ses_reply_to", "email", "info@facette.com.tr")}
+              {field("Gönderen adı", "ses_from_name", "text", "Atilla")}
+              {field("Yanıt adresi", "ses_reply_to", "email", "info@atilla.com.tr")}
               {field("Configuration Set", "ses_configuration_set", "text", "opsiyonel")}
             </div>
           </div>

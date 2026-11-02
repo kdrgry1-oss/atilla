@@ -20,7 +20,7 @@ async def list_pages(current_user: dict = Depends(require_permission("tasarim.vi
 
 @router.post("/seed-defaults")
 async def seed_default_pages(force: bool = False, slugs: str = "", current_user: dict = Depends(require_permission("tasarim.cms"))):
-    """FACETTE varsayılan içerik sayfalarını yükler (Hakkımızda, KVKK, İade, SSS, Gizlilik,
+    """ATILLA varsayılan içerik sayfalarını yükler (Hakkımızda, KVKK, İade, SSS, Gizlilik,
     Mesafeli Satış, Ön Bilgilendirme, İletişim).
     force=false (varsayılan): yalnızca eksik slug'ları ekler, mevcut içeriği KORUR.
     force=true: varsayılan sayfaların içeriğini yeniden yazar (üzerine yazar).
@@ -28,13 +28,13 @@ async def seed_default_pages(force: bool = False, slugs: str = "", current_user:
            (örn. ?force=true&slugs=mesafeli-satis,on-bilgilendirme). Diğer sayfalara dokunulmaz.
     """
     try:
-        from page_seed_data import FACETTE_DEFAULT_PAGES
+        from page_seed_data import ATILLA_DEFAULT_PAGES
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Seed verisi yüklenemedi: {e}")
     only = {s.strip() for s in slugs.split(",") if s.strip()}
     created, updated, skipped = [], [], []
     now = datetime.now(timezone.utc).isoformat()
-    for p in FACETTE_DEFAULT_PAGES:
+    for p in ATILLA_DEFAULT_PAGES:
         if only and p["slug"] not in only:
             continue
         existing = await db.pages.find_one({"slug": p["slug"]})

@@ -26,7 +26,7 @@ const JS_BLOCKED_PATHS = [
 const isJsBlockedPath = (p) => JS_BLOCKED_PATHS.some((x) => p === x || p.startsWith(`${x}/`));
 
 const jsHasRun = () => {
-  try { return window.__FACETTE_CUSTOM_JS_RAN__ === true; } catch (_) { return false; }
+  try { return window.__ATILLA_CUSTOM_JS_RAN__ === true; } catch (_) { return false; }
 };
 
 export default function CustomThemeInjector() {
@@ -44,8 +44,8 @@ export default function CustomThemeInjector() {
     }
     if (isAdmin) {
       // Admin'e girildiyse enjekte edilmiş tema kodunu KALDIR (güvenlik + admin UI bozulmasın).
-      document.getElementById("facette-custom-css")?.remove();
-      document.getElementById("facette-custom-js")?.remove();
+      document.getElementById("atilla-custom-css")?.remove();
+      document.getElementById("atilla-custom-js")?.remove();
       themeReq.current = null; // vitrine dönüşte güncel temayı yeniden çek
       return undefined;
     }
@@ -57,17 +57,17 @@ export default function CustomThemeInjector() {
       if (!alive) return;
       const css = data.custom_css || "";
       const js = data.custom_js || "";
-      if (css && !document.getElementById("facette-custom-css")) {
+      if (css && !document.getElementById("atilla-custom-css")) {
         const st = document.createElement("style");
-        st.id = "facette-custom-css";
+        st.id = "atilla-custom-css";
         st.textContent = css;
         document.head.appendChild(st);
       }
-      if (js && !jsBlocked && !jsHasRun() && !document.getElementById("facette-custom-js")) {
+      if (js && !jsBlocked && !jsHasRun() && !document.getElementById("atilla-custom-js")) {
         try {
-          window.__FACETTE_CUSTOM_JS_RAN__ = true;
+          window.__ATILLA_CUSTOM_JS_RAN__ = true;
           const sc = document.createElement("script");
-          sc.id = "facette-custom-js";
+          sc.id = "atilla-custom-js";
           sc.textContent = js;
           document.body.appendChild(sc);
         } catch (_) { /* tema JS hatası mağazayı kırmasın */ }

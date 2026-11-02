@@ -58,7 +58,7 @@ class TestReq(BaseModel):
     channel: str
     provider_key: Optional[str] = None
     to: str
-    message: str = "Facette test bildirimi ✓"
+    message: str = "Atilla test bildirimi ✓"
 
 
 class TestTemplateReq(BaseModel):
@@ -172,37 +172,37 @@ async def upsert_template(req: TemplateReq, current_user: dict = Depends(require
 _DEFAULT_TEMPLATES = {
     # (event, channel) → payload
     ("order_confirmed", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette siparişiniz onaylandı. İlginiz için teşekkür ederiz.",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla siparişiniz onaylandı. İlginiz için teşekkür ederiz.",
     ("order_shipped", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette siparişiniz kargoya verilmiştir. Kargo gönderinizi aşağıdaki link üzerinden takip edebilirsiniz: {tracking_url}",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla siparişiniz kargoya verilmiştir. Kargo gönderinizi aşağıdaki link üzerinden takip edebilirsiniz: {tracking_url}",
     ("order_delivered", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette siparişiniz başarıyla teslim edilmiştir. Siparişinizi keyifle kullanmanızı dileriz. Bizi tercih ettiğiniz için teşekkür ederiz.",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla siparişiniz başarıyla teslim edilmiştir. Siparişinizi keyifle kullanmanızı dileriz. Bizi tercih ettiğiniz için teşekkür ederiz.",
     ("order_undelivered", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette kargonuz teslim edilemedi, şubede sizi bekliyor. Takip: {tracking_url}",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla kargonuz teslim edilemedi, şubede sizi bekliyor. Takip: {tracking_url}",
     ("order_cancelled", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette siparişiniz iptal edilmiştir. Bilgi için bizimle iletişime geçebilirsiniz.",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla siparişiniz iptal edilmiştir. Bilgi için bizimle iletişime geçebilirsiniz.",
     ("order_awaiting_payment", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı Facette siparişiniz alındı. Havale/EFT ödemenizi bekliyoruz; ödeme detayları e-postanızda. Facette",
+        "Merhaba {customer_name}, {order_number} numaralı Atilla siparişiniz alındı. Havale/EFT ödemenizi bekliyoruz; ödeme detayları e-postanızda. Atilla",
     ("order_payment_reminder", "sms"):
         "Merhaba {customer_name}, {order_number} no'lu siparişiniz için havale/EFT ödemenizin henüz ulaşmadığını hatırlatmak isteriz. Ödemenizi tamamlamanızın ardından siparişiniz işleme alınacaktır. İlginiz için teşekkür ederiz.",
     ("order_payment_notified", "sms"):
-        "Merhaba {customer_name}, {order_number} numaralı siparişiniz için ödeme bildiriminiz alındı, kontrol ediliyor. Facette",
+        "Merhaba {customer_name}, {order_number} numaralı siparişiniz için ödeme bildiriminiz alındı, kontrol ediliyor. Atilla",
     ("order_payment_approved", "sms"):
         "Merhaba {customer_name}, {order_number} numaralı siparişinizin havale/EFT ödemesini aldık. Siparişiniz onaylandı ve işleme alınmıştır. İlginiz için teşekkür ederiz.",
     ("order_return_requested", "sms"):
-        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin iade talebiniz olusturuldu. Iade kodu: {return_code}. Facette",
+        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin iade talebiniz olusturuldu. Iade kodu: {return_code}. Atilla",
     ("order_return_approved", "sms"):
-        "Merhaba {customer_name}, {order_number} numarali siparisinize ait iadeniz onaylandi. Iade bedeli: {refund_amount} TL. Facette",
+        "Merhaba {customer_name}, {order_number} numarali siparisinize ait iadeniz onaylandi. Iade bedeli: {refund_amount} TL. Atilla",
     ("order_return_rejected", "sms"):
-        "Merhaba {customer_name}, {order_number} numarali iade talebiniz degerlendirildi. Detaylar e-postanizda. Facette",
+        "Merhaba {customer_name}, {order_number} numarali iade talebiniz degerlendirildi. Detaylar e-postanizda. Atilla",
     ("order_refunded", "sms"):
-        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin iade bedeli {refund_amount} TL hesabiniza iade edildi. Facette",
+        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin iade bedeli {refund_amount} TL hesabiniza iade edildi. Atilla",
     ("order_partial_refunded", "sms"):
-        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin {refund_amount} TL kismi iade yapildi. Facette",
+        "Merhaba {customer_name}, {order_number} numarali siparisiniz icin {refund_amount} TL kismi iade yapildi. Atilla",
     ("password_reset_otp", "sms"):
-        "Facette dogrulama kodunuz: {otp_code} (5 dk gecerli).",
+        "Atilla dogrulama kodunuz: {otp_code} (5 dk gecerli).",
     ("login_verification_code", "sms"):
-        "Facette giris dogrulama kodunuz: {otp_code} (5 dk gecerli).",
+        "Atilla giris dogrulama kodunuz: {otp_code} (5 dk gecerli).",
     ("abandoned_cart", "sms"):
         "Sepetinizde urunler kaldi! Siparis tamamlama baglantisi: {cart_url}",
 }
@@ -210,7 +210,7 @@ _DEFAULT_TEMPLATES = {
 
 # =============================================================================
 # Markalı HTML e-posta şablonları — tümü email_layout.email_shell ile üretilir
-# (üstte FACETTE logosu · ortada bilgiler · altta INSTAGRAM·TIKTOK + telif).
+# (üstte ATILLA logosu · ortada bilgiler · altta INSTAGRAM·TIKTOK + telif).
 # {customer_name} vb. placeholder'lar korunur; gönderimde render_template doldurur.
 # =============================================================================
 
@@ -441,10 +441,10 @@ _EMAIL_HTML_TEMPLATES = {
         ),
     },
     "welcome": {
-        "subject": "Aramıza hoş geldin · FACETTE",
+        "subject": "Aramıza hoş geldin · ATILLA",
         "body": email_shell(
             icon="✓", eyebrow="HOŞ GELDİN", title="Aramıza hoş geldin",
-            intro_html="Merhaba {customer_name}, FACETTE ailesine katıldığın için teşekkür ederiz. Yeni sezon parçalarını ve sana özel fırsatları keşfetmeye hemen başlayabilirsin.",
+            intro_html="Merhaba {customer_name}, ATILLA ailesine katıldığın için teşekkür ederiz. Yeni sezon parçalarını ve sana özel fırsatları keşfetmeye hemen başlayabilirsin.",
             body_html="{coupon_block}",
             cta_text="ALIŞVERİŞE BAŞLA", cta_url="{site_url}",
         ),
@@ -452,9 +452,9 @@ _EMAIL_HTML_TEMPLATES = {
 }
 
 
-# FACETTE Muli marka e-posta şablonları (email_templates.py) — eski ZaraHome tasarımını override eder.
+# ATILLA Muli marka e-posta şablonları (email_templates.py) — eski ZaraHome tasarımını override eder.
 try:
-    from email_templates import FACETTE_EMAIL_TEMPLATES as _FET
+    from email_templates import ATILLA_EMAIL_TEMPLATES as _FET
     _EMAIL_HTML_TEMPLATES = _FET
 except Exception:
     pass
@@ -483,7 +483,7 @@ async def seed_templates(
                 subj = ev["name"] if ch == "email" else ""
                 if ch == "email" and not body:
                     body = email_shell(
-                        eyebrow="FACETTE", title=ev["name"],
+                        eyebrow="ATILLA", title=ev["name"],
                         intro_html="Merhaba {customer_name}, " + ev["name"].lower() + " bildirimini sizinle paylaşıyoruz.",
                     )
 
@@ -656,7 +656,7 @@ async def send_test_template(req: TestTemplateReq, current_user: dict = Depends(
         "total": float(order.get("total") or 0),
         "status_label": ev_name,
         "otp_code": "123456",
-        "cart_url": "https://facette.com.tr/sepet",
+        "cart_url": "https://atilla.com.tr/sepet",
     }
 
     to_phone = req.to.strip() if req.channel in ("sms", "whatsapp") else None

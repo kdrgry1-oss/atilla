@@ -315,7 +315,7 @@ ul{{margin:0;padding-left:16px}} li{{margin:2px 0}}
 @media print{{ body{{padding:10mm}} h2{{page-break-after:avoid}} tr{{page-break-inside:avoid}} @page{{size:A4 landscape;margin:10mm}} }}
 </style></head><body>
 <h1>{e(rep['title'])}</h1>
-<div class="muted">FACETTE · oluşturma: {e(rep['generated_at'][:16].replace('T',' '))} UTC · {e(live_note)}</div>
+<div class="muted">ATILLA · oluşturma: {e(rep['generated_at'][:16].replace('T',' '))} UTC · {e(live_note)}</div>
 <div class="sum"><div><b>{len(rep['rows'])}</b>bildirim tipi</div><div><b class="okc">{n_auto}</b>otomatik tetiklenen</div><div><b style="color:#b45309">{n_man}</b>yalnız elle</div><div><b class="badc">{n_none}</b>hiç tetiklenmeyen / şablonu kullanılmayan</div></div>
 <h2>1) Bildirim tipleri — nereden tetikleniyor, gidiyor mu?</h2>
 <table><thead><tr><th style="width:17%">Bildirim</th><th style="width:8%">Tetik</th><th style="width:27%">Nerede / nasıl tetiklenir</th><th style="width:26%">SMS metni</th><th style="width:11%">SMS (log)</th><th style="width:11%">E-posta (log)</th></tr></thead>

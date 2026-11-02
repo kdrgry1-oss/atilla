@@ -1,6 +1,6 @@
-# Atilla — Beyaz Etiket E-Ticaret (Facette altyapısı)
+# Atilla — Beyaz Etiket E-Ticaret (Atilla altyapısı)
 
-Mağaza + yönetim paneli (FastAPI + MongoDB backend, React frontend). Facette kod tabanının
+Mağaza + yönetim paneli (FastAPI + MongoDB backend, React frontend). Atilla kod tabanının
 beyaz etiket kopyasıdır; firmaya özel her değer panelden / ortam değişkenlerinden gelir.
 
 ## Otomatik kurulum (terminal gerekmez)

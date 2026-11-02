@@ -41,7 +41,7 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 # Geriye dönük uyumluluk: bazı kayıtlarda görsel URL'si /api/files/... olarak saklandı
 files_router = APIRouter(prefix="/files", tags=["upload"])
 
-APP_NAME = "facette"
+APP_NAME = "atilla"
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -136,7 +136,7 @@ def _optimize_for_upload(data: bytes, content_type: str):
 
 
 # DENETİM (injection-redteam): image/svg+xml KALDIRILDI. SVG optimize edilmeden R2'ye
-# yazılıp cdn.facette.com.tr'den inline servis ediliyordu → herhangi bir üye çalıştırılabilir
+# yazılıp cdn.atilla.com.tr'den inline servis ediliyordu → herhangi bir üye çalıştırılabilir
 # SVG (stored-XSS) yükleyebiliyordu. Raster formatlar güvenli (PIL ile yeniden kodlanır).
 _ALLOWED_IMAGE_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
@@ -385,7 +385,7 @@ async def _serve(path: str, w: int = 0, q: int = 90):
 # çekip tam çözünürlükte (≤2000px) JPEG'e çevirir. Cloudflare cdn-cgi transform
 # kotasına (ERROR 9422) bağlı DEĞİL → güvenilir. Amazon URL'i bir kez çekip cache'ler.
 # =============================================================================
-_JPEG_ALLOWED_HOSTS = {"cdn.facette.com.tr", "static.ticimax.cloud"}
+_JPEG_ALLOWED_HOSTS = {"cdn.atilla.com.tr", "static.ticimax.cloud"}
 # Pazaryeri (HB/Amazon) yüzlerce görseli AYNI ANDA ilk kez çektiğinde her biri ayrı PIL
 # dönüşümü yapıyordu → işlemci doyup panel + vitrin saniyelerce bekliyordu. Aynı anda en
 # fazla 2 dönüşüm; sonuçlar küçük bir bellek önbelleğinde (≈64 MB) tutulur.

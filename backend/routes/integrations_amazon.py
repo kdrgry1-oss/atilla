@@ -34,7 +34,7 @@ async def amazon_tr_inventory_sync(payload: dict = Body(default={}),
 @router.post("/amazon-tr/products/sync")
 async def amazon_tr_products_sync(payload: dict = Body(default={}),
                                   current_user: dict = Depends(require_permission("integrations.amazon"))):
-    """Ürün Aktarım panelinden (CategoryMapping 'Filtreli Aktarım') manuel tetik — Facette
+    """Ürün Aktarım panelinden (CategoryMapping 'Filtreli Aktarım') manuel tetik — Atilla
     ürünlerini Amazon'a LİSTELER (Listings Items PUT). Asıl mantık amazon_spapi.sync_products."""
     from .amazon_spapi import sync_products_to_amazon  # yerel import
     return await sync_products_to_amazon(payload or {}, current_user)

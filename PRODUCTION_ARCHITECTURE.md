@@ -1,4 +1,4 @@
-# 🚀 Facette Production Architecture & Migration Guide
+# 🚀 Atilla Production Architecture & Migration Guide
 
 ## 1. Mimari Genel Bakış
 
@@ -185,7 +185,7 @@ from security.crypto import rotate_secret  # decrypt(eski) → encrypt(yeni)
   - Yeşil = "healthy"
   - "Test Alarmı Gönder" → kdrgry@gmail.com (SMTP / Resend / DB)
 
-- `/admin/secrets-vault` — yalnızca süper admin (admin@facette.com) raw değer görür
+- `/admin/secrets-vault` — yalnızca süper admin (admin@atilla.com) raw değer görür
 - `/admin/guvenlik-paneli` — login audit, IP blocklist, hesap kilidi
 
 ## 7. P2/P3 Backlog

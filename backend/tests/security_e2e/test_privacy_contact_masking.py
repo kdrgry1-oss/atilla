@@ -234,7 +234,7 @@ async def test_no_staff_get_endpoint_leaks_full_phone_or_address(pay_http, pay_e
     ship = {"first_name": "A", "last_name": "B", "address": ad, "city": "Istanbul", "district": "Kadikoy",
             "phone": "0" + ph, "email": "sweep@example.test"}
     order = {"id": oid, "order_number": "W990071", "user_id": cust["id"], "status": "delivered",
-             "payment_status": "paid", "payment_method": "credit_card", "platform": "facette", "total": 10.0,
+             "payment_status": "paid", "payment_method": "credit_card", "platform": "atilla", "total": 10.0,
              "created_at": now_iso(days=-3), "delivered_at": now_iso(days=-1), "phone": "0" + ph,
              "customer_phone": "+90" + ph, "email": "sweep@example.test",
              "items": [{"product_id": "p1", "name": "Elbise", "quantity": 1, "price": 10.0}],

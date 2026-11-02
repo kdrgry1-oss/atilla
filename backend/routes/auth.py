@@ -358,18 +358,18 @@ async def register(request: Request):
             "expires_at": int(datetime.now(timezone.utc).timestamp()) + 7 * 24 * 3600,
             "used": False, "created_at": datetime.now(timezone.utc).isoformat(),
         })
-        _site = _os2.environ.get("SITE_URL", "https://facette.com.tr").rstrip("/")
+        _site = _os2.environ.get("SITE_URL", "https://atilla.com.tr").rstrip("/")
         _vlink = f"{_site}/api/auth/verify-email?token={vtok}"
         _vhtml = (
             f'<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#2a2a2a">'
             f'<h2 style="font-weight:600">E-posta adresini doğrula</h2>'
-            f'<p>FACETTE hesabın oluşturuldu. Adresini doğrulamak için:</p>'
+            f'<p>ATILLA hesabın oluşturuldu. Adresini doğrulamak için:</p>'
             f'<p style="margin:24px 0"><a href="{_vlink}" style="background:#1a1a1a;color:#fff;'
             f'padding:12px 28px;text-decoration:none;border-radius:4px">E-postamı Doğrula</a></p>'
             f'<p style="font-size:12px;color:#888">Link 7 gün geçerlidir. Bu işlemi sen yapmadıysan yok say.</p></div>'
         )
         from email_smtp import send_smtp_email
-        await send_smtp_email(db, email, "E-posta Doğrulama — FACETTE", _vhtml)
+        await send_smtp_email(db, email, "E-posta Doğrulama — ATILLA", _vhtml)
     except Exception as _ve:
         logger.warning("verification email failed (%s)", type(_ve).__name__)
     # Hoş geldin e-postası (best-effort; kaydı asla bloklamaz). Kod kutusu welcome_mail'de
@@ -398,7 +398,7 @@ async def register(request: Request):
     }
 
 def _verify_site_url() -> str:
-    return (os.environ.get("SITE_URL") or "https://facette.com.tr").rstrip("/")
+    return (os.environ.get("SITE_URL") or "https://atilla.com.tr").rstrip("/")
 
 
 async def _verify_email_rec(token: str):
@@ -806,7 +806,7 @@ async def guest_convert_send_code(payload: dict, request: Request):
             f'<p style="font-size:12px;color:#888">Kod 10 dakika geçerlidir. Bu işlemi siz yapmadıysanız bu e-postayı yok sayın.</p></div>'
         )
         from email_smtp import send_smtp_email
-        await send_smtp_email(db, email, "Hesap Doğrulama Kodu — FACETTE", _html)
+        await send_smtp_email(db, email, "Hesap Doğrulama Kodu — ATILLA", _html)
     except Exception as _e:
         logger.warning(f"guest-convert kod maili başarısız: {type(_e).__name__}")  # AUTH23: istisna metni loglanmaz
     return {"sent": True, "email_masked": _mask_email(email)}
@@ -1482,10 +1482,10 @@ async def forgot_password_email(request: Request, req: EmailResetReq):
         "created_at": now.isoformat(),
     })
 
-    site = (os.environ.get("SITE_URL") or "https://facette.com.tr").rstrip("/")
+    site = (os.environ.get("SITE_URL") or "https://atilla.com.tr").rstrip("/")
     link = f"{site}/sifre-sifirla?token={reset_token}"
     import html as _html_esc
-    # GÜVENLİK (denetim 2026-09-29): ad HTML-kaçışlı — aksi halde ada link/HTML koyup Facette
+    # GÜVENLİK (denetim 2026-09-29): ad HTML-kaçışlı — aksi halde ada link/HTML koyup Atilla
     # alan adından oltalama maili gönderilebiliyordu.
     name = _html_esc.escape((user.get("first_name") or "").strip())
     from email_layout import email_shell
@@ -1495,7 +1495,7 @@ async def forgot_password_email(request: Request, req: EmailResetReq):
         title="Şifrenizi sıfırlayın",
         intro_html=(
             "Merhaba " + (name or "değerli müşterimiz") + ",<br>"
-            "Facette hesabınız için bir şifre sıfırlama talebi aldık. "
+            "Atilla hesabınız için bir şifre sıfırlama talebi aldık. "
             "Yeni bir şifre belirlemek için aşağıdaki butona tıklamanız yeterli."
         ),
         cta_text="ŞİFREYİ SIFIRLA", cta_url=link,
@@ -1504,7 +1504,7 @@ async def forgot_password_email(request: Request, req: EmailResetReq):
         note_html="Eğer bu talebi siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz; şifreniz değişmeden kalır.",
         preheader="Şifre sıfırlama bağlantınız",
     )
-    _background(_send_reset_email_bg(user["email"], "Şifre Sıfırlama — FACETTE", html, _mask_email(email)))
+    _background(_send_reset_email_bg(user["email"], "Şifre Sıfırlama — ATILLA", html, _mask_email(email)))
     return generic
 
 @router.post("/google")

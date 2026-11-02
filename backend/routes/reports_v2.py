@@ -780,9 +780,9 @@ async def return_rate(
 # ---------------------------------------------------------------------------
 # 4) KANAL BAZLI BRÜT MARJ — Site / Trendyol / HB ...
 # ---------------------------------------------------------------------------
-# Kanal adı normalizasyonu: mağaza siparişleri platform='facette' taşır → komisyon
+# Kanal adı normalizasyonu: mağaza siparişleri platform='atilla' taşır → komisyon
 # haritasındaki 'site'; admin manuel siparişler → 'manual'.
-_CH_ALIAS = {"facette": "site", "": "site", "web": "site",
+_CH_ALIAS = {"atilla": "site", "": "site", "web": "site",
              "admin_manual": "manual", "admin": "manual", "manuel": "manual"}
 # Pazaryeri komisyon varsayılanları (yüzde). Kârlılık ayarı (profitability-config →
 # commission_pct) varsa o önceliklidir — iki ekran aynı oranı kullanır.
@@ -800,7 +800,7 @@ def _norm_channel(ch) -> str:
 
 def _order_channel(o: dict) -> str:
     """reports._channel_expr'in Python karşılığı (+ _CH_ALIAS): bilinen pazaryeri
-    platform/marketplace alanından; facette/web/boş → site; diğerleri olduğu gibi."""
+    platform/marketplace alanından; atilla/web/boş → site; diğerleri olduğu gibi."""
     from .reports import _MARKETPLACES
     platform = str((o or {}).get("platform") or "").strip().lower()
     marketplace = str((o or {}).get("marketplace") or "").strip().lower()
@@ -808,7 +808,7 @@ def _order_channel(o: dict) -> str:
         ch = platform
     elif marketplace in _MARKETPLACES:
         ch = marketplace
-    elif platform in ("", "facette", "web"):
+    elif platform in ("", "atilla", "web"):
         ch = "site"
     else:
         ch = platform

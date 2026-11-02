@@ -1,4 +1,4 @@
-# Olay müdahale el kitabı — Facette'e uyarlanmış
+# Olay müdahale el kitabı — Atilla'ya uyarlanmış
 
 4 Ekim 2026 · Build `8c34c16c` · Kaynak: güvenlik paketi `olay-mudahale-el-kitabi.md` (RB-01…08, RUN-F01…F07)
 

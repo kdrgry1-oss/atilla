@@ -22,13 +22,13 @@ describe("session privacy", () => {
   });
   test("logout removes unscoped address, bearer token and user", async () => {
     localStorage.setItem("token", "test-token");
-    localStorage.setItem("facette_last_address", '{"address":"private test address"}');
+    localStorage.setItem("atilla_last_address", '{"address":"private test address"}');
     axios.get.mockResolvedValue({ data: { id: "a", email: "a@example.test" } });
     await act(async () => root.render(<AuthProvider><Probe /></AuthProvider>));
     expect(container.textContent).toBe("a@example.test");
     await act(async () => auth.logout());
     expect(container.textContent).toBe("guest");
-    expect(localStorage.getItem("facette_last_address")).toBeNull();
+    expect(localStorage.getItem("atilla_last_address")).toBeNull();
     expect(localStorage.getItem("token")).toBeNull();
     expect(axios.defaults.headers.common.Authorization).toBeUndefined();
   });

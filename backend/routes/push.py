@@ -109,11 +109,11 @@ def _log_entry(data: dict, sent: int, targets: int, via: str = "fcm_v1") -> dict
 #
 # Yapılandırma (birini seç; ikisi de yoksa iOS gönderimi SESSİZCE atlanır):
 #   • env  APNS_KEY_ID + APNS_TEAM_ID + APNS_KEY (.p8 dosyasının içeriği; satır sonları \n olabilir)
-#          [APNS_TOPIC (varsayılan tr.com.facette.admin), APNS_ENV=production|sandbox (varsayılan production)]
+#          [APNS_TOPIC (varsayılan tr.com.atilla.admin), APNS_ENV=production|sandbox (varsayılan production)]
 #   • ya da db.settings id="push": { apns_key_id, apns_team_id, apns_key, apns_topic, apns_env }
 # TestFlight ve App Store build'leri PRODUCTION APNs kullanır (Xcode'dan cihaza kurulan debug → sandbox).
 _APNS_HOSTS = {"production": "https://api.push.apple.com", "sandbox": "https://api.sandbox.push.apple.com"}
-_DEFAULT_APNS_TOPIC = "tr.com.facette.admin"
+_DEFAULT_APNS_TOPIC = "tr.com.atilla.admin"
 _apns_jwt_cache: dict = {"sig": None, "token": None, "at": 0.0}
 
 
@@ -422,6 +422,6 @@ async def push_status(current_user: dict = Depends(require_permission("integrati
 async def push_test(current_user: dict = Depends(require_permission("settings.edit"))):
     """Yönetici: tüm kayıtlı admin cihazlarına test bildirimi (iOS → APNs, Android → FCM v1)."""
     n = await send_push_to_admins("Test Bildirimi",
-                                  "Facette admin push çalışıyor ✅",
+                                  "Atilla admin push çalışıyor ✅",
                                   {"type": "test"})
     return {"success": True, "sent": n}

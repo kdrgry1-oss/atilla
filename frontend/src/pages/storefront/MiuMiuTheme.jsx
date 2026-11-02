@@ -18,7 +18,7 @@ export default function StorefrontTheme() {
   const [liveMenu, setLiveMenu] = useState([]);     // user's real categories → mega menu
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [company, setCompany] = useState({ site_name: "Facette", logo_url: "" });
+  const [company, setCompany] = useState({ site_name: "Atilla", logo_url: "" });
 
   useEffect(() => {
     let cancel = false;
@@ -123,7 +123,7 @@ function buildMegaMenu(cats, themeSlug) {
 
 /* ---------- Header ---------- */
 function Header({ theme, company, menu, onToggleMobile, mobileOpen }) {
-  const brand = company?.site_name || "Facette";
+  const brand = company?.site_name || "Atilla";
   const [openIdx, setOpenIdx] = useState(null);
 
   return (
@@ -380,7 +380,7 @@ function Footer({ theme, company }) {
           </ul>
         </div>
         <div>
-          <h5>{company?.site_name || "Facette"} sosyal</h5>
+          <h5>{company?.site_name || "Atilla"} sosyal</h5>
           <ul>
             <li><a href="#">Instagram</a></li>
             <li><a href="#">YouTube</a></li>
@@ -390,7 +390,7 @@ function Footer({ theme, company }) {
         </div>
       </div>
       <div className="mm-footer-bot">
-        <span>© {new Date().getFullYear()} {company?.site_name || "Facette"}. Tüm hakları saklıdır.</span>
+        <span>© {new Date().getFullYear()} {company?.site_name || "Atilla"}. Tüm hakları saklıdır.</span>
         <span>Türkiye · TR</span>
       </div>
     </footer>
@@ -401,7 +401,7 @@ function StoreCategory({ slug, categories, products, themeSlug, title, compact =
   const category = categories.find(c => c.slug === slug);
   const filtered = !slug || slug === "tumu" ? products : products.filter(p => p.category_id === category?.id || p.category_slug === slug || (p.categories || []).includes(category?.id));
   return <section className={`mm-category ${compact ? "mm-category-compact" : ""}`} data-testid="theme-category-view">
-    <header><small>{compact ? "FACETTE SEÇKİSİ" : "KOLEKSİYON"}</small><h1>{title || category?.name || "Tüm ürünler"}</h1>{!compact && <p>{filtered.length} ürün</p>}</header>
+    <header><small>{compact ? "ATILLA SEÇKİSİ" : "KOLEKSİYON"}</small><h1>{title || category?.name || "Tüm ürünler"}</h1>{!compact && <p>{filtered.length} ürün</p>}</header>
     <div className="mm-category-grid">{filtered.map((p,i)=><ProductCard key={p.id || p.slug || i} p={p} themeSlug={themeSlug}/>)}</div>
     {!filtered.length && <p className="mm-empty">Bu kategoride gösterilebilir ürün bulunamadı.</p>}
   </section>;
@@ -411,7 +411,7 @@ function StoreProduct({ product }) {
   if (!product) return <div className="mm-empty">Ürün bulunamadı.</div>;
   const images = Array.isArray(product.images) ? product.images : [];
   const gallery = images.length ? images : [themeImage(product)].filter(Boolean);
-  return <section className="mm-product-detail" data-testid="theme-product-view"><div className="mm-product-gallery">{gallery.slice(0,4).map((img,i)=><img key={i} src={typeof img === "string" ? img : img?.url} alt={i ? "" : product.name || product.title}/>)}</div><aside><small>FACETTE</small><h1>{product.name || product.title}</h1><strong>{themePrice(product)}</strong><p>{product.short_description || "Renk ve beden seçeneklerini inceleyin."}</p><a href={product.slug ? `/urun/${product.slug}` : "#"}>Ürün sayfasında aç</a></aside></section>;
+  return <section className="mm-product-detail" data-testid="theme-product-view"><div className="mm-product-gallery">{gallery.slice(0,4).map((img,i)=><img key={i} src={typeof img === "string" ? img : img?.url} alt={i ? "" : product.name || product.title}/>)}</div><aside><small>ATILLA</small><h1>{product.name || product.title}</h1><strong>{themePrice(product)}</strong><p>{product.short_description || "Renk ve beden seçeneklerini inceleyin."}</p><a href={product.slug ? `/urun/${product.slug}` : "#"}>Ürün sayfasında aç</a></aside></section>;
 }
 
 const PLACEHOLDER_IMG = "";

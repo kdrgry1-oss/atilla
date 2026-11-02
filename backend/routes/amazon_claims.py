@@ -72,7 +72,7 @@ def _amz_status(status_raw: str, resolution: str = "") -> str:
 
 
 async def _resolve_amazon_item(seller_sku: str, asin: str, order: dict) -> dict:
-    """SellerSKU → Facette varyantı (barkod/beden/ad). Sıra: amazon_sku_map → sipariş kalemi →
+    """SellerSKU → Atilla varyantı (barkod/beden/ad). Sıra: amazon_sku_map → sipariş kalemi →
     SKU kalıbı (stokkodu-renk-beden) → ürün stok kodu."""
     out = {"barcode": "", "size": "", "name": "", "unit_price": 0.0, "product_id": ""}
     sku = str(seller_sku or "").strip()

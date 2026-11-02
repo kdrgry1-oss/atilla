@@ -161,17 +161,17 @@ async def delete_vendor(vendor_id: str, current_user: dict = Depends(require_per
 
 @router.post("/seed-default")
 async def seed_default_vendor(current_user: dict = Depends(require_permission("settings.edit"))):
-    """Seed default FACETTE manufacturer"""
+    """Seed default ATILLA manufacturer"""
     
-    existing = await db.vendors.find_one({"name": "FACETTE", "vendor_type": "manufacturer"})
+    existing = await db.vendors.find_one({"name": "ATILLA", "vendor_type": "manufacturer"})
     if existing:
-        return {"message": "FACETTE üretici zaten mevcut", "id": existing["id"]}
+        return {"message": "ATILLA üretici zaten mevcut", "id": existing["id"]}
     
     vendor = {
         "id": await generate_short_id("vendors"),
-        "name": "FACETTE",
+        "name": "ATILLA",
         "vendor_type": "manufacturer",
-        "company_name": "FACETTE Tekstil Ltd. Şti.",
+        "company_name": "ATILLA Tekstil Ltd. Şti.",
         "tax_office": "",
         "tax_number": "",
         "identity_number": "",
@@ -181,8 +181,8 @@ async def seed_default_vendor(current_user: dict = Depends(require_permission("s
         "postal_code": "",
         "country": "Türkiye",
         "phone": "+90 212 000 00 00",
-        "email": "info@facette.com",
-        "website": "www.facette.com",
+        "email": "info@atilla.com",
+        "website": "www.atilla.com",
         "contact_person": "",
         "contact_phone": "",
         "bank_name": "",
@@ -195,4 +195,4 @@ async def seed_default_vendor(current_user: dict = Depends(require_permission("s
     
     await db.vendors.insert_one(vendor)
     
-    return {"id": vendor["id"], "message": "FACETTE üretici oluşturuldu"}
+    return {"id": vendor["id"], "message": "ATILLA üretici oluşturuldu"}

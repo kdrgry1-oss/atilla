@@ -249,7 +249,7 @@ async def test_full_order_chain_with_replays_and_out_of_order_events(pay_http, p
     # ── 2. 3DS: init, then OUT-OF-ORDER unverified failure, then verified success, then replays ──
     mock_3ds_init(pay_env.iyzico)
     r = await pay_http.post("/api/payment/3ds/initialize", json={"order_id": o["id"], "callback_url": CALLBACK_URL,
-                                                                 "return_url": "https://www.facette.com.tr/odeme",
+                                                                 "return_url": "https://www.atilla.com.tr/odeme",
                                                                  "card": CARD, "pay_token": _PT.get(o["id"], "")})
     assert r.status_code == 200 and r.json()["success"]
     await pay_callback(pay_http, o["id"], "pid-chain", status="failure", md="0")

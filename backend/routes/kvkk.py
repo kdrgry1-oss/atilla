@@ -131,11 +131,11 @@ def _tombstone_keys() -> list:
         keys.append(("env", env.encode()))
     smk = (os.environ.get("SECRETS_MASTER_KEY") or "").strip()
     if smk:
-        keys.append(("smk", hmac.new(smk.encode(), b"facette:kvkk-tombstone:v1", hashlib.sha256).digest()))
+        keys.append(("smk", hmac.new(smk.encode(), b"atilla:kvkk-tombstone:v1", hashlib.sha256).digest()))
     try:
         from .deps import JWT_SECRET as _jwt
         if _jwt:
-            keys.append(("jwt", hmac.new(str(_jwt).encode(), b"facette:kvkk-tombstone:v1", hashlib.sha256).digest()))
+            keys.append(("jwt", hmac.new(str(_jwt).encode(), b"atilla:kvkk-tombstone:v1", hashlib.sha256).digest()))
     except Exception:
         pass
     return keys
@@ -145,7 +145,7 @@ def _hmac_values(kind: str, value: str) -> dict:
     """{key_id: hex} — boş değer için {}."""
     if not value:
         return {}
-    msg = f"facette:kvkk-tombstone:{kind}:v1|{value}".encode()
+    msg = f"atilla:kvkk-tombstone:{kind}:v1|{value}".encode()
     return {kid: hmac.new(k, msg, hashlib.sha256).hexdigest() for kid, k in _tombstone_keys()}
 
 
@@ -248,7 +248,7 @@ async def open_order_count(user: dict) -> int:
             {"$and": [{"status": {"$in": ["delivered", "completed"]}},
                       {"invoice_issued": {"$ne": True}},
                       {"invoice_number": {"$in": [None, ""]}},
-                      {"platform": {"$in": [None, "", "facette", "site"]}},
+                      {"platform": {"$in": [None, "", "atilla", "site"]}},
                       {"created_at": {"$gte": cut}}]},
         ]},
     ]}
@@ -474,7 +474,7 @@ async def reapply_deletion_tombstones() -> dict:
             em = _norm_email(s.get("email"))
             if not em:
                 continue
-            msg = f"facette:kvkk-tombstone:email:v1|{em}".encode()
+            msg = f"atilla:kvkk-tombstone:email:v1|{em}".encode()
             for kid, k in keys:
                 d_at = email_hashes.get((kid, hmac.new(k, msg, hashlib.sha256).hexdigest()))
                 if d_at is None:
@@ -566,7 +566,7 @@ async def kvkk_my_data(request: Request, current_user: dict = Depends(require_au
     now_iso = _now_iso()
     payload = {
         "generated_at": now_iso,
-        "format": "facette-kvkk-export-v1",
+        "format": "atilla-kvkk-export-v1",
         "note": ("Bu dosya KVKK md. 11 kapsamında hesabınızla ilişkili kişisel verilerin dökümüdür. "
                  "Ödeme kartı bilgileri tarafımızda saklanmaz; iade IBAN'ı ve T.C. kimlik / vergi numarası "
                  "güvenlik nedeniyle maskelidir."),
@@ -588,7 +588,7 @@ async def kvkk_my_data(request: Request, current_user: dict = Depends(require_au
     await write_audit_log("kvkk_data_export", user_id=uid, email=email,
                           ip=client_ip_from_request(request), user_agent=request.headers.get("user-agent"),
                           success=True, meta={"orders": len(orders)})
-    fname = f"facette-verilerim-{_now().strftime('%Y%m%d')}.json"
+    fname = f"atilla-verilerim-{_now().strftime('%Y%m%d')}.json"
     return JSONResponse(content=json.loads(json.dumps(payload, default=str)),
                         headers={"Content-Disposition": f'attachment; filename="{fname}"',
                                  "Cache-Control": "no-store"})

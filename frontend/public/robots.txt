@@ -12,7 +12,7 @@ Disallow: /admin
 Disallow: /siparis-takip
 
 # ---------------------------------------------------------------------------
-# Yapay zeka (LLM) tarayıcıları AÇIKÇA izinli — AI asistanlarının FACETTE'i ve
+# Yapay zeka (LLM) tarayıcıları AÇIKÇA izinli — AI asistanlarının ATILLA'yı ve
 # ürünlerini kadın giyim aramalarında önerebilmesi için içerik taranabilir olsun.
 # (Aynı özel sayfa kısıtları geçerli.)
 # ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ User-agent: CCBot
 Allow: /
 
 # AI asistanları için marka/ürün özeti (llms.txt standardı)
-# https://facette.com.tr/llms.txt
+# https://atilla.com.tr/llms.txt
 
 # Sitemap (dinamik — ürünler, kategoriler ve sayfalar)
-Sitemap: https://facette.com.tr/sitemap.xml
+Sitemap: https://atilla.com.tr/sitemap.xml

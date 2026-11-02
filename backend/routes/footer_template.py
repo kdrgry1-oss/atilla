@@ -61,23 +61,23 @@ _DEFAULT = {
         {
             "title": "İletişim",
             "static": [
-                "info@facette.com.tr",
+                "info@atilla.com.tr",
                 "+90 543 330 03 10",
                 "Pazartesi-Cumartesi 09:00 - 18:00",
             ],
         },
     ],
     "newsletter": {
-        "title": "Facette Kulübü seni bekliyor",
+        "title": "Atilla Kulübü seni bekliyor",
         "description": "Yeni koleksiyonlar, özel kampanyalar ve sana özel fırsatlardan ilk sen haberdar ol.",
         "placeholder": "E-posta adresin",
     },
     "social": {
-        "instagram": "https://instagram.com/facette",
+        "instagram": "https://instagram.com/atilla",
         "facebook": "",
         "twitter": "",
     },
-    "copyright": "© 2026 Facette. Tüm hakları saklıdır.",
+    "copyright": "© 2026 Atilla. Tüm hakları saklıdır.",
 }
 
 

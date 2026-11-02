@@ -36,7 +36,7 @@ def permissions():
 
 
 @pytest.mark.parametrize("user", [None, {}, {"created_by": "owner"},
-    {"email": "admin@facette.com"}, {"is_super_admin": "true"}, {"role_id": "deleted"}])
+    {"email": "admin@atilla.com"}, {"is_super_admin": "true"}, {"role_id": "deleted"}])
 def test_no_implicit_permission_grants(permissions, user):
     assert asyncio.run(permissions["get_effective_permissions"](user)) == []
 
@@ -192,7 +192,7 @@ def test_invoice_escapes_identifiers_and_requires_invoice_permission(permissions
 
 @pytest.mark.parametrize("user,allowed", [
     ({"is_admin": True, "created_by": "owner"}, False),
-    ({"is_admin": True, "email": "admin@facette.com"}, False),
+    ({"is_admin": True, "email": "admin@atilla.com"}, False),
     ({"is_admin": False, "is_super_admin": True}, False),
     ({"is_admin": True, "role_id": "deleted"}, False),
     ({"is_admin": True, "is_super_admin": True}, True),

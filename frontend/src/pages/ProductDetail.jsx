@@ -129,7 +129,7 @@ function shippingCutoff(cfg) {
 }
 
 // Son gezilen ürünler — localStorage'da küçük anlık görüntü (snapshot) listesi.
-const RV_KEY = "facette_recently_viewed";
+const RV_KEY = "atilla_recently_viewed";
 const readRecentlyViewed = () => {
   try { return JSON.parse(localStorage.getItem(RV_KEY) || "[]"); } catch { return []; }
 };
@@ -1381,7 +1381,7 @@ export default function ProductDetail() {
                   {r.comment && <p className="text-sm text-gray-600 leading-relaxed">{r.comment}</p>}
                   {r.admin_reply && (
                     <div className="mt-2 ml-3 pl-3 border-l-2 border-black/10">
-                      <p className="text-[11px] font-medium text-gray-500 mb-0.5">FACETTE</p>
+                      <p className="text-[11px] font-medium text-gray-500 mb-0.5">ATILLA</p>
                       <p className="text-xs text-gray-600">{r.admin_reply}</p>
                     </div>
                   )}

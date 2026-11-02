@@ -78,7 +78,7 @@ memory/
 # Repository-local generated snapshots and reports
 /.iys-backup-*/
 /.iys-yedek-manuel/
-/facette_deploy/
+/atilla_deploy/
 /test_reports/
 /outputs/
 

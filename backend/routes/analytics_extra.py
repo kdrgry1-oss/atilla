@@ -275,7 +275,7 @@ async def marketplace_profit(
 
     # COGS (ürün maliyeti) — kanal bazında. Kalemleri aç, ürünü profitability'nin
     # $lookup'ı ile TIPATIP aynı şekilde eşleştir: product_id VEYA barcode (üst-seviye
-    # ya da varyant). Pazaryeri kalemleri Facette id'si değil productCode/barcode taşır.
+    # ya da varyant). Pazaryeri kalemleri Atilla id'si değil productCode/barcode taşır.
     # Birim maliyet zinciri: purchase_price(>0) → cost_price. Maliyeti bilinmeyen
     # kalemin cirosu revenue_nocost'ta toplanır ve aşağıda cog_fallback_ratio ile tahmin edilir.
     cogs_pipeline = [
@@ -370,7 +370,7 @@ async def google_merchant_feed():
     olmasın diye status='active' filtresiyle yalnızca yayındakiler dahil.
     """
     import os
-    site_url = os.environ.get("SITE_URL", "https://facette.com.tr")
+    site_url = os.environ.get("SITE_URL", "https://atilla.com.tr")
     items_xml = []
     # Yayında olan ürünler: `is_active=True` veya `status=active` veya filtre yok.
     q = {"$or": [{"is_active": True}, {"status": "active"}, {"is_active": {"$exists": False}, "status": {"$exists": False}}]}
@@ -379,7 +379,7 @@ async def google_merchant_feed():
         name = p.get("name", "")
         desc = p.get("description") or name
         img = (p.get("images") or [None])[0] or ""
-        brand = p.get("brand") or "FACETTE"
+        brand = p.get("brand") or "ATILLA"
         cat = p.get("category_name") or "Giyim"
         price = p.get("sale_price") or p.get("price") or 0
         variants = p.get("variants") or []
@@ -408,9 +408,9 @@ async def google_merchant_feed():
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
 <channel>
-  <title>FACETTE</title>
+  <title>ATILLA</title>
   <link>{site_url}</link>
-  <description>FACETTE Google Merchant Product Feed</description>
+  <description>ATILLA Google Merchant Product Feed</description>
   {''.join(items_xml)}
 </channel>
 </rss>"""

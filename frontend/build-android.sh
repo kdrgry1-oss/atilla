@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# build-android.sh — Facette Android APK/AAB Build Script
+# build-android.sh — Atilla Android APK/AAB Build Script
 # =============================================================================
 # Usage:
 #   bash build-android.sh release    # Production AAB (Play Store için)
@@ -10,7 +10,7 @@
 #   - Android Studio + Android SDK kurulu
 #   - JDK 17 kurulu
 #   - ANDROID_HOME env değişkeni set
-#   - /app/keystores/facette.keystore mevcut (release için)
+#   - /app/keystores/atilla.keystore mevcut (release için)
 # =============================================================================
 
 set -e
@@ -27,17 +27,17 @@ echo ">>> Step 3/4: Gradle build"
 cd android
 
 if [ "$MODE" = "release" ]; then
-  if [ ! -f "app/facette.keystore" ]; then
+  if [ ! -f "app/atilla.keystore" ]; then
     echo "❌ Keystore yok! Önce keystore oluştur:"
-    echo "   keytool -genkey -v -keystore app/facette.keystore -alias facette -keyalg RSA -keysize 2048 -validity 10000"
+    echo "   keytool -genkey -v -keystore app/atilla.keystore -alias atilla -keyalg RSA -keysize 2048 -validity 10000"
     exit 1
   fi
 
   # Release keystore.properties
   cat > keystore.properties << EOF
-storeFile=facette.keystore
+storeFile=atilla.keystore
 storePassword=${KEYSTORE_PASSWORD:?Set KEYSTORE_PASSWORD env}
-keyAlias=facette
+keyAlias=atilla
 keyPassword=${KEY_PASSWORD:?Set KEY_PASSWORD env}
 EOF
 

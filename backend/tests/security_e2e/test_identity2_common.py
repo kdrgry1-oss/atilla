@@ -46,7 +46,7 @@ def id2_async(scenario):
     """Run ``await scenario(client)`` on a fresh loop; background tasks are drained before exit."""
     async def _main():
         transport = httpx.ASGITransport(app=server.app, client=("203.0.113.10", 40000))
-        async with httpx.AsyncClient(transport=transport, base_url="https://www.facette.com.tr") as c:
+        async with httpx.AsyncClient(transport=transport, base_url="https://www.atilla.com.tr") as c:
             try:
                 return await scenario(c)
             finally:

@@ -1,10 +1,10 @@
-# Facette — Müşteri Mobil Uygulaması (Capacitor)
+# Atilla — Müşteri Mobil Uygulaması (Capacitor)
 
-Bu klasör, **müşteri storefront'unu** (facette.com.tr'nin müşteriye görünen tüm sayfaları)
+Bu klasör, **müşteri storefront'unu** (atilla.com.tr'nin müşteriye görünen tüm sayfaları)
 iOS + Android native uygulamasına saran Capacitor kabuğudur. Web tarafı ayrı bir kod tabanı
 değildir — `../frontend` build'inin **customer** varyantından gelir.
 
-- **appId:** `tr.com.facette.app` (admin uygulaması `tr.com.facette.admin`'den AYRI)
+- **appId:** `tr.com.atilla.app` (admin uygulaması `tr.com.atilla.admin`'den AYRI)
 - **Açılış:** native uygulamada kök `/` → anasayfa (storefront). Admin'e gitmez.
 - **Özellikler:** anasayfa, kategoriler, ürün detay, sepet, ödeme (iyzico 3DS), hesabım,
   siparişlerim, iade, sipariş takip, arama, statik sayfalar — hepsi web storefront'la birebir.

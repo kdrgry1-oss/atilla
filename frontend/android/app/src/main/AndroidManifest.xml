@@ -19,21 +19,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link: facette://order/123 -->
+            <!-- Deep link: atilla://order/123 -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="facette" />
+                <data android:scheme="atilla" />
             </intent-filter>
 
-            <!-- Universal link: https://facette.com.tr/* (Trendyol/email links) -->
+            <!-- Universal link: https://atilla.com.tr/* (Trendyol/email links) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="facette.com.tr" />
-                <data android:scheme="https" android:host="www.facette.com.tr" />
+                <data android:scheme="https" android:host="atilla.com.tr" />
+                <data android:scheme="https" android:host="www.atilla.com.tr" />
             </intent-filter>
         </activity>
 

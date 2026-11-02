@@ -1,5 +1,5 @@
 {
-  "project_name": "FACETTE E-Commerce Storefront",
+  "project_name": "ATILLA E-Commerce Storefront",
   "theme_strategy": {
     "mode": "dark",
     "archetype": "5 (Luxury)",
@@ -63,7 +63,7 @@
   },
   "page_blueprints": {
     "home": {
-      "hero": "Tam ekran (h-screen) hero görsel/video. Gradient overlay (siyah/50'den saydama). Merkezde H1 (FACETTE) ve Primary CTA (Keşfet).",
+      "hero": "Tam ekran (h-screen) hero görsel/video. Gradient overlay (siyah/50'den saydama). Merkezde H1 (ATILLA) ve Primary CTA (Keşfet).",
       "editorial_categories": "Büyük, asimetrik tipografi ve tam genişlikte görsellerle kategori geçişleri.",
       "product_scroller": "Yatay kaydırılabilir, ürünlerin arasında büyük boşluklar olan (gap-12) öne çıkan ürünler.",
       "lookbook": "Bento asimetrik grid ile sezon koleksiyonu mozaik görünümü.",

@@ -1,5 +1,5 @@
 """
-Test suite for Facette E-Commerce API after modular refactoring
+Test suite for Atilla E-Commerce API after modular refactoring
 Tests: Auth, Products, Categories, CMS, Orders, Admin, Customer, Integrations
 """
 import pytest
@@ -9,7 +9,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@facette.com"
+ADMIN_EMAIL = "admin@atilla.com"
 ADMIN_PASSWORD = "admin123"
 
 

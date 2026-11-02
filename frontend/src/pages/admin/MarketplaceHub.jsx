@@ -663,7 +663,7 @@ export default function MarketplaceHub() {
                 <p className="text-xs text-gray-500 mb-4">
                   Önce API bilgilerini girip kaydedin ve entegrasyonu aktif edin. Siparişler panele Hepsiburada ile aynı
                   kurallarla düşer (stok bir kez düşülür, n11'de iptal olursa stok geri eklenir). Stok gönderimi yalnız
-                  n11'de zaten listeli ve Facette ile eşleşen ürünlerin adedini günceller; fiyata dokunmaz.
+                  n11'de zaten listeli ve Atilla ile eşleşen ürünlerin adedini günceller; fiyata dokunmaz.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   {[

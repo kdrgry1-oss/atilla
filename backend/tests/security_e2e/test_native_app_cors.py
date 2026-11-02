@@ -1,6 +1,6 @@
 """Native (Capacitor) uygulama kaynakları CORS'ta izinli olmalı.
 
-iOS WebView kaynağı capacitor://localhost (veya ios.scheme "Facette" → Facette://localhost),
+iOS WebView kaynağı capacitor://localhost (veya ios.scheme "Atilla" → Atilla://localhost),
 Android https://localhost. Bunlar whitelist'te yoksa uygulamadan HER istek — giriş dahil —
 400 "Disallowed CORS origin" alır ve kullanıcı "giriş başarısız" görür.
 Rastgele web kaynağı yine reddedilir.
@@ -10,7 +10,7 @@ import pytest
 pytestmark = pytest.mark.usefixtures("id_env")
 
 
-@pytest.mark.parametrize("origin", ["capacitor://localhost", "Facette://localhost", "https://localhost"])
+@pytest.mark.parametrize("origin", ["capacitor://localhost", "Atilla://localhost", "https://localhost"])
 def test_native_origin_preflight_allowed(id_client, origin):
     r = id_client.options("/api/auth/login", headers={
         "Origin": origin, "Access-Control-Request-Method": "POST",

@@ -1,4 +1,4 @@
-# Facette — Olay Müdahale Planı (Incident Response Plan)
+# Atilla — Olay Müdahale Planı (Incident Response Plan)
 
 _Amazon SP-API Data Protection Policy uyumu için._
 Son güncelleme: 2026-06-04 · Gözden geçirme periyodu: **6 ayda bir**

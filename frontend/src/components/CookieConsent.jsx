@@ -1,7 +1,7 @@
 /**
  * CookieConsent.jsx — Siteye ilk giren ziyaretçiye gösterilen çerez izni barı.
  * ---------------------------------------------------------------------------
- * • Karar localStorage'da "facette_cookie_consent" altında tutulur:
+ * • Karar localStorage'da "atilla_cookie_consent" altında tutulur:
  *     { necessary:true, analytics:bool, marketing:bool, ts:ISO, v:1 }
  * • Karar verildiğinde:
  *     1) dataLayer'a Google Consent Mode "consent_update" event'i gönderilir
@@ -15,7 +15,7 @@ import axios from "axios";
 
 import { safeUrl } from "../lib/safeUrl";
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const LS_KEY = "facette_cookie_consent";
+const LS_KEY = "atilla_cookie_consent";
 
 const readConsent = () => {
   try {

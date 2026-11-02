@@ -28,7 +28,7 @@ export default function CampaignProducts() {
       .then(({ data }) => {
         if (!alive) return;
         setInfo(data);
-        try { document.title = `${data.title} | FACETTE`; } catch (_) { /* noop */ }
+        try { document.title = `${data.title} | ATILLA`; } catch (_) { /* noop */ }
       })
       .catch(() => { if (alive) setNotFound(true); });
     return () => { alive = false; };

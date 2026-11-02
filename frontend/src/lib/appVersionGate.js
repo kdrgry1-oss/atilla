@@ -4,13 +4,13 @@
  * - Native uygulama (Capacitor iOS/Android) YALNIZ kendi API'mize giden isteklere
  *   `X-App-Platform`, `X-App-Version`, `X-App-Target` başlıklarını ekler. Web istemcisi hiçbir
  *   şey eklemez (sunucu politikası web'i etkilemez; üçüncü taraf isteklere başlık gitmez).
- * - Sunucu 426 + code=app_update_required dönerse `facette:app-update-required` olayı yayılır;
+ * - Sunucu 426 + code=app_update_required dönerse `atilla:app-update-required` olayı yayılır;
  *   <AppUpdateRequired /> engelleyici "güncelleme gerekli" ekranını gösterir.
  *
  * Sürüm asgari değeri İşletme Kuralları'ndan gelir (app.min_version_admin / _customer).
  */
 
-export const APP_UPDATE_EVENT = "facette:app-update-required";
+export const APP_UPDATE_EVENT = "atilla:app-update-required";
 export const APP_UPDATE_CODE = "app_update_required";
 
 export function isOurApiUrl(url, apiBase) {

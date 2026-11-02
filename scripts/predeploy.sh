@@ -20,7 +20,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PY="${PYTHON:-python3}"
-BRANCH_DEPLOY="${DEPLOY_BRANCH:-claude/facette-repo-connect-s07sw3}"
+BRANCH_DEPLOY="${DEPLOY_BRANCH:-claude/atilla-repo-connect-s07sw3}"
 DO_DEPLOY=0
 [[ "${1:-}" == "--deploy" ]] && DO_DEPLOY=1
 

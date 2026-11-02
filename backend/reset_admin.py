@@ -33,7 +33,7 @@ async def reset():
     # GÜVENLİK (denetim 2026-10, #5): parola sıfırlanınca token_version artırılır → hesabın
     # TÜM açık oturumları (çalınmış olabilecek token'lar dâhil) geçersiz olur.
     result = await db.users.update_one(
-        {"email": "admin@facette.com"},
+        {"email": "admin@atilla.com"},
         {"$set": {"password": hashed, "password_changed_at": _now_iso,
                   "password_updated_at": _now_iso},
          "$inc": {"token_version": 1}},
@@ -41,12 +41,12 @@ async def reset():
     )
     # Denetim izi (auth_audit_logs — deps.write_audit_log ile aynı şema). Best-effort.
     try:
-        _u = await db.users.find_one({"email": "admin@facette.com"}, {"_id": 0, "id": 1})
+        _u = await db.users.find_one({"email": "admin@atilla.com"}, {"_id": 0, "id": 1})
         await db.auth_audit_logs.insert_one({
             "id": str(_uuid.uuid4()),
             "event": "admin_password_reset_script",
             "user_id": (_u or {}).get("id"),
-            "email": "admin@facette.com",
+            "email": "admin@atilla.com",
             "ip": None,
             "user_agent": "reset_admin.py",
             "success": True,
@@ -63,7 +63,7 @@ async def reset():
         from datetime import datetime, timezone
         await db.users.insert_one({
             "id": str(uuid.uuid4()),
-            "email": "admin@facette.com",
+            "email": "admin@atilla.com",
             "password": hashed,
             "first_name": "Admin",
             "last_name": "User",
@@ -71,10 +71,10 @@ async def reset():
             "is_active": True,
             "created_at": datetime.now(timezone.utc).isoformat()
         })
-        print("Admin user CREATED: admin@facette.com (parola ADMIN_RESET_PASSWORD ile ayarlandı)")
+        print("Admin user CREATED: admin@atilla.com (parola ADMIN_RESET_PASSWORD ile ayarlandı)")
     else:
         print(f"Admin password RESET. Matched: {result.matched_count}, Modified: {result.modified_count}")
-        print("Login: admin@facette.com (parola ADMIN_RESET_PASSWORD ile ayarlandı)")
+        print("Login: admin@atilla.com (parola ADMIN_RESET_PASSWORD ile ayarlandı)")
 
 if __name__ == "__main__":
     asyncio.run(reset())

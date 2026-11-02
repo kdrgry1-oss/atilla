@@ -13,10 +13,10 @@ settings.id="email_ses" alanları (ayar sayfasıyla uyumlu):
   region             : str  -> AWS bölgesi (ör. "eu-central-1", "eu-west-1")
   access_key         : str  -> IAM access key id
   secret_key         : str  -> IAM secret (at-rest ŞİFRELİ saklanır — security.crypto)
-  from_email         : str  -> doğrulanmış gönderen (ör. "bulten@news.facette.com.tr")
-  from_name          : str  -> gönderen adı (ör. "Facette")
+  from_email         : str  -> doğrulanmış gönderen (ör. "bulten@news.atilla.com.tr")
+  from_name          : str  -> gönderen adı (ör. "Atilla")
   configuration_set  : str  -> (ops.) SES configuration set (açılma/bounce takibi)
-  unsubscribe_mailto : str  -> (ops.) List-Unsubscribe mailto adresi (ör. "unsubscribe@news.facette.com.tr")
+  unsubscribe_mailto : str  -> (ops.) List-Unsubscribe mailto adresi (ör. "unsubscribe@news.atilla.com.tr")
 """
 import asyncio
 
@@ -77,7 +77,7 @@ def build_marketing_mime(cfg: dict, to: str, subject: str, html: str, reply_to: 
     from email.header import Header
     from email.utils import formataddr, make_msgid
     source = cfg.get("from_email") or ""
-    name = cfg.get("from_name") or "Facette"
+    name = cfg.get("from_name") or "Atilla"
     msg = MIMEMultipart("alternative")
     msg["Subject"] = Header(subject or "", "utf-8")
     msg["From"] = formataddr((str(Header(name, "utf-8")), source)) if name else source
@@ -128,7 +128,7 @@ def _send_sync(cfg: dict, to: str, subject: str, html: str, reply_to: str = "") 
     try:
         client = _client(cfg)
         source = cfg.get("from_email")
-        name = cfg.get("from_name") or "Facette"
+        name = cfg.get("from_name") or "Atilla"
         src = f"{name} <{source}>" if name else source
         kwargs = {
             "Source": src,

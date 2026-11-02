@@ -282,7 +282,7 @@ async def iys_query(q: IYSQuery, _=Depends(require_permission("integrations.view
 async def iys_register(p: IYSRegister, _=Depends(require_permission("integrations.netgsm"))):
     """İzin ekle — ARACI NETGSM üzerinden. DOĞRUDAN devlet İYS'sine (api.iys.org.tr) GİTMEZ.
 
-    Facette'in İYS aracı hizmet sağlayıcısı NetGSM'dir; admin panelinden elle eklenen izin de
+    Atilla'nın İYS aracı hizmet sağlayıcısı NetGSM'dir; admin panelinden elle eklenen izin de
     checkout ile AYNI NetGSM yolunu (record_consent → api.netgsm.com.tr/iys/add) kullanır.
     Böylece tek kanal olur, devlet İYS'sine doğrudan çift gönderim yapılmaz."""
     from .iys import record_consent

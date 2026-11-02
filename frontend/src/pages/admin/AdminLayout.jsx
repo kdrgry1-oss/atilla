@@ -267,7 +267,7 @@ export default function AdminLayout() {
           data-testid="admin-logo-home"
           className="text-base font-bold tracking-[0.2em] shrink-0 text-white hover:text-gray-300 transition-colors"
         >
-          FACETTE
+          ATILLA
         </Link>
 
         {/* Desktop Nav — tam yatay menü ancak ~1280px'e sığar; altında (iPad yatay/dikey dahil)

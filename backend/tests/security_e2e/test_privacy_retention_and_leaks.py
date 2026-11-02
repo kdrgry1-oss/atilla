@@ -34,7 +34,7 @@ def _blob(o):
     return json.dumps(o, default=str, ensure_ascii=False)
 
 
-def _order(oid, *, days_ago=800, status="delivered", platform="facette", **extra):
+def _order(oid, *, days_ago=800, status="delivered", platform="atilla", **extra):
     ship = {"first_name": "Ayse", "last_name": "Yilmaz", "address": ADDR, "city": "Istanbul",
             "district": "Kadikoy", "postal_code": "34000", "phone": PHONE, "email": "a@example.test"}
     o = {"id": oid, "order_number": "W" + oid, "status": status, "payment_status": "paid", "platform": platform,

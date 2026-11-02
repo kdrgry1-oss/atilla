@@ -44,7 +44,7 @@ from routes import deps  # noqa: E402
 IYZICO_BASE = "https://sandbox-api.iyzipay.com"
 IYZICO_SECRET = "pay-e2e-iyzico-secret-0123456789"
 IYZICO_KEY = "pay-e2e-iyzico-key"
-CALLBACK_URL = "https://www.facette.com.tr/api/payment/3ds/callback"
+CALLBACK_URL = "https://www.atilla.com.tr/api/payment/3ds/callback"
 CARD = {"cardHolderName": "Test Kart", "cardNumber": "5528790000000008",
         "expireMonth": "12", "expireYear": "2030", "cvc": "123"}
 SHIP = {"first_name": "Ayse", "last_name": "Test", "email": "buyer@example.test",
@@ -454,7 +454,7 @@ def pay_env(monkeypatch):
 @pytest_asyncio.fixture
 async def pay_http(pay_env):
     transport = httpx.ASGITransport(app=server.app, client=("203.0.113.10", 40000))
-    async with httpx.AsyncClient(transport=transport, base_url="https://www.facette.com.tr") as c:
+    async with httpx.AsyncClient(transport=transport, base_url="https://www.atilla.com.tr") as c:
         yield c
     await pay_drain()
 
@@ -502,7 +502,7 @@ def mock_3ds_init(router, ok=True, payment_id="pid-init"):
 async def pay_init_3ds(http, order_id, pay_token=None):
     return await http.post("/api/payment/3ds/initialize",
                            json={"order_id": order_id, "callback_url": CALLBACK_URL,
-                                 "return_url": "https://www.facette.com.tr/odeme", "card": CARD,
+                                 "return_url": "https://www.atilla.com.tr/odeme", "card": CARD,
                                  "pay_token": PAY_TOKENS.get(order_id, "") if pay_token is None else pay_token})
 
 

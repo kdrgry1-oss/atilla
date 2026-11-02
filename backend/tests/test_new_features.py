@@ -1,6 +1,6 @@
 """
 Tests for New Features: Variants, Similar/Combo Products, Cargo, Ship Order
-Facette E-Commerce Platform - Iteration 3
+Atilla E-Commerce Platform - Iteration 3
 """
 import pytest
 import requests
@@ -9,7 +9,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@facette.com"
+ADMIN_EMAIL = "admin@atilla.com"
 ADMIN_PASSWORD = "admin123"
 
 

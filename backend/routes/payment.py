@@ -124,7 +124,7 @@ def _own_hosts() -> set:
 
 def _safe_return_base(return_url: str, request) -> str:
     """OPEN-REDIRECT koruması: ödeme sonrası yönlendirilecek adres SADECE kendi
-    origin'imize (istek host'u) veya bilinen facette alan adlarına izinli. Dış/kötü
+    origin'imize (istek host'u) veya bilinen atilla alan adlarına izinli. Dış/kötü
     niyetli return_url (ör. https://evil.tld) reddedilip güvenli varsayılana düşülür.
     """
     default = f"{str(request.base_url).rstrip('/')}/odeme"
@@ -712,7 +712,7 @@ async def _notify_paid_order_confirmed(order_id: str) -> None:
             logger.warning(f"admin push (kart ödeme sonrası) atlandı: {_pe}")
         # ADMIN E-POSTA BİLDİRİMİ: web sitesinden gelen (ödemesi ONAYLANMIŞ) sipariş için
         # firmanın iletişim adresine (beyaz-etiket: company.contact_email → varsayılan
-        # info@facette.com.tr) özet mail. order_confirmed_notified bayrağıyla tek sefer.
+        # info@atilla.com.tr) özet mail. order_confirmed_notified bayrağıyla tek sefer.
         # Yarıda kalan 3DS'te BURAYA gelinmez → sahte "yeni sipariş" maili gitmez.
         try:
             import company as _company
@@ -1121,7 +1121,7 @@ async def _redecrement_after_cancel_on_paid(order_id: str) -> bool:
                                   "variant_id": it.get("variant_id"),
                                   "level": await _resolve_move_level(it), "delta": d})
         o = await db.orders.find_one({"id": order_id}, {"_id": 0, "order_number": 1, "platform": 1}) or {}
-        virt = {"order_number": o.get("order_number", ""), "platform": o.get("platform") or "facette",
+        virt = {"order_number": o.get("order_number", ""), "platform": o.get("platform") or "atilla",
                 "items": [{"barcode": bc, "quantity": q} for bc, q in by_bc.items()]}
         moves = await _stock_delta_for_order(virt, -1) if virt["items"] else []
         if no_bc:
@@ -1617,7 +1617,7 @@ async def get_installments(payload: dict, request: Request):
 # =============================================================================
 # İYZİCO WEBHOOK (İşyeri Bildirimleri) — sunucudan sunucuya ödeme onayı
 # Kurulum (iyzico paneli): Ayarlar → Firma Ayarları → İşyeri Bildirimleri →
-#   URL: https://api.facette.com.tr/api/payment/webhook
+#   URL: https://api.atilla.com.tr/api/payment/webhook
 # Müşteri ödeme sonrası sekmeyi kapatsa bile onay buraya düşer: sipariş
 # iyzico'dan retrieve ile DOĞRULANARAK finalize edilir ve CAPI purchase
 # (TikTok CompletePayment, Meta Purchase …) sunucudan gönderilir.

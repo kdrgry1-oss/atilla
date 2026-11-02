@@ -6,15 +6,15 @@
 #   4) temel koleksiyonlar (products/orders/users/settings) boş değilse BAŞARILI; geçici DB silinir.
 # Herhangi bir adım başarısızsa sıfır olmayan kodla çıkar (cron log + syslog).
 set -euo pipefail
-APP=/opt/facette
+APP=/opt/atilla
 ENVF="$APP/backend/.env"
-WORK=$(mktemp -d /var/tmp/facette-restore.XXXXXX)
+WORK=$(mktemp -d /var/tmp/atilla-restore.XXXXXX)
 umask 077
 trap 'rm -rf "$WORK"' EXIT
 
 fail() {
   echo "!! GERİ YÜKLEME TESTİ BAŞARISIZ: $*" >&2
-  logger -t facette-restore-test "BAŞARISIZ: $*" 2>/dev/null || true
+  logger -t atilla-restore-test "BAŞARISIZ: $*" 2>/dev/null || true
   exit 1
 }
 envval() {
@@ -34,7 +34,7 @@ TMPDB="restore_test"
 "$APP/venv/bin/python" - "$WORK/latest.enc" "$BUCKET" <<'PY' || fail "en son yedek indirilemedi/doğrulanamadı"
 import hashlib, pathlib, sys
 env = {}
-for line in pathlib.Path("/opt/facette/backend/.env").read_text().splitlines():
+for line in pathlib.Path("/opt/atilla/backend/.env").read_text().splitlines():
     if "=" in line and not line.strip().startswith("#"):
         k, v = line.split("=", 1); env[k.strip()] = v.strip().strip('"').strip("'")
 import boto3
@@ -81,4 +81,4 @@ finally:
     c.drop_database(sys.argv[2])
 PY
 echo "geri yükleme testi BAŞARILI"
-logger -t facette-restore-test "BAŞARILI" 2>/dev/null || true
+logger -t atilla-restore-test "BAŞARILI" 2>/dev/null || true

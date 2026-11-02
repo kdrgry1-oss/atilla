@@ -956,7 +956,7 @@ function HomePageDesign() {
               </div>
             </div>
             <div className={`mx-auto overflow-hidden border-[5px] border-gray-900 bg-gray-50 shadow-inner transition-all ${previewMode === "mobile" ? "max-w-[230px] rounded-[24px]" : "w-full rounded-lg"}`} data-testid="draft-preview">
-              <div className="flex h-7 items-center justify-center bg-gray-900 text-[8px] tracking-[0.2em] text-white">FACETTE</div>
+              <div className="flex h-7 items-center justify-center bg-gray-900 text-[8px] tracking-[0.2em] text-white">ATILLA</div>
               <div className="max-h-[420px] min-h-[260px] overflow-y-auto bg-white">
                 {blocks.filter((block) => block.is_active !== false && (previewMode === "mobile" ? block.show_mobile !== false : block.show_desktop !== false)).map((block) => {
                   const info = getBlockTypeInfo(block.type);

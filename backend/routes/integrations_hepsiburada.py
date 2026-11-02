@@ -17,7 +17,7 @@ import hashlib
 
 from .deps import db, logger, get_current_user, require_admin, generate_id, generate_short_id, require_permission
 from .marketplace_order_mapping import canonical_hb_order_number, hb_internal_status
-from facette_defaults import facette_fixed_value_for  # tüm-pazaryeri sabit varsayılan (gap-fill)
+from atilla_defaults import atilla_fixed_value_for  # tüm-pazaryeri sabit varsayılan (gap-fill)
 
 router = APIRouter(tags=["Integrations-Hepsiburada"])
 
@@ -25,8 +25,8 @@ from .integrations_common import (
     _build_product_query_from_payload,
     _decrement_stock_for_imported_order,
     _dedupe_products_by_stock_code,
-    _facette_match_for_codes,
-    _facette_product_image,
+    _atilla_match_for_codes,
+    _atilla_product_image,
     _hb_norm,
     _normalize_attr_key,
     _resolve_stock_code,
@@ -658,13 +658,13 @@ async def hb_cargo_backfill_once():
 
 
 async def _hb_enrich_items(order_data):
-    """HB kalemlerini FACETTE ürünleriyle eşler: görsel + FACETTE product_id + barkod (stok düşümü için) + ad/varyant.
+    """HB kalemlerini ATILLA ürünleriyle eşler: görsel + ATILLA product_id + barkod (stok düşümü için) + ad/varyant.
     Eşleşmeyen kalem dokunulmadan kalır (matched=False işaretlenir)."""
     for it in (order_data.get("items") or []):
         codes = [it.get("barcode"), it.get("sku"), it.get("product_id"),
                  it.get("merchant_sku"), it.get("merchantSku"),
                  it.get("hb_sku"), it.get("productBarcode")]
-        m = await _facette_match_for_codes(codes)
+        m = await _atilla_match_for_codes(codes)
         if not m:
             it["matched"] = False
             continue
@@ -680,9 +680,9 @@ async def _hb_enrich_items(order_data):
                 break
         it["marketplace_sku"] = it.get("product_id")
         it["product_id"] = prod.get("id")
-        it["facette_product_id"] = prod.get("id")
+        it["atilla_product_id"] = prod.get("id")
         it["barcode"] = vbar or prod.get("barcode") or it.get("barcode")
-        img = _facette_product_image(prod)
+        img = _atilla_product_image(prod)
         if img:
             it["image"] = img
         if prod.get("name"):
@@ -745,12 +745,12 @@ async def hepsiburada_oms_diag(on: str = "", key: str = "", current_user: dict =
     # DENETİM FIX: require_admin eklendi — sabit gömülü anahtar (repo'da açık) tek başına
     # koruma değildi; teşhis ucu efektif olarak public'ti.
     """GEÇİCİ TEŞHİS UCU: Railway backend'inden HB OMS-SIT'e bağlantıyı ölçer. HER ZAMAN 200 döner.
-    Tarayıcı adres çubuğundan aç:  /api/integrations/hepsiburada/oms-diag?key=facette_oms_diag&on=<sipariş_no>
+    Tarayıcı adres çubuğundan aç:  /api/integrations/hepsiburada/oms-diag?key=atilla_oms_diag&on=<sipariş_no>
     Yorum: list_1.ok=true+düşük ms => OMS erişilebilir (sorun frontend/cache);
            error 'timeout' => oms-external-sit Railway ağından erişilemez/yavaş (HB SIT tarafı, ticket);
            '401/403' => OMS auth; '400' => erişim var, istek formatı."""
-    if key != "facette_oms_diag":
-        return {"ok": False, "error": "?key=facette_oms_diag gerekli (gecici teshis ucu)"}
+    if key != "atilla_oms_diag":
+        return {"ok": False, "error": "?key=atilla_oms_diag gerekli (gecici teshis ucu)"}
     import asyncio, time
     from .category_mapping import _get_hb_client
     client, err = await _get_hb_client()
@@ -865,7 +865,7 @@ async def hepsiburada_import_by_number(on: str = "", current_user: dict = Depend
                 try:
                     await _decrement_stock_for_imported_order(order_data, "hepsiburada")
                 except Exception:
-                    pass  # ürün FACETTE'de yoksa stok düşmez — sipariş yine kaydedildi
+                    pass  # ürün ATILLA'da yoksa stok düşmez — sipariş yine kaydedildi
             matched = sum(1 for it in order_data.get("items", []) if it.get("matched"))
             out.append({"order_number": onum, "items": len(order_data.get("items", [])), "eslesen": matched})
         return {"ok": True, "imported": imported, "updated": updated, "orders": out,
@@ -1617,7 +1617,7 @@ async def _build_hb_product_item(product: dict, merchant_id: str):
         return [], "HB kategori eşleşmesi yok (Kategori Eşleştirme ekranından eşleyin)"
 
     # TEK OTORİTE DB VARSAYILANLARI: Özellik Ayar Kartı'ndan girilen attributes.default_value
-    # (Trendyol ile aynı kaynak). Kod sabiti (facette_fixed_value_for) yalnız DB boşsa fallback.
+    # (Trendyol ile aynı kaynak). Kod sabiti (atilla_fixed_value_for) yalnız DB boşsa fallback.
     _db_defs = await db_attr_default_map()
 
     hb_attrs_list, ferr = await _hb_category_attributes_for(hb_cat)
@@ -1774,13 +1774,13 @@ async def _build_hb_product_item(product: dict, merchant_id: str):
             else:
                 # KATMAN 2 — BİREBİR eşleşen açık kaynak (ad-kazıma / fuzzy tahmin YOK):
                 #   kart(HB) → TRENDYOL aynı-adlı özellik → kategori sabiti → ortak default →
-                #   FACETTE sabit varsayılan (Menşei/Cinsiyet/Yaş Grubu/…, Üretici/İthalatçı) → alan-eşleştirme
+                #   ATILLA sabit varsayılan (Menşei/Cinsiyet/Yaş Grubu/…, Üretici/İthalatçı) → alan-eşleştirme
                 raw = (v_hb.get(aname) or hb_attrs_for_product.get(aname)
                        or local.get(anorm)
                        or defaults.get(aname) or defaults.get(aid) or defaults_norm.get(anorm)
                        or gad.get(anorm)
                        or _db_defs.get(_normalize_attr_key(aname))
-                       or facette_fixed_value_for(aname))
+                       or atilla_fixed_value_for(aname))
                 if not raw:
                     m = map_by_attr_id.get(aid)
                     if m and m.get("local_attr"):

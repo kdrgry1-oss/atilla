@@ -25,7 +25,7 @@ from security.crypto import encrypt, decrypt
 
 router = APIRouter(prefix="/auth/mfa", tags=["MFA"])
 
-ISSUER_NAME = "Facette Admin"
+ISSUER_NAME = "Atilla Admin"
 MFA_TOKEN_PURPOSE = "mfa_pending"
 
 

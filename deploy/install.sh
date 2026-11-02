@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Facette tek sunucu kurulumu (Ubuntu 22.04/24.04, 2 GB RAM / 5 GB disk için ayarlı).
+# Atilla tek sunucu kurulumu (Ubuntu 22.04/24.04, 2 GB RAM / 5 GB disk için ayarlı).
 # Kullanım:  bash install.sh <magaza-alan-adi> <api-alan-adi>
 set -euo pipefail
 
 SITE="${1:?kullanim: bash install.sh yenimarka.com api.yenimarka.com}"
 API="${2:?api alan adi gerekli}"
-APP=/opt/facette
+APP=/opt/atilla
 REPO="${REPO_URL:-}"          # boşsa kodu kendiniz kopyalarsınız (scp/rsync)
 
 echo "▶ 1/8 Sistem güncelleniyor"
@@ -47,9 +47,9 @@ python3 -m venv "$APP/venv"
 [ -f "$APP/backend/.env" ] || cp "$APP/deploy/env.example" "$APP/backend/.env" 2>/dev/null || true
 
 echo "▶ 5/8 systemd servisi (tek işçi — bu bellekte doğrusu bu)"
-cat > /etc/systemd/system/facette-api.service <<UNIT
+cat > /etc/systemd/system/atilla-api.service <<UNIT
 [Unit]
-Description=Facette API (FastAPI/uvicorn)
+Description=Atilla API (FastAPI/uvicorn)
 After=network.target mongod.service
 Requires=mongod.service
 
@@ -61,13 +61,13 @@ ExecStart=$APP/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000 --worker
 Restart=always
 RestartSec=5
 MemoryMax=1200M
-StandardOutput=append:/var/log/facette-api.log
-StandardError=append:/var/log/facette-api.log
+StandardOutput=append:/var/log/atilla-api.log
+StandardError=append:/var/log/atilla-api.log
 
 [Install]
 WantedBy=multi-user.target
 UNIT
-systemctl daemon-reload && systemctl enable --now facette-api
+systemctl daemon-reload && systemctl enable --now atilla-api
 
 echo "▶ 6/8 Caddy (otomatik SSL) — panel/mağaza + API"
 if ! command -v caddy >/dev/null; then
@@ -95,21 +95,21 @@ systemctl reload caddy || systemctl restart caddy
 
 echo "▶ 7/8 Güvenlik duvarı + günlük yedek (03:00, 7 gün)"
 ufw allow OpenSSH >/dev/null; ufw allow 80 >/dev/null; ufw allow 443 >/dev/null; ufw --force enable >/dev/null
-install -m 0755 "$APP/deploy/backup.sh" /usr/local/bin/facette-backup
-printf '#!/bin/sh\n/usr/local/bin/facette-backup >> /var/log/facette-backup.log 2>&1\n' \
-  > /etc/cron.daily/facette-backup
-chmod +x /etc/cron.daily/facette-backup
+install -m 0755 "$APP/deploy/backup.sh" /usr/local/bin/atilla-backup
+printf '#!/bin/sh\n/usr/local/bin/atilla-backup >> /var/log/atilla-backup.log 2>&1\n' \
+  > /etc/cron.daily/atilla-backup
+chmod +x /etc/cron.daily/atilla-backup
 # Haftalık geri yükleme testi (denetim #22): yedek gerçekten geri yüklenebiliyor mu (geçici DB'ye).
-install -m 0755 "$APP/deploy/restore_test.sh" /usr/local/bin/facette-restore-test
-printf '#!/bin/sh\n/usr/local/bin/facette-restore-test >> /var/log/facette-restore-test.log 2>&1\n' \
-  > /etc/cron.weekly/facette-restore-test
-chmod +x /etc/cron.weekly/facette-restore-test
+install -m 0755 "$APP/deploy/restore_test.sh" /usr/local/bin/atilla-restore-test
+printf '#!/bin/sh\n/usr/local/bin/atilla-restore-test >> /var/log/atilla-restore-test.log 2>&1\n' \
+  > /etc/cron.weekly/atilla-restore-test
+chmod +x /etc/cron.weekly/atilla-restore-test
 
 echo "▶ 8/8 Durum"
 sleep 3
-systemctl --no-pager --lines=0 status facette-api mongod caddy | grep -E "●|Active:" || true
+systemctl --no-pager --lines=0 status atilla-api mongod caddy | grep -E "●|Active:" || true
 echo
 echo "✔ Kurulum bitti."
-echo "  1) $APP/backend/.env dosyasını doldurun → systemctl restart facette-api"
+echo "  1) $APP/backend/.env dosyasını doldurun → systemctl restart atilla-api"
 echo "  2) Frontend derlemesini /var/www/$SITE altına kopyalayın"
 echo "  3) Sağlık: curl -s https://$API/api/health"
