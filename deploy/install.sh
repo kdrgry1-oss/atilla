@@ -87,7 +87,9 @@ $SITE, www.$SITE {
 }
 $API {
     reverse_proxy 127.0.0.1:8000
-    request_body { max_size 25MB }        # görsel yükleme
+    request_body {
+        max_size 25MB
+    }
     encode gzip
 }
 CADDY

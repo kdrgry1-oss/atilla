@@ -185,7 +185,9 @@ $SITE, www.$SITE {
 }
 $API {
     reverse_proxy 127.0.0.1:8000
-    request_body { max_size 25MB }
+    request_body {
+        max_size 25MB
+    }
     encode gzip
 }
 CADDY
@@ -194,7 +196,9 @@ cat > /etc/caddy/Caddyfile <<CADDY
 :80 {
     encode gzip zstd
     handle /api/* {
-        request_body { max_size 25MB }
+        request_body {
+            max_size 25MB
+        }
         reverse_proxy 127.0.0.1:8000
     }
     handle {
