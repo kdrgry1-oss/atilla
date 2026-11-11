@@ -251,6 +251,10 @@ else
   exit 1
 fi
 
+echo "▶ Yönetici hesabı"
+(cd "$APP/backend" && ADMIN_APPLIED_FILE="$APP/.admin_secret_applied" "$APP/venv/bin/python" scripts/ensure_admin.py) \
+  || echo "!! yönetici hesabı kontrol edilemedi"
+
 echo "▶ Ürün aktarımı (XML)"
 if [ -n "$(get_kv PRODUCT_XML_URL)" ]; then
   # Stok senkronu: her 2 saatte bir (stoğu biten ürün satılamasın, yeni stoklu ürün gelsin).

@@ -1208,6 +1208,8 @@ api_router.include_router(integrations_n11_router, prefix="/integrations")
 api_router.include_router(integrations_router, prefix="/integrations")
 from routes.ticimax_xml_feed import router as ticimax_xml_feed_router  # Ticimax XMLExport aktarımı
 api_router.include_router(ticimax_xml_feed_router, prefix="/integrations")
+from routes.trendyol_excel import router as trendyol_excel_router  # Trendyol Excel ↔ ürün eşleştirme
+api_router.include_router(trendyol_excel_router, prefix="/integrations")
 api_router.include_router(integrations_temu_router, prefix="/integrations")
 api_router.include_router(trendyol_retry_queue_router)
 api_router.include_router(capi_router)

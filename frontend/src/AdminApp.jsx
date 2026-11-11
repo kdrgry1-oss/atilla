@@ -36,6 +36,7 @@ import AdminQuestions from "./pages/admin/Questions";
 import TrendyolLogs from "./pages/admin/TrendyolLogs";
 import BarcodeIssues from "./pages/admin/BarcodeIssues";
 import TrendyolGhostScanner from "./pages/admin/TrendyolGhostScanner";
+import TrendyolExcelMatch from "./pages/admin/TrendyolExcelMatch";
 import ProductAttributes from "./pages/admin/ProductAttributes";
 import Manufacturing from "./pages/admin/Manufacturing";
 import Members from "./pages/admin/Members";
@@ -197,6 +198,7 @@ export default function AdminApp() {
         <Route path="trendyol-loglar" element={<TrendyolLogs />} />
         <Route path="barkod-sorunlari" element={<BarcodeIssues />} />
         <Route path="trendyol-hayalet" element={<TrendyolGhostScanner />} />
+        <Route path="trendyol-excel-eslestir" element={<TrendyolExcelMatch />} />
         <Route path="urun-ozellikleri" element={<ProductAttributes />} />
         <Route path="cariler" element={<Navigate to="/admin/ayarlar?tab=vendors" replace />} />
         <Route path="kullanicilar" element={<Navigate to="/admin/ayarlar?tab=users-roles" replace />} />

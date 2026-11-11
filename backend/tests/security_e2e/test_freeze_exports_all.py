@@ -19,6 +19,7 @@ _PATH_RX = re.compile(r"export|\.xlsx|\.csv|print-range")
 NOT_EXPORTS = {
     "/api/products/attributes/import-xlsx": "upload/import (reads a file, returns nothing)",
     "/api/products/attributes/import-technical-xlsx": "upload/import",
+    "/api/integrations/trendyol-excel-match": "upload/import (Trendyol Excel'ini okuyup eşleştirir)",
     "/api/integrations/rooftr/products/upload-excel": "upload/import",
     "/api/production-plan/import": "upload/import",
     "/api/bulk-ops/price-stock/template": "empty template (headers only, no data)",
