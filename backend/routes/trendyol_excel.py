@@ -114,3 +114,36 @@ async def catalog_fixups(payload: dict = Body(default={}),
         logger.warning(f"[catalog-fixups] uygulandı: brand={brand!r} divisor={div} "
                        f"{ {k: v for k, v in res.items() if k != 'excel_price_sample'} }")
     return res
+
+
+@router.get("/trendyol-diagnose")
+async def trendyol_diagnose(brand: str = Query("", max_length=80),
+                            current_user: dict = Depends(require_permission("integrations.view"))):
+    """Salt-okunur tanı: API bilgileri geçerli mi, mağazada kaç ürün var, marka adına göre Trendyol marka ID'si."""
+    from routes.integrations_trendyol import get_trendyol_config
+    from trendyol_client import TrendyolClient
+    cfg = await get_trendyol_config()
+    if not cfg or not cfg.get("api_key"):
+        raise HTTPException(400, "Trendyol API bilgileri girilmemiş")
+    client = TrendyolClient(supplier_id=cfg["supplier_id"], api_key=cfg["api_key"],
+                            api_secret=cfg["api_secret"], mode=cfg.get("mode", "live"))
+    out: dict = {"mode": cfg.get("mode"), "supplier_id": cfg.get("supplier_id")}
+    try:
+        data = await client._async_get(f"/product/sellers/{cfg['supplier_id']}/products", params={"size": 3, "page": 0})
+        content = data.get("content") or []
+        out["auth_ok"] = True
+        out["seller_product_count"] = data.get("totalElements")
+        out["seller_sample"] = [{"barcode": c.get("barcode"), "title": c.get("title"), "brand": c.get("brand"),
+                                 "brandId": c.get("brandId"), "productMainId": c.get("productMainId")} for c in content]
+    except Exception as e:
+        out["auth_ok"] = False
+        code = getattr(getattr(e, "response", None), "status_code", None)
+        out["auth_error"] = f"{type(e).__name__}" + (f" HTTP {code}" if code else "")
+    if brand.strip():
+        try:
+            res = await client._async_get("/product/brands/by-name", params={"name": brand.strip()})
+            out["brands"] = res if isinstance(res, list) else (res.get("brands") or res)
+        except Exception as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            out["brands_error"] = f"{type(e).__name__}" + (f" HTTP {code}" if code else "")
+    return out
