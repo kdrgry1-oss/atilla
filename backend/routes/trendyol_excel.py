@@ -182,3 +182,28 @@ async def catalog_set_attributes(payload: dict = Body(default={}),
     for i in range(0, len(ops), 500):
         await db.products.bulk_write(ops[i:i + 500], ordered=False)
     return {"changed": changed, "skipped": skipped, "total": len(items)}
+
+
+@router.post("/ticimax-identity-apply")
+async def ticimax_identity_apply(file: UploadFile = File(...), dry_run: bool = Query(True),
+                                 current_user: dict = Depends(require_permission("products.delete"))):
+    """Ticimax URUNID kimliğiyle katalog onarımı (gzip'li JSON kayıt listesi). Bkz. ticimax_identity.py."""
+    import gzip
+    import json
+    raw = await file.read(_MAX + 1)
+    if len(raw) > _MAX:
+        raise HTTPException(413, "Dosya çok büyük")
+    try:
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        records = json.loads(raw.decode("utf-8"))
+        assert isinstance(records, list) and records and isinstance(records[0], dict)
+    except Exception:
+        raise HTTPException(400, "Geçersiz dosya (gzip'li JSON kayıt listesi bekleniyor)")
+    if len(records) > 200000:
+        raise HTTPException(400, "Çok fazla kayıt")
+    import ticimax_identity as ti
+    res = await ti.apply_identity(db, records, dry_run=dry_run)
+    if not dry_run:
+        logger.warning(f"[ticimax-identity] uygulandı: {res}")
+    return res

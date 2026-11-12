@@ -783,11 +783,28 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
              "created": 0, "updated": 0, "variants": 0, "categories_created": 0, "errors": 0}
     cat_cache: Dict[Tuple[Optional[str], str], str] = {}
 
+    # Excel'den açılıp Ticimax URUNID'sine bağlanmış varyantlar: stok/fiyatı buradan güncellenir;
+    # tamamı bağlı ürünlerde karşılanan kart için yeni (mükerrer) ürün açılmaz.
+    linked_cards: set = set()
+    if not dry_run:
+        try:
+            import ticimax_identity as _ti
+            _lk = await _ti.sync_linked_variants(db, products, _with_vat)
+            linked_cards = _lk["linked_cards"]
+            stats["linked_updated"] = _lk["linked_updated"]
+            stats["linked_cards"] = len(linked_cards)
+        except Exception as e:
+            log.warning("bağlı varyant senkronu atlandı: %s", type(e).__name__)
+
     for p in products:
         try:
             card_id, name = str(p.get("card_id") or "").strip(), (p.get("name") or "").strip()
             if not card_id or not name:
                 stats["skipped_invalid"] += 1
+                continue
+            if card_id in linked_cards and not await db.products.find_one(
+                    {"source": SOURCE, "urun_karti_id": card_id}, {"_id": 1}):
+                stats["skipped_linked"] = stats.get("skipped_linked", 0) + 1
                 continue
             f, vs = p["fields"], p["variants"]
             total_stock = sum(int(v.get("stock") or 0) for v in vs)

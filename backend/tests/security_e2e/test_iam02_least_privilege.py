@@ -139,6 +139,7 @@ POST /api/settings/bank-accounts
 POST /api/settings/bank-accounts/{acc_id}/default
 POST /api/integrations/catalog-fixups
 POST /api/integrations/catalog-reset
+POST /api/integrations/ticimax-identity-apply
 POST /api/integrations/catalog-set-attributes
 POST /api/integrations/trendyol-excel-prune-archived
 POST /api/settings/email-smtp
