@@ -12,6 +12,7 @@ _bg = {"task": None}
 @router.post("/trendyol-excel-match")
 async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Query(False),
                                create_missing: bool = Query(False), background: bool = Query(False),
+                               skip_archived: bool = Query(False), rebuild_created: bool = Query(False),
                                current_user: dict = Depends(require_permission("products.marketplace_sync"))):
     name = (file.filename or "").lower()
     if not name.endswith((".xlsx", ".xls")):
@@ -33,7 +34,8 @@ async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Que
         async def _run():
             key = "trendyol_excel_match_dry" if dry_run else "trendyol_excel_match_last"
             try:
-                rep = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing)
+                rep = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing,
+                                         skip_archived=skip_archived, rebuild_created=rebuild_created)
                 if dry_run:
                     await db.settings.update_one({"id": key}, {"$set": {"id": key, **rep}}, upsert=True)
             except Exception as e:
@@ -44,7 +46,8 @@ async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Que
         _bg["task"] = asyncio.create_task(_run())
         return {"started": True}
     try:
-        report = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing)
+        report = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing,
+                                         skip_archived=skip_archived, rebuild_created=rebuild_created)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

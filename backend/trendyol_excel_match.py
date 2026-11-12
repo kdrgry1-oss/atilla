@@ -146,8 +146,12 @@ def _flatten_ty_categories(nodes, out: Dict[str, List[int]]):
         _flatten_ty_categories(subs, out)
 
 
-async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing: bool = False) -> Dict[str, Any]:
+async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing: bool = False,
+                    skip_archived: bool = False, rebuild_created: bool = False) -> Dict[str, Any]:
     rows = read_excel(content)
+    if rebuild_created and not dry_run:
+        # Excel'den oluşturulmuş ürünler baştan kurulur (yalnız bu kaynağa dokunur)
+        await db.products.delete_many({"source": EXCEL_SOURCE})
     by_code_size: Dict[Tuple[str, str], List[dict]] = defaultdict(list)
     by_code: Dict[str, List[dict]] = defaultdict(list)
     by_name_size: Dict[Tuple[str, str], List[dict]] = defaultdict(list)
@@ -326,7 +330,9 @@ async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing
 
     # Sistemde karşılığı olmayan Trendyol ilanları → Excel'deki bilgilerle YENİ ürün (istenirse)
     if create_missing:
-        created = await _create_from_rows(db, unmatched, dry_run=dry_run)
+        to_create = [r for r in unmatched if not (skip_archived and _row_archived(r))]
+        stats["skipped_archived_rows"] = len(unmatched) - len(to_create)
+        created = await _create_from_rows(db, to_create, dry_run=dry_run)
         stats.update(created)
         if not dry_run:
             unmatched, um_active = [], []
@@ -388,6 +394,7 @@ async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) ->
     cat_cache: Dict[Tuple[Optional[str], str], str] = {}
     cstats = {"categories_created": 0}
     batch: List[dict] = []
+    issued: set = set()   # henüz yazılmamış (aynı partideki) ürünlerin kimlikleri — çakışma olmasın
     for key, g in groups.items():
         g = sorted(g, key=_rank, reverse=True)
         best = g[0]
@@ -423,6 +430,9 @@ async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) ->
             })
         active = price is not None and any(not x["bad"] and x["price_f"] for x in g)
         pid = await tx._new_product_id(db)
+        while pid in issued:
+            pid = await tx._new_product_id(db)
+        issued.add(pid)
         vat = _num(best["vat"])
         doc = {
             "id": pid,
@@ -465,6 +475,11 @@ async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) ->
         await db.products.insert_many(batch, ordered=False)
     out["categories_created"] = cstats["categories_created"]
     return dict(out)
+
+
+def _row_archived(r: Dict[str, Any]) -> bool:
+    st = (r.get("status") or "").lower()
+    return "arşiv" in st or "arsiv" in st
 
 
 def _is_archived(v: Dict[str, Any]) -> bool:

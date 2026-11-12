@@ -134,3 +134,26 @@ def test_prune_archived(monkeypatch):
     m1 = run(db.products.find_one({"trendyol_model_code": "M1"}))
     assert [v["barcode"] for v in m1["variants"]] == ["A1"] and m1["stock"] == 4
     assert run(db.products.find_one({"trendyol_model_code": "M3"}))          # ihlalli ilan durur
+
+
+def test_created_ids_unique_and_rebuild_skips_archived(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    import routes.deps as deps
+    import ticimax_xml_import as tx
+    monkeypatch.setattr(deps, "db", db)
+    seq = iter(["1000", "1000", "1001", "1001", "1002", "1003", "1004", "1005", "1006", "1007"])
+
+    async def fake_id(_db):
+        return next(seq)
+    monkeypatch.setattr(tx, "_new_product_id", fake_id)
+    rows = [{"Barkod": f"B{i}", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": f"K{i}", "Ürün Adı": f"Ürün {i}",
+             "Model Kodu": f"M{i}", "Trendyolda Satılacak Fiyat (KDV Dahil)": "10",
+             "Durum": "Ürün arşivlendi" if i == 2 else None} for i in range(3)]
+    run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    ids = [p["id"] for p in run(db.products.find({}).to_list(None))]
+    assert len(ids) == 3 and len(set(ids)) == 3
+    r = run(tm.run_match(db, _xlsx(rows), create_missing=True, skip_archived=True, rebuild_created=True))
+    assert r["stats"]["created_products"] == 2 and r["stats"]["skipped_archived_rows"] == 1
+    ps = run(db.products.find({}).to_list(None))
+    assert len(ps) == 2 and len({p["id"] for p in ps}) == 2
+    assert not any(v["barcode"] == "B2" for p in ps for v in p["variants"])
