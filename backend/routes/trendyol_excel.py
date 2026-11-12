@@ -106,10 +106,11 @@ async def catalog_fixups(payload: dict = Body(default={}),
         raise HTTPException(400, "excel_price_divisor sayı olmalı")
     if div is not None and not (1 <= div <= 20):
         raise HTTPException(400, "excel_price_divisor 1 ile 20 arasında olmalı")
-    if not brand and not div:
-        raise HTTPException(400, "brand ve/veya excel_price_divisor gerekli")
+    zero = bool(payload.get("excel_zero_stock"))
+    if not brand and not div and not zero:
+        raise HTTPException(400, "brand, excel_price_divisor ve/veya excel_zero_stock gerekli")
     import trendyol_excel_match as tm
-    res = await tm.catalog_fixups(db, brand=brand, excel_price_divisor=div, dry_run=dry)
+    res = await tm.catalog_fixups(db, brand=brand, excel_price_divisor=div, excel_zero_stock=zero, dry_run=dry)
     if not dry:
         logger.warning(f"[catalog-fixups] uygulandı: brand={brand!r} divisor={div} "
                        f"{ {k: v for k, v in res.items() if k != 'excel_price_sample'} }")

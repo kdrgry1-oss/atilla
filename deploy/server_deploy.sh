@@ -261,10 +261,11 @@ echo "▶ Yönetici hesabı"
 
 echo "▶ Ürün aktarımı (XML)"
 if [ -n "$(get_kv PRODUCT_XML_URL)" ]; then
-  # Stok senkronu: her 2 saatte bir (stoğu biten ürün satılamasın, yeni stoklu ürün gelsin).
+  # Stok senkronu: her 10 dakikada bir (stoğu biten ürün satılamasın, yeni stoklu ürün gelsin).
+  # flock -n: önceki çalıştırma bitmediyse yenisi başlamaz (üst üste binmez).
   cat > /etc/cron.d/atilla-xml-import <<CRON
 SHELL=/bin/bash
-17 */2 * * * root cd $APP/backend && flock -n /run/atilla-xml.lock $APP/venv/bin/python scripts/import_ticimax_xml.py >> /var/log/atilla-xml-import.log 2>&1
+*/10 * * * * root cd $APP/backend && flock -n /run/atilla-xml.lock $APP/venv/bin/python scripts/import_ticimax_xml.py >> /var/log/atilla-xml-import.log 2>&1
 CRON
   chmod 644 /etc/cron.d/atilla-xml-import
   cd "$APP/backend" && timeout 1800 flock /run/atilla-xml.lock "$APP/venv/bin/python" scripts/import_ticimax_xml.py \

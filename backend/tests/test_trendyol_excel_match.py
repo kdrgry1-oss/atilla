@@ -208,3 +208,21 @@ def test_match_fills_size_attribute_for_one_size():
     r = run(tm.run_match(db, _xlsx([{"Barkod": "T1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "K1", "Ürün Adı": "Kolye"}])))
     v = run(db.products.find_one({"id": "1"}))["variants"][0]
     assert v["barcode"] == "T1" and v["size"] is None and {"name": "Beden", "value": "Tek Ebat"} in v["attributes"]
+
+
+def test_flagged_status_turkish_i_and_zero_stock(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    import routes.deps as deps
+    monkeypatch.setattr(deps, "db", db)
+    rows = [{"Barkod": "V1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "IB1", "Ürün Adı": "Bileklik", "Model Kodu": "M1",
+             "Trendyolda Satılacak Fiyat (KDV Dahil)": "100", "Ürün Stok Adedi": "12", "Durum": "Marka Hakkı İhlali"},
+            {"Barkod": "N1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "IB2", "Ürün Adı": "Kolye", "Model Kodu": "M2",
+             "Trendyolda Satılacak Fiyat (KDV Dahil)": "100", "Ürün Stok Adedi": "5"}]
+    run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    assert run(db.products.find_one({"trendyol_model_code": "M1"}))["is_active"] is False   # İhlal → pasif
+    assert run(db.products.find_one({"trendyol_model_code": "M2"}))["is_active"] is True
+    run(db.products.insert_one({"id": "t1", "source": "ticimax_xml", "stock": 7, "variants": [{"id": "x", "stock": 7}]}))
+    r = run(tm.catalog_fixups(db, excel_zero_stock=True, dry_run=False))
+    assert r["excel_zeroed_products"] == 2 and r["excel_zeroed_variants"] == 2
+    assert run(db.products.find_one({"trendyol_model_code": "M2"}))["variants"][0]["stock"] == 0
+    assert run(db.products.find_one({"id": "t1"}))["stock"] == 7

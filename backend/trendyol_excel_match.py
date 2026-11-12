@@ -125,8 +125,9 @@ def read_excel(content: bytes) -> List[Dict[str, Any]]:
         r["name_n"] = norm_name(r["name"])
         r["price_f"] = _num(r["price"])
         r["stock_i"] = int(_num(r["stock"]) or 0)
-        st = (r["status"] or "").lower()
-        r["bad"] = any(b in st for b in _BAD_STATUS)
+        # Türkçe "İ" küçültülünce "i̇" (birleşik nokta) olur → "İhlal" kaçıyordu; norm_name ile karşılaştır.
+        st = norm_name(r["status"])
+        r["bad"] = any(norm_name(b) in st for b in _BAD_STATUS)
         rows.append(r)
     return rows
 
@@ -547,7 +548,7 @@ async def prune_archived(db, *, dry_run: bool = True) -> Dict[str, Any]:
 
 
 async def catalog_fixups(db, *, brand: Optional[str] = None, excel_price_divisor: Optional[float] = None,
-                         dry_run: bool = True) -> Dict[str, Any]:
+                         excel_zero_stock: bool = False, dry_run: bool = True) -> Dict[str, Any]:
     """Toplu düzeltmeler:
       • brand: TÜM ürünlerde marka adı (elle sabitlenmiş sayılır → XML senkronu ezmez).
       • excel_price_divisor: Excel'den oluşturulmuş ürünlerde panel fiyatı = Trendyol ilan fiyatı ÷ bölen
@@ -562,6 +563,22 @@ async def catalog_fixups(db, *, brand: Optional[str] = None, excel_price_divisor
         if not dry_run:
             await db.products.update_many(q, {"$set": {"brand": brand, "brand_by": "catalog_fixups",
                                                        "updated_at": now}})
+    if excel_zero_stock:
+        # Excel'den oluşturulan ürünlerin stoğu XML'e bağlı değildir → 0 (stok yalnız XML'den gelir).
+        ops, nv = [], 0
+        async for p in db.products.find({"source": EXCEL_SOURCE, "stock": {"$gt": 0}}, {"_id": 0, "id": 1, "variants": 1}):
+            vs = list(p.get("variants") or [])
+            for v in vs:
+                if int(v.get("stock") or 0) > 0:
+                    nv += 1
+                v["stock"] = 0
+            ops.append(UpdateOne({"id": p["id"], "source": EXCEL_SOURCE},
+                                 {"$set": {"variants": vs, "stock": 0, "updated_at": now}}))
+        out["excel_zeroed_products"] = len(ops)
+        out["excel_zeroed_variants"] = nv
+        if not dry_run:
+            for i in range(0, len(ops), 500):
+                await db.products.bulk_write(ops[i:i + 500], ordered=False)
     if excel_price_divisor and excel_price_divisor > 0:
         ops, n, sample = [], 0, []
         async for p in db.products.find({"source": EXCEL_SOURCE},
