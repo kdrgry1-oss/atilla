@@ -147,3 +147,37 @@ async def trendyol_diagnose(brand: str = Query("", max_length=80),
             code = getattr(getattr(e, "response", None), "status_code", None)
             out["brands_error"] = f"{type(e).__name__}" + (f" HTTP {code}" if code else "")
     return out
+
+
+@router.post("/catalog-set-attributes")
+async def catalog_set_attributes(payload: dict = Body(default={}),
+                                 current_user: dict = Depends(require_permission("products.delete"))):
+    """Toplu ürün özelliği yazımı (boşluk doldurma): items=[{id, attrs:{Ad: Değer}}].
+    Üründe aynı adda DOLU bir özellik varsa dokunulmaz (elle girilen korunur)."""
+    items = payload.get("items") or []
+    if not isinstance(items, list) or not items or len(items) > 5000:
+        raise HTTPException(400, "items: 1-5000 kayıt")
+    import trendyol_excel_match as tm
+    from datetime import datetime, timezone
+    from pymongo import UpdateOne
+    ids = [str(i.get("id")) for i in items if isinstance(i, dict) and i.get("id")]
+    cur = {p["id"]: p async for p in db.products.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "attributes": 1})}
+    now = datetime.now(timezone.utc).isoformat()
+    ops, changed, skipped = [], 0, 0
+    for it in items:
+        p = cur.get(str((it or {}).get("id")))
+        attrs = (it or {}).get("attrs") or {}
+        if not p or not isinstance(attrs, dict) or not isinstance(p.get("attributes"), (list, type(None))):
+            skipped += 1
+            continue
+        new = p.get("attributes") or []
+        before = len(new)
+        for name, value in attrs.items():
+            if str(name).strip() and str(value).strip():
+                new = tm._set_attr(new, str(name).strip()[:80], str(value).strip()[:200])
+        if new != (p.get("attributes") or []) or len(new) != before:
+            ops.append(UpdateOne({"id": p["id"]}, {"$set": {"attributes": new, "updated_at": now}}))
+            changed += 1
+    for i in range(0, len(ops), 500):
+        await db.products.bulk_write(ops[i:i + 500], ordered=False)
+    return {"changed": changed, "skipped": skipped, "total": len(items)}
