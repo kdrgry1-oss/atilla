@@ -157,3 +157,23 @@ def test_created_ids_unique_and_rebuild_skips_archived(monkeypatch):
     ps = run(db.products.find({}).to_list(None))
     assert len(ps) == 2 and len({p["id"] for p in ps}) == 2
     assert not any(v["barcode"] == "B2" for p in ps for v in p["variants"])
+
+
+def test_catalog_fixups(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    import routes.deps as deps
+    monkeypatch.setattr(deps, "db", db)
+    rows = [{"Barkod": "A1", "Beden": "12", "Tedarikçi Stok Kodu": "N1", "Ürün Adı": "Yüzük", "Model Kodu": "M1",
+             "Trendyolda Satılacak Fiyat (KDV Dahil)": "280", "Piyasa Satış Fiyatı (KDV Dahil)": "560",
+             "Marka": "Başka"}]
+    run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    run(db.products.insert_one({"id": "t1", "source": "ticimax_xml", "brand": "Inure", "price": 100, "variants": []}))
+    d = run(tm.catalog_fixups(db, brand="Inure Jewelry", excel_price_divisor=2.8, dry_run=True))
+    assert d["brand_changed"] == 2 and d["excel_repriced"] == 1
+    assert run(db.products.find_one({"id": "t1"}))["brand"] == "Inure"
+    for _ in range(2):   # tekrar çalıştırma fiyatı yeniden bölmez
+        run(tm.catalog_fixups(db, brand="Inure Jewelry", excel_price_divisor=2.8, dry_run=False))
+    p = run(db.products.find_one({"source": "trendyol_excel"}))
+    assert p["price"] == 100.0 and p["variants"][0]["price"] == 100.0 and p["market_price"] == 200.0
+    assert p["brand"] == "Inure Jewelry" and run(db.products.find_one({"id": "t1"}))["price"] == 100
+    assert run(db.products.find_one({"id": "t1"}))["brand_by"] == "catalog_fixups"

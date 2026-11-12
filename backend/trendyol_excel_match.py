@@ -516,6 +516,51 @@ async def prune_archived(db, *, dry_run: bool = True) -> Dict[str, Any]:
     return {"dry_run": dry_run, **dict(out)}
 
 
+async def catalog_fixups(db, *, brand: Optional[str] = None, excel_price_divisor: Optional[float] = None,
+                         dry_run: bool = True) -> Dict[str, Any]:
+    """Toplu düzeltmeler:
+      • brand: TÜM ürünlerde marka adı (elle sabitlenmiş sayılır → XML senkronu ezmez).
+      • excel_price_divisor: Excel'den oluşturulmuş ürünlerde panel fiyatı = Trendyol ilan fiyatı ÷ bölen
+        (Trendyol'a "panel fiyatı × çarpan" gönderildiğinde bugünkü ilan fiyatı korunur). Her zaman
+        kayıtlı ilan fiyatından hesaplanır → tekrar çalıştırmak fiyatı yeniden bölmez."""
+    from pymongo import UpdateOne
+    now = datetime.now(timezone.utc).isoformat()
+    out: Dict[str, Any] = {"dry_run": dry_run}
+    if brand:
+        q = {"brand": {"$ne": brand}}
+        out["brand_changed"] = await db.products.count_documents(q)
+        if not dry_run:
+            await db.products.update_many(q, {"$set": {"brand": brand, "brand_by": "catalog_fixups",
+                                                       "updated_at": now}})
+    if excel_price_divisor and excel_price_divisor > 0:
+        ops, n, sample = [], 0, []
+        async for p in db.products.find({"source": EXCEL_SOURCE},
+                                        {"_id": 0, "id": 1, "name": 1, "variants": 1, "price": 1}):
+            vs = list(p.get("variants") or [])
+            for v in vs:
+                lp = _num((v.get("trendyol_listing") or {}).get("price"))
+                v["price"] = round(lp / excel_price_divisor, 2) if lp else v.get("price")
+            base = next((v["price"] for v in vs if v.get("price")), None)
+            if base is None:
+                continue
+            for v in vs:
+                v["price_adjustment"] = round(v["price"] - base, 2) if v.get("price") else 0
+            lm = _num((vs[0].get("trendyol_listing") or {}).get("list_price")) if vs else None
+            upd = {"variants": vs, "price": base, "updated_at": now}
+            if lm:
+                upd["market_price"] = round(lm / excel_price_divisor, 2)
+            if len(sample) < 5:
+                sample.append({"name": p.get("name"), "old": p.get("price"), "new": base})
+            n += 1
+            ops.append(UpdateOne({"id": p["id"], "source": EXCEL_SOURCE}, {"$set": upd}))
+        out["excel_repriced"] = n
+        out["excel_price_sample"] = sample
+        if not dry_run:
+            for i in range(0, len(ops), 500):
+                await db.products.bulk_write(ops[i:i + 500], ordered=False)
+    return out
+
+
 async def unmatched_xlsx(db) -> bytes:
     import pandas as pd
     rows = await db.trendyol_excel_unmatched.find({}, {"_id": 0}).to_list(None)

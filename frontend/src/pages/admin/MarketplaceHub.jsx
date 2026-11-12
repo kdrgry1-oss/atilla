@@ -484,7 +484,8 @@ export default function MarketplaceHub() {
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-1">Ortam</label>
-                          <select value={tyOp.mode ?? "prod"} onChange={(e) => tyUpd("mode", e.target.value)}
+                          <select value={["prod", "production", "live", "canli", "canlı"].includes(String(tyOp.mode ?? "").toLowerCase()) ? "prod" : "test"}
+                                  onChange={(e) => tyUpd("mode", e.target.value)}
                                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" data-testid="ty-op-mode">
                             <option value="prod">Canlı</option>
                             <option value="test">Test</option>
@@ -525,6 +526,16 @@ export default function MarketplaceHub() {
                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                           </div>
                         </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t flex items-center gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer" data-testid="ty-op-active">
+                          <input type="checkbox" checked={!!tyOp.is_active}
+                                 onChange={(e) => tyUpd("is_active", e.target.checked)}
+                                 className="w-4 h-4 accent-green-600" />
+                          <span className={`text-sm font-semibold ${tyOp.is_active ? "text-[#3F7A52]" : "text-gray-400"}`}>
+                            Entegrasyon Aktif
+                          </span>
+                        </label>
                       </div>
                     </>
                   )}

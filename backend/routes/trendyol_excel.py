@@ -91,3 +91,26 @@ async def trendyol_excel_prune_archived(payload: dict = Body(default={}),
     if not dry:
         logger.warning(f"[trendyol-excel] arşivli ilanlar silindi: {res}")
     return res
+
+
+@router.post("/catalog-fixups")
+async def catalog_fixups(payload: dict = Body(default={}),
+                         current_user: dict = Depends(require_permission("products.delete"))):
+    """Toplu katalog düzeltmesi: tüm ürünlerde marka adı ve/veya Excel'den oluşturulan ürünlerde
+    panel fiyatı = Trendyol ilan fiyatı ÷ bölen. Varsayılan dry_run=true."""
+    dry = bool(payload.get("dry_run", True))
+    brand = (payload.get("brand") or "").strip() or None
+    try:
+        div = float(payload["excel_price_divisor"]) if payload.get("excel_price_divisor") else None
+    except (TypeError, ValueError):
+        raise HTTPException(400, "excel_price_divisor sayı olmalı")
+    if div is not None and not (1 <= div <= 20):
+        raise HTTPException(400, "excel_price_divisor 1 ile 20 arasında olmalı")
+    if not brand and not div:
+        raise HTTPException(400, "brand ve/veya excel_price_divisor gerekli")
+    import trendyol_excel_match as tm
+    res = await tm.catalog_fixups(db, brand=brand, excel_price_divisor=div, dry_run=dry)
+    if not dry:
+        logger.warning(f"[catalog-fixups] uygulandı: brand={brand!r} divisor={div} "
+                       f"{ {k: v for k, v in res.items() if k != 'excel_price_sample'} }")
+    return res
