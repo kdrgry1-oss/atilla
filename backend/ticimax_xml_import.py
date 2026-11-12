@@ -786,11 +786,13 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
     # Excel'den açılıp Ticimax URUNID'sine bağlanmış varyantlar: stok/fiyatı buradan güncellenir;
     # tamamı bağlı ürünlerde karşılanan kart için yeni (mükerrer) ürün açılmaz.
     linked_cards: set = set()
+    linked_ids: set = set()
     if not dry_run:
         try:
             import ticimax_identity as _ti
             _lk = await _ti.sync_linked_variants(db, products, _with_vat)
             linked_cards = _lk["linked_cards"]
+            linked_ids = _lk["linked_ids"]
             stats["linked_updated"] = _lk["linked_updated"]
             stats["linked_cards"] = len(linked_cards)
         except Exception as e:
@@ -879,6 +881,12 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
             typed = {k: v for k, v in typed.items() if v is not None}
 
             if existing is None:
+                # Başka bir üründe (Excel'den açılıp Ticimax'a bağlanmış) duran varyant YENİDEN açılmaz.
+                vs = [v for v in vs if str(v.get("urun_id") or "") not in linked_ids]
+                if not vs:
+                    stats["skipped_linked"] = stats.get("skipped_linked", 0) + 1
+                    continue
+                total_stock = sum(int(v.get("stock") or 0) for v in vs)
                 variants = [_variant_doc(v, price) for v in vs]
                 doc = {
                     **typed,

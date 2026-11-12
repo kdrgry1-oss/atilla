@@ -153,7 +153,7 @@ async def sync_linked_variants(db, parsed_products: List[Dict[str, Any]], with_v
                 want[u] = v
                 card_of[u] = _s(p.get("card_id"))
     if not want:
-        return {"linked_updated": 0, "linked_cards": set()}
+        return {"linked_updated": 0, "linked_cards": set(), "linked_ids": set()}
     now = datetime.now(timezone.utc).isoformat()
     ops, n, found = [], 0, set()
     async for p in db.products.find({"source": EXCEL_SOURCE, "ticimax_linked": True},
@@ -182,4 +182,4 @@ async def sync_linked_variants(db, parsed_products: List[Dict[str, Any]], with_v
     for u, c in card_of.items():
         cards_all.setdefault(c, []).append(u)
     linked_cards = {c for c, us in cards_all.items() if c and all(u in found for u in us)}
-    return {"linked_updated": n, "linked_cards": linked_cards}
+    return {"linked_updated": n, "linked_cards": linked_cards, "linked_ids": found}
