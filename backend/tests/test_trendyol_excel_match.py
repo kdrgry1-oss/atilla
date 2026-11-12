@@ -199,3 +199,12 @@ def test_match_fills_color_and_gender_attributes():
     assert p["variants"][0]["attributes"] == [{"name": "Renk", "value": "Karışık"}] and not p["variants"][0].get("color")
     assert "attributes" not in p["variants"][1] and p["variants"][1]["color"] == "Altın"
     assert p["variants"][0]["trendyol_listing"]["gender"] == "Erkek"
+
+
+def test_match_fills_size_attribute_for_one_size():
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    run(db.products.insert_one({"id": "1", "name": "Kolye", "price": 100, "variants": [
+        {"id": "a", "size": None, "stock_code": "K1"}]}))
+    r = run(tm.run_match(db, _xlsx([{"Barkod": "T1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "K1", "Ürün Adı": "Kolye"}])))
+    v = run(db.products.find_one({"id": "1"}))["variants"][0]
+    assert v["barcode"] == "T1" and v["size"] is None and {"name": "Beden", "value": "Tek Ebat"} in v["attributes"]

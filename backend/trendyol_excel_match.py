@@ -279,6 +279,10 @@ async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing
                 # Varyantın kendi rengi yoksa Trendyol ilanındaki renk ÖZELLİK olarak tutulur (vitrin
                 # seçeneği olan `color` alanına yazılmaz) → pazaryeri gönderiminde Renk/Web Color dolar.
                 v["attributes"] = _set_attr(v.get("attributes"), "Renk", r["color"])
+            if not v.get("size") and (r["size"] or r["size2"]):
+                # Bedensiz (tek ebat) varyant: Trendyol ilanındaki beden değeri ("Tek Ebat", "Standart" …)
+                # özellik olarak tutulur → Beden'in zorunlu olduğu kategorilerde gönderim eksik kalmaz.
+                v["attributes"] = _set_attr(v.get("attributes"), "Beden", r["size"] or r["size2"])
             variants[i] = v
             changed = True
             stats["matched_variants"] += 1
