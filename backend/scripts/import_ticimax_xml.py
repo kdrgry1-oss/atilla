@@ -16,14 +16,17 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 
 async def main() -> int:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    url = (args[0] if args else os.environ.get("PRODUCT_XML_URL") or "").strip()
-    if not url:
-        print("PRODUCT_XML_URL tanımlı değil — ürün aktarımı atlandı.")
-        return 0
     from motor.motor_asyncio import AsyncIOMotorClient
     import ticimax_xml_import as tx
     db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
-    stats = await tx.run_import(db, url, dry_run="--dry-run" in sys.argv, describe="--describe" in sys.argv)
+    # Panelden seçilmiş kalıcı kaynak (settings.ticimax_xml_source) .env'deki adresin önüne geçer.
+    src = {} if args else await tx.get_source(db)
+    url = (args[0] if args else src.get("url") or os.environ.get("PRODUCT_XML_URL") or "").strip()
+    if not url:
+        print("PRODUCT_XML_URL tanımlı değil — ürün aktarımı atlandı.")
+        return 0
+    stats = await tx.run_import(db, url, dry_run="--dry-run" in sys.argv, describe="--describe" in sys.argv,
+                                include_no_stock=bool(src.get("include_no_stock")) or "--all" in sys.argv)
     st = dict(stats)
     struct = st.pop("structure", None)
     samples = st.pop("feed_samples", None)

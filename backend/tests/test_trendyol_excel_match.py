@@ -73,3 +73,37 @@ def test_match_barcodes_and_categories():
     assert r2["stats"]["matched_variants"] == 4
     bars = [v["barcode"] for p in run(db.products.find({}).to_list(None)) for v in p["variants"]]
     assert len(bars) == len(set(bars))
+
+
+def test_create_missing_products_from_excel(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    import routes.deps as deps
+    monkeypatch.setattr(deps, "db", db)
+    run(db.products.insert_one(
+        {"id": "1", "name": "Gümüş Yüzük", "price": 100, "source": "ticimax_xml",
+         "variants": [{"id": "a", "size": "17", "stock_code": "LR1", "barcode": None, "ticimax_barcode": "LR1-17"},
+                      {"id": "b", "size": "18", "stock_code": "LR1", "barcode": None, "ticimax_barcode": "LR1-18"}]}))
+    rows = ROWS + [
+        {"Barkod": "TYA1", "Beden": "12", "Tedarikçi Stok Kodu": "NEW1", "Ürün Adı": "Yeni Yüzük", "Model Kodu": "MN",
+         "Kategori İsmi": "Gümüş Yüzük", "Trendyolda Satılacak Fiyat (KDV Dahil)": "200", "Ürün Stok Adedi": "4",
+         "Marka": "Inure Jewelry"},
+        {"Barkod": "TYA2", "Beden": "13", "Tedarikçi Stok Kodu": "NEW1", "Ürün Adı": "Yeni Yüzük", "Model Kodu": "MN",
+         "Kategori İsmi": "Gümüş Yüzük", "Trendyolda Satılacak Fiyat (KDV Dahil)": "200", "Ürün Stok Adedi": "0"},
+    ]
+    dry = run(tm.run_match(db, _xlsx(rows), dry_run=True, create_missing=True))
+    assert dry["stats"]["created_products"] == 5 and run(db.products.count_documents({})) == 1
+    r = run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    st = r["stats"]
+    assert st["matched_variants"] == 2 and st["created_products"] == 5 and st["created_variants"] == 6
+    p1 = run(db.products.find_one({"id": "1"}))
+    assert [(v["barcode"], v["ticimax_barcode"]) for v in p1["variants"]] == [("TY17", "LR1-17"), ("TY18", "LR1-18")]
+    new = run(db.products.find_one({"trendyol_model_code": "MN"}))
+    assert new["source"] == "trendyol_excel" and new["is_active"] and new["price"] == 200.0 and new["stock"] == 4
+    assert [(v["size"], v["barcode"], v["ticimax_barcode"]) for v in new["variants"]] == [("12", "TYA1", None), ("13", "TYA2", None)]
+    assert new["category_id"] and new["brand"] == "Inure Jewelry"
+    ars = run(db.products.find_one({"variants.barcode": "TY17ARS"}))
+    assert ars["is_active"] is False                      # arşivli ilan pasif açılır
+    assert run(db.trendyol_excel_unmatched.count_documents({})) == 0
+    # tekrar çalıştırma yeni ürün ÜRETMEZ
+    r2 = run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    assert r2["stats"]["created_products"] == 0 and run(db.products.count_documents({})) == 6

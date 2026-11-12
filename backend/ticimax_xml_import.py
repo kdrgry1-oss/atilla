@@ -146,7 +146,7 @@ def _flat_scalars(el) -> Dict[str, str]:
 
 # ───────────────────────────── ayrıştırma ─────────────────────────────
 
-def parse_feed(content: bytes) -> List[Dict[str, Any]]:
+def parse_feed(content: bytes, images: Optional[Dict[str, List[str]]] = None) -> List[Dict[str, Any]]:
     """XML'i güvenli ayrıştır (DTD/ENTITY/ağ yok) ve ürün sözlükleri listesi döndür."""
     from lxml import etree
     parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False,
@@ -157,7 +157,15 @@ def parse_feed(content: bytes) -> List[Dict[str, Any]]:
     urunler = [e for e in root.iter() if isinstance(e.tag, str) and _key(e.tag) in ("URUN", "PRODUCT")
                and (_child(e, "UrunKartiID", "UrunAdi", "ProductName") is not None)]
     if urunler:
-        return [_parse_product(u) for u in urunler]
+        if _is_flat_layout(urunler):
+            prods = _parse_flat_products(urunler)
+        else:
+            prods = [_parse_product(u) for u in urunler]
+        if images:
+            for p in prods:
+                if not p["images"]:
+                    p["images"] = list(images.get(str(p.get("card_id") or "")) or [])
+        return prods
     # Google Shopping (RSS/Atom) biçimi: her <item> bir varyant, item_group_id ile ürüne bağlanır.
     items = [e for e in root.iter() if isinstance(e.tag, str) and _key(e.tag) in ("ITEM", "ENTRY")
              and _child(e, "id") is not None and _child(e, "title") is not None]
@@ -459,7 +467,7 @@ def _parse_variant(sec) -> Dict[str, Any]:
         "market_price": _num(f.get("PIYASAFIYATI")),
         "vat_rate": _num(f.get("KDVORANI") or f.get("KDV")),
         "vat_included": _bool(f.get("KDVDAHIL")),
-        "currency": f.get("PARABIRIMI") or "",
+        "currency": f.get("PARABIRIMIKODU") or f.get("PARABIRIMI") or "",
         "desi": _num(f.get("DESI") or f.get("KARGOAGIRLIGI")),
         "color": color,
         "size": size,
@@ -518,8 +526,8 @@ def _parse_technical(u) -> List[Dict[str, str]]:
         name = d.get("Tanim") or d.get("OzellikAdi") or d.get("Grup") or ""
         val = d.get("Deger") or d.get("OzellikDegeri") or ""
         if not name:
-            name = _txt(_child(d, "OzellikAdi", "Tanim", "Ad", "Name"))
-            val = _txt(_child(d, "OzellikDegeri", "Deger", "Value")) or val
+            name = _txt(_child(d, "OzellikAdi", "OzellikTanim", "Tanim", "Ad", "Name"))
+            val = _txt(_child(d, "OzellikDegeri", "DegerTanim", "Deger", "Value")) or val
         if name and val and {"name": name, "value": val} not in out:
             out.append({"name": name.strip(), "value": val.strip()})
     return out
@@ -546,7 +554,114 @@ def _parse_product(u) -> Dict[str, Any]:
     }
 
 
+# ───────────────────── TicimaxXmlV2 "Tek Link" (düz) biçimi ─────────────────────
+# Her <Urun> bir VARYANTTIR (VaryasyonID/StokKodu/Barkod ürün düzeyinde); aynı UrunKartiID'li kayıtlar
+# tek üründür. Varyasyon değeri, varyasyon grubunun XML kodu adındaki etikette gelir (kod tanımsızsa
+# Ticimax "VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ" yazar). Resimler ayrı dosyadadır (UrunResimleri.xml).
+
+_FLAT_VARIANT_KEYS = ("AKTIF", "VARYASYONID", "STOKKODU", "BARKOD", "STOKADEDI", "ALISFIYATI", "SATISFIYATI",
+                      "INDIRIMLIFIYAT", "PIYASAFIYATI", "KDVDAHIL", "KDVORANI", "PARABIRIMI", "PARABIRIMIKODU",
+                      "DESI", "KARGOAGIRLIGI")
+_FLAT_PRODUCT_KEYS = ("URUNKARTIID", "URUNADI", "ONYAZI", "ACIKLAMA", "MARKA", "MARKAID", "SATISBIRIMI",
+                      "KATEGORIID", "KATEGORI", "KATEGORITREE", "URUNURL", "TEDARIKCI", "TEDARIKCIID",
+                      "RESIMLER", "TEKNIKDETAYLAR", "GTIPKODU", "ANAHTARKELIME")
+_FLAT_OPTION_PLACEHOLDER = "VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ"
+V2_URL_RE = re.compile(r"^(https?://[^/]+/TicimaxXmlV2/[A-Za-z0-9]+)/?$", re.I)
+
+
+def _is_flat_layout(urunler: list) -> bool:
+    head = urunler[:50]
+    if any(_child(u, "UrunSecenek", "Secenekler", "Varyasyonlar") is not None for u in head):
+        return False
+    return any(_child(u, "VaryasyonID") is not None for u in head)
+
+
+def _parse_flat_products(urunler: list) -> List[Dict[str, Any]]:
+    groups: Dict[str, list] = {}
+    for u in urunler:
+        cid = _txt(_child(u, "UrunKartiID"))
+        groups.setdefault(cid, []).append(u)
+    out: List[Dict[str, Any]] = []
+    for cid, els in groups.items():
+        flats = [_flat_scalars(e) for e in els]
+        # Değeri grup içinde DEĞİŞEN, bilinmeyen yaprak etiket → varyasyon ekseni
+        opt_keys: List[str] = []
+        for k in {k for f in flats for k in f}:
+            if k == _FLAT_OPTION_PLACEHOLDER or k.startswith("VARYASYON_GRUBU"):
+                opt_keys.append(k)
+        if len(els) > 1:
+            for k in sorted({k for f in flats for k in f}):
+                if k in _FLAT_VARIANT_KEYS or k in _FLAT_PRODUCT_KEYS or k in opt_keys \
+                        or k.startswith(("SEO", "OZELALAN", "UYETIPI", "FIYAT")):
+                    continue
+                vals = {f.get(k, "") for f in flats}
+                if len(vals) > 1:
+                    opt_keys.append(k)
+        rows = []
+        for e, f in zip(els, flats):
+            opts = [(("Beden" if k == _FLAT_OPTION_PLACEHOLDER or k.startswith("VARYASYON_GRUBU")
+                      else k.replace("_", " ").title()), f[k]) for k in opt_keys if f.get(k)]
+            rows.append((e, f, opts))
+        if len(rows) > 1:
+            # Varyasyonlu ürünün seçeneksiz PASİF "ana" kaydı satılabilir varyant değildir
+            kept = [r for r in rows if r[2] or _bool(r[1].get("AKTIF")) is not False]
+            rows = kept or rows[:1]
+        first_el = rows[0][0]
+        base = _parse_product(first_el)
+        variants = []
+        for e, f, opts in rows:
+            v = _parse_variant(e)
+            color = size = None
+            extra: List[str] = []
+            for name, val in opts:
+                n = _norm(name)
+                if color is None and any(k in n for k in _COLOR_KEYS):
+                    color = val
+                elif size is None and any(k in n for k in _SIZE_KEYS):
+                    size = val
+                else:
+                    extra.append(val)
+            if size is None and extra:
+                size = " / ".join(extra)
+            vf = {k: f[k] for k in f if k in _FLAT_VARIANT_KEYS or k in opt_keys}
+            v.update({"color": color, "size": size, "options": [{"name": n, "value": x} for n, x in opts],
+                      "fields": vf, "raw": dict(vf)})
+            variants.append(v)
+        pf = {k: v for k, v in base["fields"].items() if k not in opt_keys}
+        base.update({"card_id": cid, "fields": pf, "variants": variants})
+        out.append(base)
+    return out
+
+
+def parse_images_feed(content: bytes) -> Dict[str, List[str]]:
+    """UrunResimleri.xml → {UrunKartiID: [resim adresleri]} (dosyadaki sırayla)."""
+    from lxml import etree
+    parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False,
+                             huge_tree=True, recover=True, remove_comments=True)
+    root = etree.fromstring(content, parser=parser)
+    out: Dict[str, List[str]] = {}
+    if root is None:
+        return out
+    for r in root.iter():
+        if not isinstance(r.tag, str) or _key(r.tag) != "RESIM":
+            continue
+        cid = _txt(_child(r, "UrunKartiID"))
+        url = _txt(_child(r, "ResimAdresi", "ResimUrl", "Url")).strip()
+        if url.startswith("//"):
+            url = "https:" + url
+        if cid and url.startswith("http"):
+            lst = out.setdefault(cid, [])
+            if url not in lst:
+                lst.append(url)
+    return out
+
+
 # ───────────────────────────── yazma ─────────────────────────────
+
+def _seo(v: Any) -> str:
+    v = str(v or "").strip()
+    return "" if v in (".", "-", "0") else v
+
 
 def _with_vat(price: Optional[float], v: Dict[str, Any]) -> Optional[float]:
     if price is None or price <= 0:
@@ -623,7 +738,10 @@ def _variant_doc(v: Dict[str, Any], base_price: Optional[float]) -> Dict[str, An
         "id": generate_id(),
         "size": v.get("size"),
         "color": v.get("color"),
-        "barcode": v.get("barcode") or None,
+        # `barcode` = pazaryeri (Trendyol) barkodu — Trendyol Excel eşleştirmesi doldurur.
+        # Ticimax'taki (site) barkodu kimlik için `ticimax_barcode` alanında saklanır.
+        "barcode": None,
+        "ticimax_barcode": v.get("barcode") or None,
         "sku": v.get("stock_code") or None,
         "stock_code": v.get("stock_code") or None,
         "urun_id": str(v.get("urun_id") or "") or None,
@@ -638,10 +756,14 @@ def _variant_doc(v: Dict[str, Any], base_price: Optional[float]) -> Dict[str, An
 
 
 def _variant_match(old: Dict[str, Any], new: Dict[str, Any]) -> bool:
-    for a, b in (("urun_id", "urun_id"), ("barcode", "barcode"), ("stock_code", "stock_code")):
+    for a, b in (("urun_id", "urun_id"), ("ticimax_barcode", "barcode"), ("barcode", "barcode")):
         x, y = str(old.get(a) or "").strip(), str(new.get(b) or "").strip()
         if x and y and x == y:
             return True
+    # Stok kodu çoğu mağazada ÜRÜN düzeyindedir (tüm bedenlerde aynı) → yalnız beden de tutuyorsa eşleşir
+    x, y = str(old.get("stock_code") or "").strip(), str(new.get("stock_code") or "").strip()
+    if x and y and x == y and not (str(old.get("urun_id") or "").strip() and str(new.get("urun_id") or "").strip()):
+        return str(old.get("size") or "") == str(new.get("size") or "")
     return False
 
 
@@ -651,7 +773,8 @@ def _is_manual(existing: Dict[str, Any], key: str) -> bool:
             or bool(existing.get(f"{key}_edited_at")))
 
 
-async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool = False) -> Dict[str, Any]:
+async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool = False,
+                          include_no_stock: bool = False) -> Dict[str, Any]:
     from routes.deps import generate_short_id
     from routes.products import slug_with_card_id
 
@@ -669,7 +792,7 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
             f, vs = p["fields"], p["variants"]
             total_stock = sum(int(v.get("stock") or 0) for v in vs)
             existing = await db.products.find_one({"source": SOURCE, "urun_karti_id": card_id}, {"_id": 0})
-            if existing is None and total_stock <= 0:
+            if existing is None and total_stock <= 0 and not include_no_stock:
                 stats["skipped_no_stock"] += 1
                 continue
 
@@ -699,9 +822,9 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                 "supplier": f.get("TEDARIKCI") or "",
                 "gtip_code": f.get("GTIPKODU") or "",
                 "keywords": f.get("ANAHTARKELIME") or "",
-                "meta_title": f.get("SEO_SAYFABASLIK") or f.get("SEOSAYFABASLIK") or "",
-                "meta_description": f.get("SEO_SAYFAACIKLAMA") or f.get("SEOSAYFAACIKLAMA") or "",
-                "meta_keywords": f.get("SEO_ANAHTARKELIME") or f.get("SEOANAHTARKELIME") or "",
+                "meta_title": _seo(f.get("SEO_SAYFABASLIK") or f.get("SEOSAYFABASLIK")),
+                "meta_description": _seo(f.get("SEO_SAYFAACIKLAMA") or f.get("SEOSAYFAACIKLAMA") or f.get("SEOACIKLAMA")),
+                "meta_keywords": _seo(f.get("SEO_ANAHTARKELIME") or f.get("SEOANAHTARKELIME")),
                 "breadcrumb": " > ".join(primary_path),
                 "unit": f.get("SATISBIRIMI") or "ADET",
                 "currency": "TRY" if (first.get("currency") or "TL").upper() in ("TL", "TRY", "") else first.get("currency"),
@@ -720,7 +843,7 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                 "ticimax_fields": {**f, **{k: v for k, v in (first.get("fields") or {}).items() if k not in f}},
                 "ticimax_xml": p["raw"],
                 "stock_code": first.get("stock_code") or f.get("STOKKODU") or "",
-                "barcode": first.get("barcode") or "",
+                "ticimax_barcode": first.get("barcode") or "",
             }
             for k in ("is_showcase:VITRIN", "is_new:YENIURUN", "is_opportunity:FIRSATURUNU",
                       "is_free_shipping:UCRETSIZKARGO"):
@@ -779,6 +902,8 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
                     used.add(hit)
                     ov = dict(old_vars[hit])
                     ov["stock"] = int(nv.get("stock") or 0)
+                    if nv.get("barcode"):
+                        ov["ticimax_barcode"] = nv["barcode"]
                     ov["ticimax_fields"] = nv.get("fields") or {}
                     ov["ticimax_xml"] = nv.get("raw") or {}
                     ov["options"] = nv.get("options") or []
@@ -811,13 +936,38 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
     return stats
 
 
-async def run_import(db, url: str, *, dry_run: bool = False, describe: bool = False) -> Dict[str, Any]:
+SOURCE_SETTING_ID = "ticimax_xml_source"
+
+
+async def get_source(db) -> Dict[str, Any]:
+    """Panelden seçilmiş kalıcı XML kaynağı (varsa .env PRODUCT_XML_URL'in ÖNÜNE geçer)."""
+    return await db.settings.find_one({"id": SOURCE_SETTING_ID}, {"_id": 0}) or {}
+
+
+async def set_source(db, url: str, include_no_stock: bool) -> None:
+    await db.settings.update_one(
+        {"id": SOURCE_SETTING_ID},
+        {"$set": {"id": SOURCE_SETTING_ID, "url": url, "include_no_stock": bool(include_no_stock),
+                  "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+
+
+async def run_import(db, url: str, *, dry_run: bool = False, describe: bool = False,
+                     include_no_stock: bool = False) -> Dict[str, Any]:
     from security_fetch import safe_fetch
     res = await safe_fetch(url, max_bytes=MAX_FEED_BYTES, timeout=600, allow_redirects=3)
     if not res.ok:
         raise RuntimeError(f"XML indirilemedi: HTTP {res.status_code}")
-    products = parse_feed(res.content)
-    stats = await import_products(db, products, dry_run=dry_run)
+    images: Optional[Dict[str, List[str]]] = None
+    m = V2_URL_RE.match(url.strip())
+    if m:   # TicimaxXmlV2: resimler ayrı dosyada
+        ires = await safe_fetch(m.group(1) + "/UrunResimleri.xml", max_bytes=MAX_FEED_BYTES, timeout=600,
+                                allow_redirects=3)
+        if ires.ok:
+            images = parse_images_feed(ires.content)
+    products = parse_feed(res.content, images)
+    stats = await import_products(db, products, dry_run=dry_run, include_no_stock=include_no_stock)
+    stats["include_no_stock"] = bool(include_no_stock)
+    stats["with_images"] = sum(1 for p in products if p.get("images"))
     if not products:
         stats["structure"] = describe_structure(res.content)
         stats["content_type"] = res.content_type

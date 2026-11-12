@@ -37,6 +37,8 @@ COLS = {
     "name": "Ürün Adı", "list_price": "Piyasa Satış Fiyatı (KDV Dahil)",
     "price": "Trendyolda Satılacak Fiyat (KDV Dahil)", "stock": "Ürün Stok Adedi", "vat": "KDV Oranı",
     "status": "Durum", "status_note": "Durum Açıklaması", "link": "Trendyol.com Linki",
+    "description": "Ürün Açıklaması", "gender": "Cinsiyet", "desi": "Desi",
+    **{f"img{i}": f"Görsel {i}" for i in range(1, 9)},
 }
 
 
@@ -144,7 +146,7 @@ def _flatten_ty_categories(nodes, out: Dict[str, List[int]]):
         _flatten_ty_categories(subs, out)
 
 
-async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, Any]:
+async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing: bool = False) -> Dict[str, Any]:
     rows = read_excel(content)
     by_code_size: Dict[Tuple[str, str], List[dict]] = defaultdict(list)
     by_code: Dict[str, List[dict]] = defaultdict(list)
@@ -233,6 +235,8 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
             if cur and cur != r["barcode"]:
                 if cur in pre_used and cur == str(v.get("trendyol_barcode") or ""):
                     pass   # önceki eşleştirmenin barkodu → güncellenebilir
+                elif cur == str(v.get("ticimax_barcode") or ""):
+                    pass   # `barcode`da duran Ticimax barkodu → Trendyol barkodu yazılır (Ticimax'ınki ayrı alanda)
                 else:
                     stats["conflict_existing_barcode"] += 1
                     used.add(r["barcode"])
@@ -319,6 +323,15 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
         ops = [UpdateOne({"id": pid}, {"$set": u}) for pid, u in product_updates]
         for i in range(0, len(ops), 500):
             await db.products.bulk_write(ops[i:i + 500], ordered=False)
+
+    # Sistemde karşılığı olmayan Trendyol ilanları → Excel'deki bilgilerle YENİ ürün (istenirse)
+    if create_missing:
+        created = await _create_from_rows(db, unmatched, dry_run=dry_run)
+        stats.update(created)
+        if not dry_run:
+            unmatched, um_active = [], []
+
+    if not dry_run:
         for cid, st in cat_updates:
             await db.categories.update_one({"id": cid}, {"$set": st})
         await db.trendyol_excel_unmatched.delete_many({})
@@ -344,6 +357,114 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
         await db.settings.update_one({"id": "trendyol_excel_match_last"},
                                      {"$set": {"id": "trendyol_excel_match_last", **report}}, upsert=True)
     return report
+
+
+EXCEL_SOURCE = "trendyol_excel"
+
+
+def _desc_html(text: Optional[str]) -> str:
+    import html as _h
+    parts = [p.strip() for p in re.split(r";\s*", text or "") if p.strip()]
+    return "".join(f"<p>{_h.escape(p)}</p>" for p in parts)
+
+
+async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) -> Dict[str, int]:
+    """Eşleşmeyen Trendyol satırlarından ürün oluşturur: Model Kodu = ürün, her satır = varyant.
+    Varyant `barcode` = Trendyol barkodu. Arşivli/ihlalli ilanlardan oluşan ürün PASİF açılır."""
+    import ticimax_xml_import as tx
+    from routes.deps import generate_id
+    from routes.products import slug_with_card_id
+
+    groups: Dict[str, List[dict]] = defaultdict(list)
+    for r in rows:
+        groups[r["model"] or r["code"] or r["barcode"]].append(r)
+    out = Counter({"created_products": 0, "created_variants": 0, "created_inactive": 0})
+    if dry_run:
+        out["created_products"] = len(groups)
+        out["created_variants"] = len(rows)
+        out["created_inactive"] = sum(1 for g in groups.values() if all(x["bad"] or not x["price_f"] for x in g))
+        return dict(out)
+    now = datetime.now(timezone.utc).isoformat()
+    cat_cache: Dict[Tuple[Optional[str], str], str] = {}
+    cstats = {"categories_created": 0}
+    batch: List[dict] = []
+    for key, g in groups.items():
+        g = sorted(g, key=_rank, reverse=True)
+        best = g[0]
+        price = next((x["price_f"] for x in g if x["price_f"]), None)
+        images: List[str] = []
+        for x in g:
+            for i in range(1, 9):
+                u = (x.get(f"img{i}") or "").strip()
+                if u.startswith("http") and u not in images:
+                    images.append(u)
+        cat_ids = await tx._ensure_category_path(db, [best["category"]], cat_cache, cstats) if best["category"] else []
+        variants = []
+        for x in g:
+            size = (x["size"] or x["size2"] or "").strip()
+            variants.append({
+                "id": generate_id(),
+                "size": size if norm_size(size) else None,
+                "color": x["color"] or None,
+                "barcode": x["barcode"], "trendyol_barcode": x["barcode"], "ticimax_barcode": None,
+                "sku": x["code"] or None, "stock_code": x["code"] or None,
+                "stock": max(0, x["stock_i"]),
+                "price": x["price_f"],
+                "price_adjustment": round(x["price_f"] - price, 2) if (x["price_f"] and price) else 0,
+                "options": [{"name": "Beden", "value": size}] if norm_size(size) else [],
+                "trendyol_listing": {
+                    "barcode": x["barcode"], "model_code": x["model"], "stock_code": x["code"],
+                    "size": x["size"] or x["size2"], "color": x["color"], "category": x["category"],
+                    "price": x["price_f"], "list_price": _num(x["list_price"]), "stock": x["stock_i"],
+                    "status": x["status"], "status_note": x["status_note"], "link": x["link"],
+                    "matched_by": "excel_olusturuldu", "matched_at": now,
+                },
+                "source": EXCEL_SOURCE,
+            })
+        active = price is not None and any(not x["bad"] and x["price_f"] for x in g)
+        pid = await tx._new_product_id(db)
+        vat = _num(best["vat"])
+        doc = {
+            "id": pid,
+            "name": best["name"] or key,
+            "slug": slug_with_card_id(best["name"] or key, pid),
+            "description": _desc_html(best.get("description")),
+            "short_description": "",
+            "brand": best["brand"] or "",
+            "images": images, "thumbnail": images[0] if images else "",
+            "category_name": best["category"] or "",
+            "category_id": cat_ids[-1] if cat_ids else None,
+            "category_ids": cat_ids,
+            "breadcrumb": best["category"] or "",
+            "price": price, "sale_price": None,
+            "market_price": _num(best["list_price"]),
+            "currency": "TRY", "vat_rate": vat, "vat_included": True, "unit": "ADET",
+            "cargo_weight": _num(best.get("desi")),
+            "gender": best.get("gender") or "",
+            "stock_code": best["code"] or "",
+            "barcode": variants[0]["barcode"],
+            "variants": variants,
+            "sizes": [v["size"] for v in variants if v.get("size")],
+            "stock": sum(v["stock"] for v in variants),
+            "is_active": bool(active), "is_featured": False, "is_new": False,
+            "trendyol_category_name": best["category"] or "",
+            "trendyol_model_code": best["model"] or "",
+            "source": EXCEL_SOURCE,
+            "created_at": now, "updated_at": now,
+        }
+        if not active:
+            doc["deactivated_reason"] = "trendyol_arsivli_veya_ihlalli" if price is not None else "fiyat_yok"
+            out["created_inactive"] += 1
+        batch.append(doc)
+        out["created_products"] += 1
+        out["created_variants"] += len(variants)
+        if len(batch) >= 500:
+            await db.products.insert_many(batch, ordered=False)
+            batch = []
+    if batch:
+        await db.products.insert_many(batch, ordered=False)
+    out["categories_created"] = cstats["categories_created"]
+    return dict(out)
 
 
 async def unmatched_xlsx(db) -> bytes:

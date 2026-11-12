@@ -6,10 +6,12 @@ from .deps import db, logger, require_permission
 
 router = APIRouter()
 _MAX = 30 * 1024 * 1024
+_bg = {"task": None}
 
 
 @router.post("/trendyol-excel-match")
 async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Query(False),
+                               create_missing: bool = Query(False), background: bool = Query(False),
                                current_user: dict = Depends(require_permission("products.marketplace_sync"))):
     name = (file.filename or "").lower()
     if not name.endswith((".xlsx", ".xls")):
@@ -22,8 +24,27 @@ async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Que
         tm.save_last_upload(content)   # sunucuda (600) saklanır: kurulum tanısı ve yeniden çalıştırma için
     except Exception as e:
         logger.warning(f"[trendyol-excel] dosya saklanamadı: {type(e).__name__}")
+    if background:
+        # Uzun iş (on binlerce satır + ürün oluşturma): arka planda çalışır, sonuç GET ile okunur.
+        t = _bg.get("task")
+        if t is not None and not t.done():
+            return {"started": False, "message": "Eşleştirme zaten çalışıyor"}
+
+        async def _run():
+            key = "trendyol_excel_match_dry" if dry_run else "trendyol_excel_match_last"
+            try:
+                rep = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing)
+                if dry_run:
+                    await db.settings.update_one({"id": key}, {"$set": {"id": key, **rep}}, upsert=True)
+            except Exception as e:
+                logger.error(f"[trendyol-excel] arka plan eşleştirme hatası: {type(e).__name__}: {e}")
+                await db.settings.update_one({"id": key}, {"$set": {"id": key, "error": type(e).__name__}},
+                                             upsert=True)
+        import asyncio
+        _bg["task"] = asyncio.create_task(_run())
+        return {"started": True}
     try:
-        report = await tm.run_match(db, content, dry_run=dry_run)
+        report = await tm.run_match(db, content, dry_run=dry_run, create_missing=create_missing)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
@@ -34,7 +55,12 @@ async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Que
 
 @router.get("/trendyol-excel-match")
 async def trendyol_excel_match_last(current_user: dict = Depends(require_permission("integrations.view"))):
-    return await db.settings.find_one({"id": "trendyol_excel_match_last"}, {"_id": 0}) or {}
+    last = await db.settings.find_one({"id": "trendyol_excel_match_last"}, {"_id": 0}) or {}
+    t = _bg.get("task")
+    if t is not None or last.get("error"):
+        dry = await db.settings.find_one({"id": "trendyol_excel_match_dry"}, {"_id": 0}) or {}
+        return {**last, "running": bool(t is not None and not t.done()), "last_dry_run": dry}
+    return last
 
 
 @router.get("/trendyol-excel-match/unmatched.xlsx")

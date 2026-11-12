@@ -63,7 +63,7 @@ def test_import_full(mdb):
     assert p["name"] == "Gümüş Zincir Kolye" and p["price"] == 1250.0 and p["sale_price"] == 999.9
     assert p["stock"] == 3 and len(p["variants"]) == 2               # stoksuz varyant da var (0)
     v45 = next(v for v in p["variants"] if v["urun_id"] == "9001")
-    assert v45["size"] == "45 cm" and v45["color"] == "Gümüş" and v45["barcode"] == "869001"
+    assert v45["size"] == "45 cm" and v45["color"] == "Gümüş" and v45["ticimax_barcode"] == "869001" and v45["barcode"] is None
     assert v45["stock_code"] == "KLY-45" and v45["stock"] == 3
     assert p["images"] == ["https://cdn.example.com/a.jpg", "https://cdn.example.com/b.jpg"]
     assert p["brand"] == "Inure" and p["short_description"] == "925 ayar" and "Şık & zarif" in p["description"]
@@ -179,3 +179,63 @@ def test_reimport_fixes_previous_bad_variant_names_and_category(mdb):
     k = run(mdb.products.find_one({"urun_karti_id": "K1"}))
     assert sorted(v["size"] for v in k["variants"]) == ["45 cm", "50 cm"] and k["category_id"]
     assert sorted(k["sizes"]) == ["45 cm", "50 cm"]
+
+
+FLAT = """<?xml version="1.0" encoding="utf-8"?>
+<Root><Urunler>
+ <Urun><Aktif>Hayır</Aktif><UrunKartiID>700</UrunKartiID><UrunAdi>Gümüş Set</UrunAdi><Aciklama>a</Aciklama>
+  <Marka>Inure</Marka><Kategori>Set</Kategori><KategoriTree>Gumush/Set</KategoriTree><SeoAciklama>.</SeoAciklama>
+  <Resimler/><VaryasyonID>1</VaryasyonID><StokKodu>ST26</StokKodu><Barkod>ST26</Barkod><StokAdedi>0</StokAdedi>
+  <SatisFiyati>100.00</SatisFiyati><KDVDahil>false</KDVDahil><KdvOrani>20</KdvOrani>
+  <ParaBirimi>tr-TR</ParaBirimi><ParaBirimiKodu>TRY</ParaBirimiKodu><TeknikDetaylar/></Urun>
+ <Urun><Aktif>Evet</Aktif><UrunKartiID>700</UrunKartiID><UrunAdi>Gümüş Set</UrunAdi><Aciklama>a</Aciklama>
+  <Marka>Inure</Marka><Kategori>Set</Kategori><KategoriTree>Gumush/Set</KategoriTree>
+  <Resimler/><VaryasyonID>2</VaryasyonID><StokKodu>ST26</StokKodu><Barkod>ST26-9</Barkod><StokAdedi>0</StokAdedi>
+  <SatisFiyati>100.00</SatisFiyati><KDVDahil>false</KDVDahil><KdvOrani>20</KdvOrani>
+  <ParaBirimi>tr-TR</ParaBirimi><ParaBirimiKodu>TRY</ParaBirimiKodu>
+  <VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ>8</VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ></Urun>
+ <Urun><Aktif>Evet</Aktif><UrunKartiID>700</UrunKartiID><UrunAdi>Gümüş Set</UrunAdi><Aciklama>a</Aciklama>
+  <Marka>Inure</Marka><Kategori>Set</Kategori><KategoriTree>Gumush/Set</KategoriTree>
+  <Resimler/><VaryasyonID>3</VaryasyonID><StokKodu>ST26</StokKodu><Barkod></Barkod><StokAdedi>0</StokAdedi>
+  <SatisFiyati>100.00</SatisFiyati><KDVDahil>false</KDVDahil><KdvOrani>20</KdvOrani>
+  <ParaBirimi>tr-TR</ParaBirimi><ParaBirimiKodu>TRY</ParaBirimiKodu>
+  <VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ>10</VARYASYON_GRUBU_XMLKOD_KONTROL_EDINIZ></Urun>
+ <Urun><Aktif>Evet</Aktif><UrunKartiID>701</UrunKartiID><UrunAdi>Kol Düğmesi</UrunAdi><Aciklama>b</Aciklama>
+  <Marka>Inure</Marka><KategoriTree>Gumush/Aksesuar/Kol Düğmeleri</KategoriTree>
+  <VaryasyonID>9</VaryasyonID><StokKodu>CFL1</StokKodu><Barkod>CFL1</Barkod><StokAdedi>2</StokAdedi>
+  <SatisFiyati>2340.90</SatisFiyati><IndirimliFiyat>2340.90</IndirimliFiyat><KDVDahil>false</KDVDahil><KdvOrani>0</KdvOrani>
+  <ParaBirimi>tr-TR</ParaBirimi><ParaBirimiKodu>TRY</ParaBirimiKodu>
+  <TeknikDetaylar><TeknikDetay><OzellikID>1</OzellikID><OzellikTanim>Tarz</OzellikTanim><DegerID>1</DegerID><DegerTanim>Günlük</DegerTanim></TeknikDetay></TeknikDetaylar></Urun>
+</Urunler></Root>""".encode("utf-8")
+
+IMAGES = """<Resimler><Resim><UrunKartiID>700</UrunKartiID><VaryasyonID>0</VaryasyonID>
+<ResimAdresi>https://cdn.example.com/700-a.jpg</ResimAdresi></Resim>
+<Resim><UrunKartiID>700</UrunKartiID><VaryasyonID>0</VaryasyonID><ResimAdresi>https://cdn.example.com/700-b.jpg</ResimAdresi></Resim>
+</Resimler>""".encode("utf-8")
+
+
+def test_flat_v2_layout(mdb):
+    prods = tx.parse_feed(FLAT, tx.parse_images_feed(IMAGES))
+    assert [p["card_id"] for p in prods] == ["700", "701"]
+    p700 = prods[0]
+    assert [v["size"] for v in p700["variants"]] == ["8", "10"]          # pasif seçeneksiz ana kayıt atıldı
+    assert p700["images"] == ["https://cdn.example.com/700-a.jpg", "https://cdn.example.com/700-b.jpg"]
+    assert prods[1]["technical"] == [{"name": "Tarz", "value": "Günlük"}]
+    # stoksuz ürün: varsayılan atlanır, include_no_stock ile eklenir
+    st = run(tx.import_products(mdb, prods))
+    assert st["created"] == 1 and st["skipped_no_stock"] == 1
+    st = run(tx.import_products(mdb, prods, include_no_stock=True))
+    assert st["created"] == 1 and st["updated"] == 1 and st["errors"] == 0
+    p = run(mdb.products.find_one({"urun_karti_id": "700"}))
+    v8 = p["variants"][0]
+    assert v8["barcode"] is None and v8["ticimax_barcode"] == "ST26-9" and v8["stock_code"] == "ST26"
+    assert p["price"] == 120.0 and p["currency"] == "TRY" and p["meta_description"] == ""
+    assert p["ticimax_barcode"] == "ST26-9" and "barcode" not in p
+    assert "ACIKLAMA" not in v8["ticimax_fields"]
+    # Trendyol barkodu yazıldıktan sonra yeniden aktarım onu EZMEZ; varyant çoğalmaz
+    p["variants"][0]["barcode"] = "TYX1"
+    run(mdb.products.update_one({"id": p["id"]}, {"$set": {"variants": p["variants"]}}))
+    run(tx.import_products(mdb, prods, include_no_stock=True))
+    p = run(mdb.products.find_one({"urun_karti_id": "700"}))
+    assert len(p["variants"]) == 2 and p["variants"][0]["barcode"] == "TYX1"
+    assert p["variants"][0]["ticimax_barcode"] == "ST26-9"

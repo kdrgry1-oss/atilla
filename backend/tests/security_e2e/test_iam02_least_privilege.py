@@ -137,6 +137,7 @@ POST /api/provider-settings/{kind}/config
 POST /api/settings
 POST /api/settings/bank-accounts
 POST /api/settings/bank-accounts/{acc_id}/default
+POST /api/integrations/catalog-reset
 POST /api/settings/email-smtp
 PUT /api/admin/coupons/{cid}
 PUT /api/admin/email-marketing/settings
