@@ -217,6 +217,71 @@ export default function TrendyolExcelMatch() {
               </table>
             </div>
           )}
+
+          {Array.isArray(report.unmatched_variant_sample) && report.unmatched_variant_sample.length > 0 && (
+            <div className="border rounded bg-white overflow-x-auto">
+              <div className="px-4 py-3 border-b font-medium inline-flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> Eşleşmeyen sistem varyantları (örnek)
+              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="p-2">Ürün</th>
+                    <th className="p-2">Stok kodu</th>
+                    <th className="p-2">Beden</th>
+                    <th className="p-2">Trendyol'daki bedenler (aynı kod)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.unmatched_variant_sample.map((x, i) => (
+                    <tr key={`${x.product_id}-${i}`} className="border-t">
+                      <td className="p-2">
+                        <a
+                          href={`/admin/urunler/${x.product_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-purple-700 hover:underline"
+                        >
+                          {x.name}
+                        </a>
+                      </td>
+                      <td className="p-2 font-mono text-xs">{x.stock_code || "—"}</td>
+                      <td className="p-2">{x.size || "—"}</td>
+                      <td className="p-2 text-gray-600">
+                        {(x.trendyol_sizes_for_code || []).join(", ") || "Bu kod Excel'de yok"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {Array.isArray(report.price_sample) && report.price_sample.length > 0 && (
+            <div className="border rounded bg-white overflow-x-auto">
+              <div className="px-4 py-3 border-b font-medium">Fiyat karşılaştırması (örnek)</div>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="p-2">Ürün</th>
+                    <th className="p-2">Beden</th>
+                    <th className="p-2 text-right">Site fiyatı</th>
+                    <th className="p-2 text-right">Trendyol fiyatı</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.price_sample.map((x, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="p-2">{x.name}</td>
+                      <td className="p-2">{x.size || "—"}</td>
+                      <td className="p-2 text-right tabular-nums">{fmt(x.site_price)} ₺</td>
+                      <td className="p-2 text-right tabular-nums">{fmt(x.trendyol_price)} ₺</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </div>

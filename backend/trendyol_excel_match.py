@@ -54,11 +54,41 @@ def strip_inure(code: str) -> str:
     return m.group(2) if m else ""
 
 
+_SIZE_WORDS = {"NUMARA", "NO", "NR", "BEDEN", "OLCU", "YUZUK", "YUZUKOLCUSU", "MM", "CM", "UZUNLUK", "BOY", "EBAT",
+               "SECENEK", "SECINIZ", "OLCUSU"}
+
+
 def norm_size(s: Any) -> str:
     s = "" if s is None else str(s)
-    s = s.translate(_TR).upper().replace(" ", "").replace("CM", "")
+    s = s.translate(_TR).upper().replace(",", ".")
+    nums = re.findall(r"\d+(?:\.\d+)?", s)
+    words = set(re.findall(r"[A-Z]+", s))
+    if len(nums) == 1 and words <= _SIZE_WORDS:
+        n = nums[0]
+        return n[:-2] if n.endswith(".0") else n
+    s = s.replace(" ", "").replace("CM", "")
     s = s[:-2] if re.fullmatch(r"\d+\.0", s) else s
     return "" if s in _NO_SIZE else s
+
+
+def code_candidates(code: str, size: str) -> List[str]:
+    """Sistem stok kodu için denenecek biçimler: kendisi; sonuna eklenmiş beden atılmış hâli
+    (LR1100511117 / LR11005111-17 → LR11005111); 'inure' önekli hâli."""
+    out = [code] if code else []
+    if code and size:
+        for suf in (f"-{size}", f"_{size}", f".{size}", f"/{size}", size):
+            if code.endswith(suf) and len(code) > len(suf) + 2:
+                out.append(code[: -len(suf)].rstrip("-_./"))
+    if code:
+        si = strip_inure(code)
+        if si:
+            out.append(si)
+    seen, res = set(), []
+    for c in out:
+        if c and c not in seen:
+            seen.add(c)
+            res.append(c)
+    return res
 
 
 def norm_name(s: Any) -> str:
@@ -127,6 +157,8 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
             by_name_size[(r["name_n"], r["size_n"])].append(r)
 
     used: set = set()
+    unmatched_sample: List[Dict[str, Any]] = []
+    price_sample: List[Dict[str, Any]] = []
     stats = Counter()
     ratios: List[float] = []
     cat_votes: Dict[str, Counter] = defaultdict(Counter)
@@ -164,17 +196,37 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
             size = norm_size(v.get("size"))
             own = str(v.get("barcode") or "")
             r, how = None, ""
-            if code:
-                r = pick(by_code_size.get((code, size), []), own); how = "kod+beden" if r else ""
-                if r is None:
-                    same = by_code.get(code, [])
+            cands = code_candidates(code, size)
+            for c in cands:
+                r = pick(by_code_size.get((c, size), []), own)
+                if r is not None:
+                    how = "kod+beden"
+                    break
+            if r is None:
+                for c in cands:
+                    same = by_code.get(c, [])
                     sizes = {x["size_n"] for x in same}
                     if same and (not size or sizes <= {""} or len(variants) == 1 and len(sizes) == 1):
-                        r = pick(same, own); how = "kod" if r else ""
+                        r = pick(same, own)
+                        if r is not None:
+                            how = "kod"
+                            break
             if r is None and pname:
                 r = pick(by_name_size.get((pname, size), []), own); how = "ad+beden" if r else ""
             if r is None:
                 stats["unmatched_variants"] += 1
+                ty_sizes = sorted({x["size"] or x["size2"] or "" for c in cands for x in by_code.get(c, [])})
+                if not code:
+                    stats["unmatched_no_code"] += 1
+                elif ty_sizes:
+                    stats["unmatched_size_mismatch"] += 1
+                else:
+                    stats["unmatched_code_not_in_excel"] += 1
+                if len(unmatched_sample) < 80:
+                    unmatched_sample.append({"product_id": p.get("id"), "name": p.get("name"),
+                                             "stock_code": v.get("stock_code") or "", "size": v.get("size"),
+                                             "variant_count": len(variants),
+                                             "trendyol_sizes_for_code": ty_sizes[:12]})
                 continue
             stats[f"by_{how}"] += 1
             cur = str(v.get("barcode") or "")
@@ -203,9 +255,12 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
             changed = True
             stats["matched_variants"] += 1
             matched_rows.append(r)
-            base = p.get("sale_price") or p.get("price")
+            base = v.get("price") or p.get("sale_price") or p.get("price")
             if base and r["price_f"]:
                 ratios.append(r["price_f"] / float(base))
+                if len(price_sample) < 25:
+                    price_sample.append({"name": p.get("name"), "size": v.get("size"), "site_price": float(base),
+                                         "trendyol_price": r["price_f"], "matched_by": how})
         if matched_rows:
             stats["matched_products"] += 1
             cats = Counter(x["category"] for x in matched_rows if x["category"])
@@ -280,6 +335,8 @@ async def run_match(db, content: bytes, *, dry_run: bool = False) -> Dict[str, A
         "price_ratio_median": round(statistics.median(ratios), 3) if ratios else None,
         "suggested_markup_pct": round((statistics.median(ratios) - 1) * 100, 1) if ratios else None,
         "categories": sorted(cat_report, key=lambda x: -x["share_pct"]),
+        "unmatched_variant_sample": unmatched_sample,
+        "price_sample": price_sample,
         "unmatched_sample": [{"barcode": r["barcode"], "stock_code": r["code"], "name": r["name"],
                               "size": r["size"] or r["size2"], "status": r["status"]} for r in um_active[:50]],
     }
@@ -302,3 +359,19 @@ async def unmatched_xlsx(db) -> bytes:
     buf = io.BytesIO()
     df.to_excel(buf, index=False)
     return buf.getvalue()
+
+
+def last_upload_path():
+    import os
+    import pathlib
+    return pathlib.Path(os.environ.get("ATILLA_DATA_DIR") or "/opt/atilla/data") / "trendyol_last_upload.xlsx"
+
+
+def save_last_upload(content: bytes) -> None:
+    import os
+    path = last_upload_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(content)
+    os.chmod(tmp, 0o600)
+    tmp.replace(path)

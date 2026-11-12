@@ -273,3 +273,7 @@ else
   rm -f /etc/cron.d/atilla-xml-import
   echo "PRODUCT_XML_URL tanımlı değil — atlandı."
 fi
+
+echo "▶ Trendyol eşleştirme tanısı (kaydetmeden)"
+(cd "$APP/backend" && timeout 900 "$APP/venv/bin/python" scripts/trendyol_match_diag.py 2>&1 \
+  | grep -viE 'secret|password|token' | tail -n 120) || echo "!! tanı çalıştırılamadı"

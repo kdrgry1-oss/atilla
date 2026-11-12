@@ -19,6 +19,10 @@ async def trendyol_excel_match(file: UploadFile = File(...), dry_run: bool = Que
         raise HTTPException(413, "Dosya çok büyük (en fazla 30 MB)")
     import trendyol_excel_match as tm
     try:
+        tm.save_last_upload(content)   # sunucuda (600) saklanır: kurulum tanısı ve yeniden çalıştırma için
+    except Exception as e:
+        logger.warning(f"[trendyol-excel] dosya saklanamadı: {type(e).__name__}")
+    try:
         report = await tm.run_match(db, content, dry_run=dry_run)
     except ValueError as e:
         raise HTTPException(400, str(e))
