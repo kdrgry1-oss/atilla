@@ -2216,7 +2216,7 @@ async def sync_products_to_trendyol(
                 # Description yoksa veya çok kısaysa ürün adından bir minimum açıklama üret
                 fallback = (product.get("name") or "").strip()
                 if fallback and len(fallback) >= 10:
-                    clean_desc = f"{fallback}. Kaliteli kumaş, modern kesim, şık tasarım. Günlük ve özel kullanım için ideal."
+                    clean_desc = f"{fallback}. Ürün detayları için görselleri ve ürün özelliklerini inceleyebilirsiniz."
                 else:
                     errors.append(f"{product.get('name')} - Açıklama eksik (Trendyol min 30 karakter zorunlu).")
                     continue

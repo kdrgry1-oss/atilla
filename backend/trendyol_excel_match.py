@@ -131,6 +131,21 @@ def read_excel(content: bytes) -> List[Dict[str, Any]]:
     return rows
 
 
+def _has_attr(attrs: Any, name: str) -> bool:
+    return any(isinstance(a, dict) and norm_name(a.get("name") or a.get("label")) == norm_name(name)
+               and (a.get("value") not in (None, "")) for a in (attrs or []))
+
+
+def _set_attr(attrs: Any, name: str, value: str) -> List[Dict[str, Any]]:
+    """Liste biçimli özelliklere {name,value} ekler; aynı adda DOLU değer varsa dokunmaz (elle girilen korunur)."""
+    out = [a for a in (attrs or []) if isinstance(a, dict)] if isinstance(attrs, list) else []
+    if _has_attr(out, name):
+        return out
+    out = [a for a in out if norm_name(a.get("name") or a.get("label")) != norm_name(name)]
+    out.append({"name": name, "value": value})
+    return out
+
+
 def _rank(r: Dict[str, Any]) -> Tuple:
     return (0 if r["bad"] else 1, 1 if not r["status"] else 0, r["stock_i"])
 
@@ -189,7 +204,7 @@ async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing
 
     async for p in db.products.find({"is_deleted": {"$ne": True}},
                                     {"_id": 0, "id": 1, "name": 1, "variants": 1, "price": 1, "sale_price": 1,
-                                     "category_id": 1, "stock_code": 1}):
+                                     "category_id": 1, "stock_code": 1, "attributes": 1}):
         variants = list(p.get("variants") or [])
         if not variants:
             continue
@@ -257,8 +272,13 @@ async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing
                 "size": r["size"] or r["size2"], "color": r["color"], "category": r["category"],
                 "price": r["price_f"], "list_price": _num(r["list_price"]), "stock": r["stock_i"],
                 "status": r["status"], "status_note": r["status_note"], "link": r["link"],
+                "gender": r.get("gender") or "",
                 "matched_by": how, "matched_at": datetime.now(timezone.utc).isoformat(),
             }
+            if not v.get("color") and r["color"]:
+                # Varyantın kendi rengi yoksa Trendyol ilanındaki renk ÖZELLİK olarak tutulur (vitrin
+                # seçeneği olan `color` alanına yazılmaz) → pazaryeri gönderiminde Renk/Web Color dolar.
+                v["attributes"] = _set_attr(v.get("attributes"), "Renk", r["color"])
             variants[i] = v
             changed = True
             stats["matched_variants"] += 1
@@ -283,6 +303,11 @@ async def run_match(db, content: bytes, *, dry_run: bool = False, create_missing
                 models = {x["model"] for x in matched_rows if x["model"]}
                 if len(models) == 1:
                     upd["trendyol_model_code"] = models.pop()
+                genders = Counter(x.get("gender") for x in matched_rows if x.get("gender")).most_common(1)
+                if genders:
+                    cur_attrs = p.get("attributes")
+                    if isinstance(cur_attrs, (list, type(None))) and not _has_attr(cur_attrs, "Cinsiyet"):
+                        upd["attributes"] = _set_attr(cur_attrs, "Cinsiyet", genders[0][0])
             product_updates.append((p["id"], upd))
 
     # Kategori eşleştirmesi (çoğunluk oyu); Trendyol kategori ağacı önbellekte varsa ID de bulunur
@@ -451,6 +476,7 @@ async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) ->
             "currency": "TRY", "vat_rate": vat, "vat_included": True, "unit": "ADET",
             "cargo_weight": _num(best.get("desi")),
             "gender": best.get("gender") or "",
+            "attributes": ([{"name": "Cinsiyet", "value": best["gender"]}] if best.get("gender") else []),
             "stock_code": best["code"] or "",
             "barcode": variants[0]["barcode"],
             "variants": variants,

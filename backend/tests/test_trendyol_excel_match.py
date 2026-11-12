@@ -177,3 +177,25 @@ def test_catalog_fixups(monkeypatch):
     assert p["price"] == 100.0 and p["variants"][0]["price"] == 100.0 and p["market_price"] == 200.0
     assert p["brand"] == "Inure Jewelry" and run(db.products.find_one({"id": "t1"}))["price"] == 100
     assert run(db.products.find_one({"id": "t1"}))["brand_by"] == "catalog_fixups"
+
+
+def test_match_fills_color_and_gender_attributes():
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    global COLS
+    cols = COLS + ["Cinsiyet"]
+    run(db.products.insert_one({"id": "1", "name": "Yüzük", "price": 100, "variants": [
+        {"id": "a", "size": "17", "stock_code": "LR1"},
+        {"id": "b", "size": "18", "stock_code": "LR1", "color": "Altın"}]}))
+    rows = [{"Barkod": "T17", "Beden": "17", "Tedarikçi Stok Kodu": "LR1", "Ürün Adı": "Yüzük", "Ürün Rengi": "Karışık",
+             "Cinsiyet": "Erkek"},
+            {"Barkod": "T18", "Beden": "18", "Tedarikçi Stok Kodu": "LR1", "Ürün Adı": "Yüzük", "Ürün Rengi": "Karışık",
+             "Cinsiyet": "Erkek"}]
+    df = pd.DataFrame([{c: r.get(c) for c in cols} for r in rows], columns=cols)
+    b = io.BytesIO(); df.to_excel(b, index=False, sheet_name="Ürünler")
+    for _ in range(2):
+        run(tm.run_match(db, b.getvalue()))
+    p = run(db.products.find_one({"id": "1"}))
+    assert p["attributes"] == [{"name": "Cinsiyet", "value": "Erkek"}]
+    assert p["variants"][0]["attributes"] == [{"name": "Renk", "value": "Karışık"}] and not p["variants"][0].get("color")
+    assert "attributes" not in p["variants"][1] and p["variants"][1]["color"] == "Altın"
+    assert p["variants"][0]["trendyol_listing"]["gender"] == "Erkek"
