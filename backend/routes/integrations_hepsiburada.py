@@ -1606,6 +1606,11 @@ async def _build_hb_product_item(product: dict, merchant_id: str):
         cm = await db.category_mappings.find_one(
             {"marketplace": "hepsiburada", "category_name": product.get("category_name")}, {"_id": 0})
     hb_cat = (cm or {}).get("marketplace_category_id")
+    # Ürün, Hepsiburada "Listelerim" ilanıyla eşleşmişse (hb_category_id) ilanın KENDİ HB kategorisi
+    # önceliklidir: aynı yerel kategori (ör. "Gümüş Yüzük") HB'de cinsiyete göre farklı kategorilere
+    # (Erkek > Yüzük / Kadın > Gümüş Yüzük) ayrılır. Kategori sabitleri (cm) yine uygulanır.
+    if product.get("hb_category_id"):
+        hb_cat = product.get("hb_category_id")
     if not hb_cat:
         # OTOMATİK KATEGORİ (kullanıcı, 2026-09-30): ana kategori koleksiyon/kampanya kategorisi
         # olabilir ("Feminora", "EN YENİLER" — HB karşılığı yok). Ürünün DİĞER kategorilerinden
@@ -1859,7 +1864,10 @@ async def _build_hb_product_item(product: dict, merchant_id: str):
         if not sku:
             errors.add("stok kodu/barkod yok")
             continue
-        bc = (str(_base_val("Barcode", variant) or "").strip()
+        # Hepsiburada ilanıyla eşleşmiş varyantta (hb_barcode) HB kataloğundaki barkod gönderilir →
+        # HB mevcut katalog ürünüyle eşleştirir; yoksa eski davranış (alan eşleştirmesi / varyant barkodu).
+        bc = (str((variant or {}).get("hb_barcode") or "").strip()
+              or str(_base_val("Barcode", variant) or "").strip()
               or (variant or {}).get("barcode") or product.get("barcode") or sku)
         attrs.setdefault("merchantSku", sku)
         attrs.setdefault("Barcode", bc)

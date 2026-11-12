@@ -183,3 +183,63 @@ async def sync_linked_variants(db, parsed_products: List[Dict[str, Any]], with_v
         cards_all.setdefault(c, []).append(u)
     linked_cards = {c for c, us in cards_all.items() if c and all(u in found for u in us)}
     return {"linked_updated": n, "linked_cards": linked_cards, "linked_ids": found}
+
+
+async def apply_hb_listings(db, records: List[Dict[str, Any]], *, dry_run: bool = True) -> Dict[str, Any]:
+    """Hepsiburada "Listelerim" Excel'indeki ilanları URUNID (= HB Satıcı Stok Kodu) ile varyantlara bağlar.
+
+    Kayıt: {"u": URUNID, "s": Hepsiburada SKU, "b": Hepsiburada barkodu, "ci": HB kategori id (ops.)}.
+    Eşleşen varyanta `hb_sku` ve `hb_barcode`, ürüne varyantlarının çoğunluk HB kategorisi
+    (`hb_category_id`) yazılır; HB'ye gönderimde barkod olarak bu değer kullanılır (HB kataloğundaki mevcut
+    ürünle eşleşsin diye). Varyantın kendi `barcode` alanına (Trendyol barkodu) DOKUNULMAZ.
+    """
+    from pymongo import UpdateOne
+    M: Dict[str, Dict[str, Any]] = {}
+    for r in records:
+        u = _s(r.get("u"))
+        if u:
+            M[u] = r
+    st = Counter()
+    ops: list = []
+    found: set = set()
+    async for p in db.products.find({"variants.urun_id": {"$exists": True}}, {"_id": 0, "id": 1, "variants": 1, "hb_category_id": 1}):
+        vs = list(p.get("variants") or [])
+        changed = False
+        cat_votes: Counter = Counter()
+        for v in vs:
+            u = _s(v.get("urun_id"))
+            rec = M.get(u) if u else None
+            if not rec:
+                continue
+            found.add(u)
+            st["matched"] += 1
+            sku, bc = _s(rec.get("s")), _s(rec.get("b"))
+            if _s(rec.get("ci")):
+                cat_votes[_s(rec.get("ci"))] += 1
+            if (sku and v.get("hb_sku") != sku) or (bc and v.get("hb_barcode") != bc):
+                if sku:
+                    v["hb_sku"] = sku
+                if bc:
+                    v["hb_barcode"] = bc
+                changed = True
+                st["updated"] += 1
+        setdoc: Dict[str, Any] = {}
+        if changed:
+            setdoc["variants"] = vs
+        if cat_votes:
+            top = cat_votes.most_common(1)[0][0]
+            top_val: Any = int(top) if top.isdigit() else top
+            if p.get("hb_category_id") != top_val:
+                setdoc["hb_category_id"] = top_val
+                st["category_set"] += 1
+        if setdoc:
+            st["products_updated"] += 1
+            ops.append(UpdateOne({"id": p["id"]}, {"$set": setdoc}))
+    st["records"] = len(M)
+    st["not_in_catalog"] = len(M) - len(found)
+    if not dry_run:
+        for i in range(0, len(ops), 500):
+            await db.products.bulk_write(ops[i:i + 500], ordered=False)
+    out = dict(st)
+    out["dry_run"] = dry_run
+    return out

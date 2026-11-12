@@ -207,3 +207,28 @@ async def ticimax_identity_apply(file: UploadFile = File(...), dry_run: bool = Q
     if not dry_run:
         logger.warning(f"[ticimax-identity] uygulandı: {res}")
     return res
+
+
+@router.post("/hepsiburada-listings-apply")
+async def hepsiburada_listings_apply(file: UploadFile = File(...), dry_run: bool = Query(True),
+                                     current_user: dict = Depends(require_permission("products.delete"))):
+    """Hepsiburada "Listelerim" ilanlarını URUNID ile varyantlara bağlar (gzip'li JSON kayıt listesi)."""
+    import gzip
+    import json
+    raw = await file.read(_MAX + 1)
+    if len(raw) > _MAX:
+        raise HTTPException(413, "Dosya çok büyük")
+    try:
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        records = json.loads(raw.decode("utf-8"))
+        assert isinstance(records, list) and records and isinstance(records[0], dict)
+    except Exception:
+        raise HTTPException(400, "Geçersiz dosya (gzip'li JSON kayıt listesi bekleniyor)")
+    if len(records) > 200000:
+        raise HTTPException(400, "Çok fazla kayıt")
+    import ticimax_identity as ti
+    res = await ti.apply_hb_listings(db, records, dry_run=dry_run)
+    if not dry_run:
+        logger.warning(f"[hb-listings] uygulandı: {res}")
+    return res

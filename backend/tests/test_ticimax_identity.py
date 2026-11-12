@@ -51,3 +51,23 @@ def test_apply_identity_and_linked_sync():
     assert lk["linked_updated"] == 1 and lk["linked_cards"] == {"C2"}
     e1 = run(db.products.find_one({"id": "e1"}))
     assert e1["variants"][0]["stock"] == 33 and e1["variants"][0]["price"] == 310.0 and e1["stock"] == 33
+
+
+def test_apply_hb_listings():
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    run(db.products.insert_many([
+        {"id": "p1", "variants": [{"id": "a", "urun_id": "101", "barcode": "TY101"},
+                                  {"id": "b", "urun_id": "102", "barcode": "TY102"}]},
+        {"id": "p2", "variants": [{"id": "c", "barcode": "TY7"}]}]))
+    recs = [{"u": "101", "s": "HBV1", "b": "HB101", "ci": 530729}, {"u": "999", "s": "HBV9", "b": "HB999"}]
+    d = run(ti.apply_hb_listings(db, recs, dry_run=True))
+    assert d["matched"] == 1 and d["updated"] == 1 and d["not_in_catalog"] == 1
+    assert "hb_sku" not in run(db.products.find_one({"id": "p1"}))["variants"][0]
+    run(ti.apply_hb_listings(db, recs, dry_run=False))
+    r = run(ti.apply_hb_listings(db, recs, dry_run=False))
+    assert r.get("updated", 0) == 0
+    v = run(db.products.find_one({"id": "p1"}))["variants"]
+    assert v[0]["hb_sku"] == "HBV1" and v[0]["hb_barcode"] == "HB101" and v[0]["barcode"] == "TY101"
+    assert "hb_sku" not in v[1]
+    assert run(db.products.find_one({"id": "p1"}))["hb_category_id"] == 530729
+    assert "hb_category_id" not in run(db.products.find_one({"id": "p2"}))
