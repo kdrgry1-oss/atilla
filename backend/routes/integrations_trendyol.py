@@ -2237,7 +2237,11 @@ async def sync_products_to_trendyol(
             # 3. Base Product Details
             base_item = {
                 "title": product.get("name"),
-                "productMainId": _resolve_stock_code(product) or product.get("id"),
+                # Model kodu: Trendyol'daki mevcut model kodu biliniyorsa (Excel eşleştirmesi) O kullanılır —
+                # aynı modelin renk/beden kardeşleri (ayrı ürün kartı olsalar da) tek modelde birleşir.
+                # Bilinmiyorsa ürünün stok kodu model kodudur.
+                "productMainId": (str(product.get("trendyol_model_code") or "").strip()
+                                  or _resolve_stock_code(product) or product.get("id")),
                 "brandId": int(product.get("trendyol_brand_id") or config.get("default_brand_id") or 975755),
                 "categoryId": int(trendyol_cat_id),
                 "description": clean_desc,
