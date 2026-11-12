@@ -467,6 +467,40 @@ async def _create_from_rows(db, rows: List[Dict[str, Any]], *, dry_run: bool) ->
     return dict(out)
 
 
+def _is_archived(v: Dict[str, Any]) -> bool:
+    st = str(((v.get("trendyol_listing") or {}).get("status")) or "").lower()
+    return "arşiv" in st or "arsiv" in st
+
+
+async def prune_archived(db, *, dry_run: bool = True) -> Dict[str, Any]:
+    """Excel'den oluşturulmuş ürünlerde Trendyol'da ARŞİVLİ ilandan gelen varyantları kalıcı siler;
+    varyantı kalmayan ürün de silinir. Ticimax kaynaklı ürünlere ve ihlalli/çoklanan ilanlara dokunmaz."""
+    from pymongo import DeleteOne, UpdateOne
+    out = Counter({"products_scanned": 0, "products_deleted": 0, "products_trimmed": 0, "variants_deleted": 0})
+    ops: list = []
+    now = datetime.now(timezone.utc).isoformat()
+    async for p in db.products.find({"source": EXCEL_SOURCE}, {"_id": 0, "id": 1, "variants": 1}):
+        out["products_scanned"] += 1
+        vs = list(p.get("variants") or [])
+        keep = [v for v in vs if not _is_archived(v)]
+        if len(keep) == len(vs):
+            continue
+        out["variants_deleted"] += len(vs) - len(keep)
+        if not keep:
+            out["products_deleted"] += 1
+            ops.append(DeleteOne({"id": p["id"], "source": EXCEL_SOURCE}))
+        else:
+            out["products_trimmed"] += 1
+            ops.append(UpdateOne({"id": p["id"], "source": EXCEL_SOURCE}, {"$set": {
+                "variants": keep, "sizes": [v["size"] for v in keep if v.get("size")],
+                "stock": sum(int(v.get("stock") or 0) for v in keep),
+                "barcode": keep[0].get("barcode"), "updated_at": now}}))
+    if not dry_run:
+        for i in range(0, len(ops), 500):
+            await db.products.bulk_write(ops[i:i + 500], ordered=False)
+    return {"dry_run": dry_run, **dict(out)}
+
+
 async def unmatched_xlsx(db) -> bytes:
     import pandas as pd
     rows = await db.trendyol_excel_unmatched.find({}, {"_id": 0}).to_list(None)

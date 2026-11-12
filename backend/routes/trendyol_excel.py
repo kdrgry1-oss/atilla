@@ -1,5 +1,5 @@
 """Panel: Trendyol "Ürünleriniz" Excel'i ile sistem ürünlerini eşleştir (barkod + kategori)."""
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 
 from .deps import db, logger, require_permission
@@ -74,3 +74,17 @@ async def trendyol_excel_unmatched(current_user: dict = Depends(require_permissi
     return Response(content=data,
                     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": 'attachment; filename="trendyol-eslesmeyenler.xlsx"'})
+
+
+@router.post("/trendyol-excel-prune-archived")
+async def trendyol_excel_prune_archived(payload: dict = Body(default={}),
+                                        current_user: dict = Depends(require_permission("products.delete"))):
+    """Excel'den oluşturulan ürünlerde Trendyol'da arşivli ilanların varyantlarını/ürünlerini KALICI siler."""
+    dry = bool(payload.get("dry_run", True))
+    if not dry and (payload.get("confirm") or "") != "ARSIVLILERI SIL":
+        raise HTTPException(400, 'Onay gerekli: confirm="ARSIVLILERI SIL"')
+    import trendyol_excel_match as tm
+    res = await tm.prune_archived(db, dry_run=dry)
+    if not dry:
+        logger.warning(f"[trendyol-excel] arşivli ilanlar silindi: {res}")
+    return res

@@ -107,3 +107,30 @@ def test_create_missing_products_from_excel(monkeypatch):
     # tekrar çalıştırma yeni ürün ÜRETMEZ
     r2 = run(tm.run_match(db, _xlsx(rows), create_missing=True))
     assert r2["stats"]["created_products"] == 0 and run(db.products.count_documents({})) == 6
+
+
+def test_prune_archived(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["t"]
+    import routes.deps as deps
+    monkeypatch.setattr(deps, "db", db)
+    rows = [
+        {"Barkod": "A1", "Beden": "12", "Tedarikçi Stok Kodu": "N1", "Ürün Adı": "Yüzük", "Model Kodu": "M1",
+         "Trendyolda Satılacak Fiyat (KDV Dahil)": "200", "Ürün Stok Adedi": "4"},
+        {"Barkod": "A2", "Beden": "13", "Tedarikçi Stok Kodu": "N1", "Ürün Adı": "Yüzük", "Model Kodu": "M1",
+         "Trendyolda Satılacak Fiyat (KDV Dahil)": "200", "Ürün Stok Adedi": "3", "Durum": "Ürün arşivlendi"},
+        {"Barkod": "B1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "N2", "Ürün Adı": "Kolye", "Model Kodu": "M2",
+         "Durum": "Ürün arşivlendi"},
+        {"Barkod": "C1", "Beden": "Tek Ebat", "Tedarikçi Stok Kodu": "N3", "Ürün Adı": "Küpe", "Model Kodu": "M3",
+         "Durum": "Marka Hakkı İhlali"},
+    ]
+    run(tm.run_match(db, _xlsx(rows), create_missing=True))
+    run(db.products.insert_one({"id": "t1", "source": "ticimax_xml", "variants": [
+        {"id": "x", "barcode": "T1", "trendyol_listing": {"status": "Ürün arşivlendi"}}]}))
+    d = run(tm.prune_archived(db, dry_run=True))
+    assert d["products_deleted"] == 1 and d["products_trimmed"] == 1 and d["variants_deleted"] == 2
+    assert run(db.products.count_documents({})) == 4
+    run(tm.prune_archived(db, dry_run=False))
+    assert run(db.products.count_documents({})) == 3 and run(db.products.find_one({"id": "t1"}))
+    m1 = run(db.products.find_one({"trendyol_model_code": "M1"}))
+    assert [v["barcode"] for v in m1["variants"]] == ["A1"] and m1["stock"] == 4
+    assert run(db.products.find_one({"trendyol_model_code": "M3"}))          # ihlalli ilan durur
