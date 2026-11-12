@@ -56,6 +56,13 @@ async def main() -> int:
         print("✔ Yönetici şifresi GitHub'daki ADMIN_PASSWORD değerine sıfırlandı.")
     else:
         print("Yönetici hesabı mevcut (şifre değişmedi).")
+    # Panel doğrulaması kapalıysa (ADMIN_MFA_ENFORCE=off) yönetici hesabındaki kişisel MFA bayrağı da kapatılır;
+    # aksi halde e-posta/SMS servisi olmadan ulaşmayan kod beklenir ve giriş yapılamaz.
+    if (os.environ.get("ADMIN_MFA_ENFORCE") or "").strip().lower() in ("0", "off", "false", "no", "disable"):
+        r = await db.users.update_one({"email": email, "mfa_enabled": True},
+                                      {"$set": {"mfa_enabled": False, "mfa_disabled_reason": "deploy_admin_mfa_off"}})
+        if r.modified_count:
+            print("✔ Yönetici hesabında e-posta/SMS doğrulaması kapatıldı.")
     if user is None or secret_changed:
         APPLIED.write_text(bcrypt.hashpw(pw.encode(), bcrypt.gensalt(rounds=12)).decode())
         os.chmod(APPLIED, 0o600)

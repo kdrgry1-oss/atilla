@@ -11,6 +11,7 @@ name: Sunucuya Otomatik Kurulum
 #                                             sunucuda her 2 saatte bir stok/ürün senkronu çalışır
 # İsteğe bağlı Variables (aynı sayfa → Variables):
 #   SITE_DOMAIN (ör. magaza.com), API_DOMAIN (ör. api.magaza.com)
+#   ADMIN_MFA_ENFORCE=on → panel girişinde e-posta/SMS doğrulaması (varsayılan kapalı)
 #   Boşsa site IP üzerinden http://SSH_HOST adresinde açılır.
 #
 # DİKKAT: Bu repo herkese açık → Actions log'u da açık. Hiçbir sır log'a yazdırılmaz.
@@ -82,6 +83,7 @@ jobs:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           PRODUCT_XML_URL: ${{ secrets.PRODUCT_XML_URL }}
+          ADMIN_MFA_ENFORCE: ${{ vars.ADMIN_MFA_ENFORCE }}
         run: |
           mkdir -p release
           cp -r backend deploy release/
@@ -92,6 +94,7 @@ jobs:
             printf 'ADMIN_EMAIL=%q\n' "$ADMIN_EMAIL"
             printf 'ADMIN_PASSWORD=%q\n' "$ADMIN_PASSWORD"
             printf 'PRODUCT_XML_URL=%q\n' "$PRODUCT_XML_URL"
+            printf 'ADMIN_MFA_ENFORCE=%q\n' "$ADMIN_MFA_ENFORCE"
           } > release/bootstrap.env
           tar -czf release.tgz -C release .
           du -sh release.tgz

@@ -134,6 +134,10 @@ set_kv SITE_URL "$SITE_URL"
 set_kv FRONTEND_URL "$SITE_URL"
 set_kv BACKEND_URL "$API_URL"
 set_kv PUBLIC_API_URL "$API_URL"
+# Panel girişinde e-posta/SMS doğrulaması (MFA). E-posta/SMS servisi tanımlı olmadan kod ulaşmaz →
+# varsayılan KAPALI. Açmak için GitHub Variables: ADMIN_MFA_ENFORCE=on.
+MFA_SETTING="$(grep -m1 '^ADMIN_MFA_ENFORCE=' "$REL/bootstrap.env" 2>/dev/null | cut -d= -f2- | tr -d "'\"" || true)"
+case "$MFA_SETTING" in on|ON|true|1) set_kv ADMIN_MFA_ENFORCE on ;; *) set_kv ADMIN_MFA_ENFORCE off ;; esac
 # İlk yönetici (yalnız GitHub Secrets'tan gelirse; dosya okunduktan sonra silinir).
 if [ -f "$REL/bootstrap.env" ]; then
   # shellcheck disable=SC1091
