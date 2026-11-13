@@ -114,6 +114,14 @@ RULE_CATALOG = [
      "type": "number", "default": 130, "unit": "₺", "options": [0, 50, 100, 130, 150, 200],
      "help": "Hediye paketi seçilince eklenen ücret."},
 
+    # ---- Pazaryeri ----
+    {"group": "Pazarlama & Stok", "key": "marketplace.only_xml_products",
+     "label": "Pazaryerine yalnız XML'den gelen ürünler gönderilsin",
+     "type": "toggle", "default": True, "options": [True, False],
+     "help": "AÇIK: Trendyol, Hepsiburada, Amazon, n11 ve Temu'ya YALNIZ ürün XML'inden (Ticimax) aktarılan "
+             "ürünlerin stok/fiyat/ürün verisi gönderilir. Elle eklenen ya da başka kaynaktan gelen ürünler "
+             "için hiçbir stok/fiyat hareketi (stok-0 dahil) pazaryerine gitmez."},
+
     # ---- İade ----
     {"group": "İade & Değişim", "key": "return.window_days", "label": "İade/değişim süresi",
      "type": "number", "default": 14, "unit": "gün", "options": [7, 14, 15, 30],

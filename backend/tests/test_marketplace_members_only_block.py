@@ -10,7 +10,7 @@ def _setup(monkeypatch, end=None):
     monkeypatch.setattr(deps, "db", db)
     monkeypatch.setattr(rp, "db", db)
     rp.invalidate_members_only_cache()
-    mb._STATE.update({"keys": frozenset(), "ts": 0.0})
+    mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0})
 
     async def seed():
         await db.categories.insert_many([
@@ -18,9 +18,9 @@ def _setup(monkeypatch, end=None):
             {"id": "ceket", "name": "Ceket"},
         ])
         await db.products.insert_many([
-            {"id": "p1", "category_id": "ceket", "category_ids": ["ceket", "ws"], "stock_code": "FCWS1",
+            {"id": "p1", "source": "ticimax_xml", "category_id": "ceket", "category_ids": ["ceket", "ws"], "stock_code": "FCWS1",
              "variants": [{"barcode": "BC1", "stock_code": "FCWS1", "size": "S"}]},
-            {"id": "p2", "category_id": "ceket", "category_ids": ["ceket"], "stock_code": "FCX2",
+            {"id": "p2", "source": "ticimax_xml", "category_id": "ceket", "category_ids": ["ceket"], "stock_code": "FCX2",
              "variants": [{"barcode": "BC2", "stock_code": "FCX2", "size": "S"}]},
         ])
         await mb.refresh_blocked(force=True)
@@ -108,3 +108,71 @@ def test_trendyol_create_sends_members_only_with_zero_stock(monkeypatch):
     assert r["batchRequestId"] == "b1"
     assert sent["items"][0]["quantity"] == 0 and sent["items"][0]["salePrice"] == 100
     assert sent["items"][1]["quantity"] == 3
+
+
+
+# ── XML dışı ürünler (İşletme Kuralı marketplace.only_xml_products, varsayılan AÇIK) ──────────────────
+def _setup_xml(monkeypatch, rule_on=True):
+    import routes.deps as deps
+    import routes.products as rp
+    import marketplace_block as mb
+    db = AsyncMongoMockClient()["mbx"]
+    monkeypatch.setattr(deps, "db", db)
+    monkeypatch.setattr(rp, "db", db)
+    rp.invalidate_members_only_cache()
+    mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0})
+
+    async def seed():
+        import business_rules as br
+        if not rule_on:
+            await br.save_rules(db, {"marketplace.only_xml_products": False})
+        await db.products.insert_many([
+            {"id": "x1", "source": "ticimax_xml", "stock_code": "LR1",
+             "variants": [{"barcode": "TYX1", "stock_code": "LR1", "size": "17"}]},
+            {"id": "m1", "source": "manual", "stock_code": "EL1",
+             "variants": [{"barcode": "MAN1", "stock_code": "EL1"}]},
+            # elle eklenmiş KOPYA: XML ürünüyle aynı stok kodu → XML ürünü engellenmemeli
+            {"id": "m2", "stock_code": "LR1", "variants": [{"barcode": "MAN2", "stock_code": "LR1"}]},
+        ])
+        await mb.refresh_blocked(force=True)
+    asyncio.run(seed())
+    return mb
+
+
+def test_nonxml_products_never_sent(monkeypatch):
+    mb = _setup_xml(monkeypatch)
+    keep, skipped = mb.filter_items([{"barcode": "TYX1", "quantity": 1}, {"barcode": "MAN1", "quantity": 5},
+                                     {"barcode": "MAN2", "quantity": 2}])
+    assert skipped == 2 and keep == [{"barcode": "TYX1", "quantity": 1}]
+    assert not mb.item_is_blocked({"stockCode": "LR1", "quantity": 1})        # ortak kod XML ürününe ait
+    # ürün oluşturma/güncelleme: XML dışı kalem 0 stokla bile GÖNDERİLMEZ (çıkarılır)
+    out, zeroed = mb.zero_stock_items([{"barcode": "TYX1", "quantity": 3}, {"barcode": "MAN1", "quantity": 9}])
+    assert out == [{"barcode": "TYX1", "quantity": 3}] and zeroed == 0
+
+
+def test_trendyol_price_inventory_skips_nonxml(monkeypatch):
+    mb = _setup_xml(monkeypatch)
+    from trendyol_client import TrendyolClient
+    import httpx
+    called = []
+
+    class _Boom:
+        def __init__(self, *a, **k):
+            called.append(1)
+    monkeypatch.setattr(httpx, "AsyncClient", _Boom)
+    c = TrendyolClient.__new__(TrendyolClient)
+    c.base_url, c.supplier_id = "https://x", "1"
+    r = asyncio.run(c.update_price_and_inventory([{"barcode": "MAN1", "quantity": 4, "salePrice": 10}]))
+    assert r["skipped_members_only"] == 1 and not called
+
+
+def test_rule_off_allows_nonxml(monkeypatch):
+    mb = _setup_xml(monkeypatch, rule_on=False)
+    assert mb.filter_items([{"barcode": "MAN1"}])[1] == 0
+
+
+def test_fail_closed_before_first_refresh(monkeypatch):
+    import marketplace_block as mb
+    mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0})
+    assert mb.filter_items([{"barcode": "ANY"}], "hb.stocks") == ([], 1)
+    assert mb.item_is_blocked({"merchantSku": "ANY"})
