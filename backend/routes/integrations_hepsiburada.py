@@ -1122,37 +1122,104 @@ def _hb_listing_items_from_product(product: dict, markup: float = 0.0, price_sou
                           "price": (round(base_price, 2) if (base_price and base_price > 0) else None),
                           "availableStock": int(_to_float_tr(product.get("stock", 0)))})
     return items
-_HB_UPLOAD_CHUNK = 4000
+_HB_UPLOAD_CHUNK = 4000        # HB tek istekte en çok 5000 kalem kabul eder (kod 1137)
+_HB_DELTA_MIN = 1000           # bu sayının üstündeki gönderim "toplu senkron" sayılır → yalnız DEĞİŞENLER gider
+_HB_REFRESH_HOURS = 3          # değişmeyen kalem en geç bu kadar saatte bir yeniden gönderilir (+ dağıtma)
+_HB_REFRESH_SPREAD_MIN = 180   # yenilemeler tek seferde yığılmasın: kalem başına 0-180 dk kaydırma
+_HB_REFRESH_BATCH = 1000       # değişiklik yokken yenileme için beklenen asgari kalem
+
+
+def _hb_state_key(it: dict) -> str:
+    return str(it.get("merchantSku") or it.get("hepsiburadaSku") or "").strip()
+
+
+async def _hb_delta_filter(items: list) -> list:
+    """Toplu senkronda yalnız fiyatı/stoğu SON GÖNDERİLENDEN farklı olan (ya da yenileme zamanı gelen)
+    kalemleri döner. HB satıcı başına envanter-yükleme sayısını sınırlar (kod 1144/1136, HTTP 429);
+    3 dakikada bir 30 bin kalemi baştan göndermek bu sınırı aşar ve HİÇBİR güncelleme işlenmez."""
+    state = {}
+    async for d in db.hb_sent_state.find({}, {"_id": 1, "p": 1, "s": 1, "at": 1}):
+        state[d["_id"]] = d
+    now = datetime.now(timezone.utc)
+    changed, due = [], []
+    for it in items:
+        k = _hb_state_key(it)
+        if not k:
+            continue
+        st = state.get(k)
+        if st is None or st.get("p") != it.get("price") or st.get("s") != it.get("availableStock"):
+            changed.append(it)
+            continue
+        try:
+            at = datetime.fromisoformat(st.get("at"))
+        except Exception:
+            at = None
+        spread = int(hashlib.md5(k.encode("utf-8")).hexdigest()[:6], 16) % _HB_REFRESH_SPREAD_MIN
+        if at is None or (now - at) >= timedelta(hours=_HB_REFRESH_HOURS, minutes=spread):
+            due.append(it)
+    if changed or len(due) >= _HB_REFRESH_BATCH:
+        return changed + due
+    return []
+
+
+async def _hb_mark_sent(rows: list) -> None:
+    from pymongo import UpdateOne
+    now = datetime.now(timezone.utc).isoformat()
+    ops = [UpdateOne({"_id": _hb_state_key(it)},
+                     {"$set": {"p": it.get("price"), "s": it.get("availableStock"), "at": now}}, upsert=True)
+           for it in rows if _hb_state_key(it)]
+    for i in range(0, len(ops), 1000):
+        await db.hb_sent_state.bulk_write(ops[i:i + 1000], ordered=False)
 
 
 async def _hb_push_stock_price(client, items, do_price=True, do_stock=True):
-    """price-uploads / stock-uploads çağrılarını yapar, upload id'lerini döner."""
+    """price-uploads / stock-uploads çağrılarını yapar, upload id'lerini döner.
+    Eski sözleşme korunur: *_upload_id = ilk parçanın id'si; çok parçalıysa tüm id'ler *_upload_ids'te.
+    Toplu senkron (>_HB_DELTA_MIN kalem, fiyat+stok birlikte): yalnız değişen kalemler, tur başına en çok
+    bir parça gönderilir; kalanlar sonraki turda gider (HB yükleme sınırına takılmamak için)."""
     import asyncio
     from hepsiburada_client import HepsiburadaError
     out = {"price_upload_id": None, "stock_upload_id": None, "errors": []}
-    price_items = [{k: it[k] for k in ("merchantSku", "hepsiburadaSku", "price") if k in it and it.get(k) not in (None, "")}
-                   for it in items if it.get("price") is not None]
-    stock_items = [{k: it[k] for k in ("merchantSku", "hepsiburadaSku", "availableStock") if k in it and it.get(k) not in (None, "")}
-                   for it in items if it.get("availableStock") is not None]
-    # HB tek istekte en çok 5000 kalem kabul eder (kod 1137) → büyük kataloglar parça parça gönderilir.
-    # Eski sözleşme korunur: *_upload_id = ilk parçanın id'si; tüm id'ler *_upload_ids listesinde.
+    items = list(items or [])
+    bulk = len(items) > _HB_DELTA_MIN and do_price and do_stock
+    if bulk:
+        total = len(items)
+        items = await _hb_delta_filter(items)
+        out["delta"] = {"total": total, "pending": len(items), "sent": min(len(items), _HB_UPLOAD_CHUNK)}
+        items = items[:_HB_UPLOAD_CHUNK]
+        if not items:
+            return out
+
+    def _rows(key):
+        return [{k: it[k] for k in ("merchantSku", "hepsiburadaSku", key) if k in it and it.get(k) not in (None, "")}
+                for it in items if it.get(key) is not None]
+
     async def _send(fn, rows, id_key, label):
-        ids = []
+        ids, ok = [], True
         for i in range(0, len(rows), _HB_UPLOAD_CHUNK):
             try:
                 r = await asyncio.to_thread(fn, rows[i:i + _HB_UPLOAD_CHUNK])
                 if isinstance(r, dict) and r.get("id"):
                     ids.append(r.get("id"))
             except HepsiburadaError as e:
+                ok = False
                 out["errors"].append(f"{label}: {e}")
         out[id_key] = ids[0] if ids else None
         if len(rows) > _HB_UPLOAD_CHUNK:
             out[id_key + "s"] = ids
+        return ok
 
+    ok_p = ok_s = True
+    price_items, stock_items = _rows("price"), _rows("availableStock")
     if do_price and price_items:
-        await _send(client.update_prices, price_items, "price_upload_id", "Fiyat")
+        ok_p = await _send(client.update_prices, price_items, "price_upload_id", "Fiyat")
     if do_stock and stock_items:
-        await _send(client.update_stocks, stock_items, "stock_upload_id", "Stok")
+        ok_s = await _send(client.update_stocks, stock_items, "stock_upload_id", "Stok")
+    if do_price and do_stock and ok_p and ok_s:
+        try:
+            await _hb_mark_sent(items)   # yalnız İKİSİ de kabul edildiyse "gönderildi" say
+        except Exception:
+            pass
     return out
 @router.post("/hepsiburada/products/{product_id}/update-stock-price")
 async def hb_update_product_stock_price(product_id: str, body: HbBulkListingReq = None,
