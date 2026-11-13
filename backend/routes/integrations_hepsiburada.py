@@ -1122,6 +1122,9 @@ def _hb_listing_items_from_product(product: dict, markup: float = 0.0, price_sou
                           "price": (round(base_price, 2) if (base_price and base_price > 0) else None),
                           "availableStock": int(_to_float_tr(product.get("stock", 0)))})
     return items
+_HB_UPLOAD_CHUNK = 4000
+
+
 async def _hb_push_stock_price(client, items, do_price=True, do_stock=True):
     """price-uploads / stock-uploads çağrılarını yapar, upload id'lerini döner."""
     import asyncio
@@ -1131,18 +1134,25 @@ async def _hb_push_stock_price(client, items, do_price=True, do_stock=True):
                    for it in items if it.get("price") is not None]
     stock_items = [{k: it[k] for k in ("merchantSku", "hepsiburadaSku", "availableStock") if k in it and it.get(k) not in (None, "")}
                    for it in items if it.get("availableStock") is not None]
+    # HB tek istekte en çok 5000 kalem kabul eder (kod 1137) → büyük kataloglar parça parça gönderilir.
+    # Eski sözleşme korunur: *_upload_id = ilk parçanın id'si; tüm id'ler *_upload_ids listesinde.
+    async def _send(fn, rows, id_key, label):
+        ids = []
+        for i in range(0, len(rows), _HB_UPLOAD_CHUNK):
+            try:
+                r = await asyncio.to_thread(fn, rows[i:i + _HB_UPLOAD_CHUNK])
+                if isinstance(r, dict) and r.get("id"):
+                    ids.append(r.get("id"))
+            except HepsiburadaError as e:
+                out["errors"].append(f"{label}: {e}")
+        out[id_key] = ids[0] if ids else None
+        if len(rows) > _HB_UPLOAD_CHUNK:
+            out[id_key + "s"] = ids
+
     if do_price and price_items:
-        try:
-            r = await asyncio.to_thread(client.update_prices, price_items)
-            out["price_upload_id"] = (r or {}).get("id") if isinstance(r, dict) else None
-        except HepsiburadaError as e:
-            out["errors"].append(f"Fiyat: {e}")
+        await _send(client.update_prices, price_items, "price_upload_id", "Fiyat")
     if do_stock and stock_items:
-        try:
-            r = await asyncio.to_thread(client.update_stocks, stock_items)
-            out["stock_upload_id"] = (r or {}).get("id") if isinstance(r, dict) else None
-        except HepsiburadaError as e:
-            out["errors"].append(f"Stok: {e}")
+        await _send(client.update_stocks, stock_items, "stock_upload_id", "Stok")
     return out
 @router.post("/hepsiburada/products/{product_id}/update-stock-price")
 async def hb_update_product_stock_price(product_id: str, body: HbBulkListingReq = None,
