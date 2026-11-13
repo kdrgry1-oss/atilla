@@ -98,23 +98,27 @@ async def refresh_blocked(force: bool = False) -> frozenset:
     return _STATE["keys"]
 
 
-def _product_keys(p: dict) -> set:
-    out: set = set()
-    for k in ("barcode", "stock_code", "sku", "model_code", "trendyol_model_code"):
-        if p.get(k):
-            out.add(_norm(p[k]))
-    for v in (p.get("variants") or []):
-        if not isinstance(v, dict):
-            continue
-        for k in ("barcode", "stock_code", "sku", "merchant_sku", "hb_sku", "trendyol_barcode", "amazon_sku"):
-            if v.get(k):
-                out.add(_norm(v[k]))
-    return out
+_P_KEYS = ("barcode", "stock_code", "sku", "model_code", "trendyol_model_code")
+_V_KEYS = ("barcode", "stock_code", "sku", "merchant_sku", "hb_sku", "hb_barcode", "trendyol_barcode",
+           "ticimax_barcode", "amazon_sku")
+EXCEL_SOURCE = "trendyol_excel"
+
+
+def _variant_is_xml(p: dict, v: Optional[dict]) -> bool:
+    """Varyantın stok/fiyatı XML'den (Ticimax) mi besleniyor?
+    - source=ticimax_xml ürünlerin tüm varyantları
+    - Trendyol Excel'inden açılıp Ticimax'a BAĞLANMIŞ ürünlerde (ticimax_linked) Ticimax URUNID'si olan varyantlar"""
+    src = p.get("source")
+    if src == XML_SOURCE:
+        return True
+    if src == EXCEL_SOURCE and p.get("ticimax_linked"):
+        return bool(v is not None and str(v.get("urun_id") or "").strip())
+    return False
 
 
 async def _nonxml_keys(db) -> Tuple[frozenset, int]:
-    """İşletme Kuralı marketplace.only_xml_products AÇIKSA: XML'den (Ticimax) GELMEYEN ürünlerin tüm
-    tanımlayıcıları (barkod/stok kodu/SKU/HB merchantSku/Amazon SellerSKU) — XML ürünleriyle ORTAK olan
+    """İşletme Kuralı marketplace.only_xml_products AÇIKSA: stok/fiyatı XML'den beslenmeyen ürün/varyantların
+    tanımlayıcıları (barkod/stok kodu/SKU/HB merchantSku/Amazon SellerSKU). XML'den beslenen kalemlerle ORTAK
     anahtarlar çıkarılır (elle eklenmiş kopya, XML ürününün gönderimini engellemesin)."""
     try:
         from business_rules import get_rule
@@ -128,44 +132,52 @@ async def _nonxml_keys(db) -> Tuple[frozenset, int]:
     except Exception:
         _hb_variant_sku, hb_src = None, None
     try:
-        from routes.amazon_spapi import _amazon_seller_sku, _amz_variants
+        from routes.amazon_spapi import _amazon_seller_sku
     except Exception:
-        _amazon_seller_sku = _amz_variants = None
-    xml_keys: set = set()
+        _amazon_seller_sku = None
+    allow: set = set()
     non: set = set()
     non_pids: list = []
     n = 0
     async for p in db.products.find({}, {"_id": 0}):
-        ks = _product_keys(p)
         variants = [v for v in (p.get("variants") or []) if isinstance(v, dict)]
-        if _hb_variant_sku:
-            try:
-                used: set = set()
-                for vi, v in enumerate(variants or [None]):
-                    s = _hb_variant_sku(p, v, vi, hb_src, used) if v is not None else _hb_variant_sku(p, None, 0, hb_src)
+        flags = [_variant_is_xml(p, v) for v in variants]
+        prod_xml = any(flags) if variants else _variant_is_xml(p, None)
+        pk = {_norm(p[k]) for k in _P_KEYS if p.get(k)}
+        (allow if prod_xml else non).update(pk)
+        used: set = set()
+        for vi, (v, ok) in enumerate(zip(variants, flags)):
+            vk = {_norm(v[k]) for k in _V_KEYS if v.get(k)}
+            if _hb_variant_sku:
+                try:
+                    s = _hb_variant_sku(p, v, vi, hb_src, used)
                     if s:
-                        ks.add(_norm(s))
-            except Exception:
-                pass
-        if _amazon_seller_sku and _amz_variants:
-            try:
-                for v in _amz_variants(p):
+                        vk.add(_norm(s))
+                except Exception:
+                    pass
+            if _amazon_seller_sku:
+                try:
                     s = _amazon_seller_sku(v, p)
                     if s:
-                        ks.add(_norm(s))
+                        vk.add(_norm(s))
+                except Exception:
+                    pass
+            (allow if ok else non).update(vk)
+        if not variants and _hb_variant_sku:
+            try:
+                s = _hb_variant_sku(p, None, 0, hb_src)
+                if s:
+                    (allow if prod_xml else non).add(_norm(s))
             except Exception:
                 pass
-        if p.get("source") == XML_SOURCE:
-            xml_keys |= ks
-        else:
-            non |= ks
+        if not prod_xml:
             n += 1
             non_pids.append(p.get("id"))
     if non_pids:
         async for mm in db.amazon_sku_map.find({"product_id": {"$in": non_pids}}, {"_id": 0, "sku": 1}):
             if mm.get("sku"):
                 non.add(_norm(mm["sku"]))
-    non -= xml_keys
+    non -= allow
     non.discard("")
     return frozenset(non), n
 

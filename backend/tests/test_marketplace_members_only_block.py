@@ -124,8 +124,7 @@ def _setup_xml(monkeypatch, rule_on=True):
 
     async def seed():
         import business_rules as br
-        if not rule_on:
-            await br.save_rules(db, {"marketplace.only_xml_products": False})
+        await br.save_rules(db, {"marketplace.only_xml_products": bool(rule_on)})
         await db.products.insert_many([
             {"id": "x1", "source": "ticimax_xml", "stock_code": "LR1",
              "variants": [{"barcode": "TYX1", "stock_code": "LR1", "size": "17"}]},
@@ -176,3 +175,32 @@ def test_fail_closed_before_first_refresh(monkeypatch):
     mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0})
     assert mb.filter_items([{"barcode": "ANY"}], "hb.stocks") == ([], 1)
     assert mb.item_is_blocked({"merchantSku": "ANY"})
+
+
+def test_excel_products_linked_to_ticimax_are_xml_fed(monkeypatch):
+    """Trendyol Excel'inden açılıp Ticimax URUNID'sine bağlanan varyantlar XML'den beslenir → gönderilir;
+    aynı ürünün bağlı olmayan varyantı ve hiç bağlanmamış Excel ürünü gönderilmez."""
+    import routes.deps as deps
+    import routes.products as rp
+    import marketplace_block as mb
+    db = AsyncMongoMockClient()["mbl"]
+    monkeypatch.setattr(deps, "db", db)
+    monkeypatch.setattr(rp, "db", db)
+    rp.invalidate_members_only_cache()
+    mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0})
+
+    async def seed():
+        import business_rules as br
+        await br.save_rules(db, {"marketplace.only_xml_products": True})
+        await db.products.insert_many([
+            {"id": "e1", "source": "trendyol_excel", "ticimax_linked": True, "stock_code": "LR9",
+             "variants": [{"barcode": "TYL17", "stock_code": "LR9", "size": "17", "urun_id": "5551"},
+                          {"barcode": "TYL18", "stock_code": "LR9-18", "size": "18"}]},
+            {"id": "e2", "source": "trendyol_excel", "stock_code": "PAS1",
+             "variants": [{"barcode": "TYPAS", "stock_code": "PAS1"}]},
+        ])
+        await mb.refresh_blocked(force=True)
+    asyncio.run(seed())
+    keep, skipped = mb.filter_items([{"barcode": "TYL17", "quantity": 2}, {"barcode": "TYL18", "quantity": 1},
+                                     {"barcode": "TYPAS", "quantity": 4}])
+    assert keep == [{"barcode": "TYL17", "quantity": 2}] and skipped == 2
