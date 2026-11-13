@@ -882,9 +882,15 @@ async def import_products(db, products: List[Dict[str, Any]], *, dry_run: bool =
 
             if existing is None:
                 # Başka bir üründe (Excel'den açılıp Ticimax'a bağlanmış) duran varyant YENİDEN açılmaz.
+                n_all = len(vs)
                 vs = [v for v in vs if str(v.get("urun_id") or "") not in linked_ids]
                 if not vs:
                     stats["skipped_linked"] = stats.get("skipped_linked", 0) + 1
+                    continue
+                if len(vs) < n_all:
+                    # Kartın bir kısmı zaten bağlı üründe: kalan (pazaryerinde arşivli/olmayan) varyantlar
+                    # için AYNI stok koduyla ikinci bir ürün açılmaz — mükerrer ürün ve model kodu oluşmasın.
+                    stats["skipped_partial_linked"] = stats.get("skipped_partial_linked", 0) + 1
                     continue
                 total_stock = sum(int(v.get("stock") or 0) for v in vs)
                 variants = [_variant_doc(v, price) for v in vs]
@@ -979,14 +985,21 @@ async def set_source(db, url: str, include_no_stock: bool) -> None:
 async def run_import(db, url: str, *, dry_run: bool = False, describe: bool = False,
                      include_no_stock: bool = False) -> Dict[str, Any]:
     from security_fetch import safe_fetch
-    res = await safe_fetch(url, max_bytes=MAX_FEED_BYTES, timeout=600, allow_redirects=3)
+    m = V2_URL_RE.match(url.strip())
+    fetch_url = url
+    if m:
+        # TicimaxXmlV2 çıktısı CDN'de 24 saat önbelleklenir (cache-control: max-age=86400); parametresiz
+        # istek bir güne kadar ESKİ stok/ürün listesi döndürür. Her çekimde değişen bir parametre ile
+        # güncel çıktı alınır (resim dosyası saatte bir yenilenir — nadiren değişir, yük olmasın).
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        fetch_url = f"{m.group(1)}/?v={now_ts}"
+    res = await safe_fetch(fetch_url, max_bytes=MAX_FEED_BYTES, timeout=600, allow_redirects=3)
     if not res.ok:
         raise RuntimeError(f"XML indirilemedi: HTTP {res.status_code}")
     images: Optional[Dict[str, List[str]]] = None
-    m = V2_URL_RE.match(url.strip())
     if m:   # TicimaxXmlV2: resimler ayrı dosyada
-        ires = await safe_fetch(m.group(1) + "/UrunResimleri.xml", max_bytes=MAX_FEED_BYTES, timeout=600,
-                                allow_redirects=3)
+        ires = await safe_fetch(f"{m.group(1)}/UrunResimleri.xml?v={now_ts // 3600}", max_bytes=MAX_FEED_BYTES,
+                                timeout=600, allow_redirects=3)
         if ires.ok:
             images = parse_images_feed(ires.content)
     products = parse_feed(res.content, images)

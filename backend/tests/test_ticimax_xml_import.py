@@ -239,3 +239,17 @@ def test_flat_v2_layout(mdb):
     p = run(mdb.products.find_one({"urun_karti_id": "700"}))
     assert len(p["variants"]) == 2 and p["variants"][0]["barcode"] == "TYX1"
     assert p["variants"][0]["ticimax_barcode"] == "ST26-9"
+
+
+def test_partially_linked_card_does_not_open_duplicate_product(mdb):
+    prods = tx.parse_feed(FLAT, tx.parse_images_feed(IMAGES))
+    ids = [str(v["urun_id"]) for v in prods[0]["variants"]]
+    assert len(ids) == 2
+    # kartın yalnız İLK varyantı, Excel'den açılıp Ticimax'a bağlanmış üründe duruyor
+    run(mdb.products.insert_one({"id": "e1", "source": "trendyol_excel", "ticimax_linked": True,
+                                 "stock_code": "ST26", "variants": [
+                                     {"id": "a", "urun_id": ids[0], "barcode": "TY1", "stock": 0, "price": 1}]}))
+    st = run(tx.import_products(mdb, prods, include_no_stock=True))
+    assert st.get("skipped_partial_linked") == 1
+    assert run(mdb.products.count_documents({"urun_karti_id": "700"})) == 0     # ikinci ürün açılmadı
+    assert run(mdb.products.find_one({"id": "e1"}))["variants"][0]["price"] == 120.0  # bağlı varyant güncellendi
