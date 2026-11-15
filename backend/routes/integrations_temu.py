@@ -109,8 +109,12 @@ async def _temu_request(method: str, path: str, *, params: Optional[Dict] = None
     """Imzalı Temu API çağrısı."""
     # ÜYELERE ÖZEL (erken erişim) ürünlerin ürün/stok/fiyat verisi Temu'ya gönderilmez
     if method.upper() != "GET" and json_body and any(path.startswith(x) for x in ("/product", "/inventory", "/pricing")):
-        from marketplace_block import refresh_blocked, item_is_blocked, filter_items, skipped_response
+        from marketplace_block import (refresh_blocked, item_is_blocked, filter_items, skipped_response,
+                                       marketplace_write_blocked as _mwb, disabled_response as _dr)
         await refresh_blocked()
+        _off = _mwb("temu")
+        if _off:
+            return _dr("temu", _off, len(json_body.get("updates") or [1]))
         if isinstance(json_body.get("updates"), list):
             _ups, _sk = filter_items(json_body["updates"], f"temu{path}")
             if not _ups:
@@ -192,6 +196,18 @@ def _sign_openapi(params: Dict[str, Any], secret: str) -> str:
 
 async def temu_openapi_call(api_type: str, business_params: Optional[Dict] = None) -> Dict:
     """İmzalı Temu açık API çağrısı (gateway router POST). Ham JSON yanıt döner."""
+    _t = str(api_type or "").lower()
+    _is_read = _t.endswith((".get", ".query", ".list", ".search")) or ".get." in _t or ".query." in _t
+    if not _is_read and any(k in _t for k in ("add", "update", "edit", "stock", "price", "publish",
+                                               "delete", "offline", "online", "upload", "sale")):
+        from marketplace_block import (refresh_blocked, item_is_blocked, skipped_response,
+                                       marketplace_write_blocked as _mwb, disabled_response as _dr)
+        await refresh_blocked()
+        _off = _mwb("temu")
+        if _off:
+            return _dr("temu", _off, 1)
+        if business_params and item_is_blocked(business_params):
+            return skipped_response(1)
     cfg = await _get_temu_config()
     if not cfg.get("access_token"):
         raise HTTPException(status_code=400, detail="Temu access_token yok. Önce Temu uygulamasını mağazaya yetkilendirin.")

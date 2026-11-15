@@ -18,7 +18,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 _STATE = {"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0, "products": 0,
-          "nonxml_products": 0}
+          "nonxml_products": 0, "disabled": frozenset(), "paused": False}
 XML_SOURCE = "ticimax_xml"
 _TTL = 60.0
 
@@ -91,6 +91,8 @@ async def refresh_blocked(force: bool = False) -> frozenset:
                         keys.add(_norm(m["sku"]))
         keys.discard("")
         nonxml, n_nonxml = await _nonxml_keys(db)
+        disabled, paused = await _disabled_marketplaces(db)
+        _STATE.update({"disabled": disabled, "paused": paused})
         _STATE.update({"members": frozenset(keys), "nonxml": nonxml, "keys": frozenset(keys) | nonxml,
                        "ts": now, "products": n, "nonxml_products": n_nonxml})
     except Exception as e:  # hata halinde önceki küme korunur (engel sessizce kalkmaz)
@@ -180,6 +182,51 @@ async def _nonxml_keys(db) -> Tuple[frozenset, int]:
     non -= allow
     non.discard("")
     return frozenset(non), n
+
+
+MARKETPLACES = ("trendyol", "hepsiburada", "n11", "temu", "amazon")
+
+
+async def _disabled_marketplaces(db) -> Tuple[frozenset, bool]:
+    """Panelde PASİFE alınmış pazaryerleri. Ayar iki yerde tutulabiliyor (entegrasyon formu: settings.<ad>.is_active,
+    Pazaryerleri Hub: marketplace_accounts.<ad>.enabled) — HERHANGİ biri açıkça kapalıysa pazaryeri pasif sayılır.
+    Ayrıca acil anahtar 'pause_marketplace_sync' / 'restore_mode' açıksa TÜM pazaryerlerine yazma durur."""
+    off = set()
+    for name in MARKETPLACES:
+        try:
+            s = await db.settings.find_one({"id": name}, {"_id": 0, "is_active": 1, "enabled": 1}) or {}
+            if s.get("is_active") is False or s.get("enabled") is False:
+                off.add(name)
+            a = await db.marketplace_accounts.find_one({"key": name}, {"_id": 0, "enabled": 1, "is_active": 1}) or {}
+            if a.get("enabled") is False or a.get("is_active") is False:
+                off.add(name)
+        except Exception:
+            pass
+    paused = False
+    try:
+        from security_switches import outbound_paused
+        paused = bool(await outbound_paused())
+    except Exception:
+        pass
+    return frozenset(off), paused
+
+
+def marketplace_write_blocked(name: str) -> Optional[str]:
+    """Pazaryerine YAZMA (stok/fiyat/ürün/arşiv) yapılmamalıysa nedenini döndürür, yoksa None.
+    Liste hiç hesaplanmadıysa (süreç açılışı) güvenli taraf: yazma yok."""
+    if _never_refreshed():
+        return "durum henüz okunmadı"
+    if _STATE.get("paused"):
+        return "acil anahtar: pazaryeri senkronu duraklatıldı"
+    if name in _STATE.get("disabled", frozenset()):
+        return "entegrasyon panelde pasif"
+    return None
+
+
+def disabled_response(name: str, reason: str, n: int = 0) -> dict:
+    logger.warning(f"[mp-block] {name}: {reason} — {n} kalem GÖNDERİLMEDİ")
+    return {"skipped_members_only": n, "skipped_disabled": n, "items": [], "disabled": True,
+            "message": f"{name} entegrasyonu pasif / duraklatılmış — gönderilmedi ({reason})."}
 
 
 def blocked_keys() -> frozenset:

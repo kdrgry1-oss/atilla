@@ -204,3 +204,66 @@ def test_excel_products_linked_to_ticimax_are_xml_fed(monkeypatch):
     keep, skipped = mb.filter_items([{"barcode": "TYL17", "quantity": 2}, {"barcode": "TYL18", "quantity": 1},
                                      {"barcode": "TYPAS", "quantity": 4}])
     assert keep == [{"barcode": "TYL17", "quantity": 2}] and skipped == 2
+
+
+def _setup_disabled(monkeypatch, settings=None, accounts=None):
+    import routes.deps as deps
+    import routes.products as rp
+    import marketplace_block as mb
+    db = AsyncMongoMockClient()["mbd"]
+    monkeypatch.setattr(deps, "db", db)
+    monkeypatch.setattr(rp, "db", db)
+    rp.invalidate_members_only_cache()
+    mb._STATE.update({"keys": frozenset(), "members": frozenset(), "nonxml": frozenset(), "ts": 0.0,
+                      "disabled": frozenset(), "paused": False})
+
+    async def seed():
+        import business_rules as br
+        await br.save_rules(db, {"marketplace.only_xml_products": True})
+        await db.products.insert_one({"id": "x1", "source": "ticimax_xml", "variants": [{"barcode": "TYX1"}]})
+        for s in settings or []:
+            await db.settings.insert_one(s)
+        for a in accounts or []:
+            await db.marketplace_accounts.insert_one(a)
+        await mb.refresh_blocked(force=True)
+    asyncio.run(seed())
+    return mb
+
+
+def test_disabled_trendyol_sends_nothing(monkeypatch):
+    mb = _setup_disabled(monkeypatch, settings=[{"id": "trendyol", "is_active": False}])
+    from trendyol_client import TrendyolClient
+    import httpx
+    called = []
+
+    class _Boom:
+        def __init__(self, *a, **k):
+            called.append(1)
+    monkeypatch.setattr(httpx, "AsyncClient", _Boom)
+    c = TrendyolClient.__new__(TrendyolClient)
+    c.base_url, c.supplier_id = "https://x", "1"
+    r = asyncio.run(c.update_price_and_inventory([{"barcode": "TYX1", "quantity": 3}]))   # XML ürünü bile
+    assert r.get("disabled") and not called
+    r = asyncio.run(c.create_products([{"barcode": "TYX1", "quantity": 3}]))
+    assert r.get("disabled") and not called
+    assert mb.marketplace_write_blocked("hepsiburada") is None                         # diğerleri etkilenmez
+
+
+def test_disabled_hepsiburada_from_hub_account(monkeypatch):
+    mb = _setup_disabled(monkeypatch, accounts=[{"key": "hepsiburada", "enabled": False}])
+    from hepsiburada_client import HepsiburadaClient
+    c = HepsiburadaClient.__new__(HepsiburadaClient)
+    c._request = lambda *a, **k: (_ for _ in ()).throw(AssertionError("HB'ye istek gitmemeli"))
+    assert c.update_stocks([{"merchantSku": "TYX1", "availableStock": 2}]).get("disabled")
+    assert c.update_listings_xml([{"MerchantSku": "TYX1", "AvailableStock": 2}]).get("disabled")
+
+
+def test_emergency_pause_blocks_all(monkeypatch):
+    import security_switches as ss
+
+    async def _on():
+        return True
+    monkeypatch.setattr(ss, "outbound_paused", _on)
+    mb = _setup_disabled(monkeypatch)
+    for name in ("trendyol", "hepsiburada", "n11", "temu", "amazon"):
+        assert mb.marketplace_write_blocked(name)

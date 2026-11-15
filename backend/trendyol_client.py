@@ -100,6 +100,12 @@ class TrendyolClient:
         from marketplace_block import refresh_blocked, zero_stock_items
         await refresh_blocked()
         items, _mo_zero = zero_stock_items(items, "trendyol.create")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("trendyol")
+        if _off:
+            return _dr("trendyol", _off, len(items or []))
+        if not items:
+            return {"skipped_members_only": _mo_zero, "items": [], "message": "Gönderilecek kalem kalmadı (XML dışı / engelli)."}
         url = f"{self.base_url}/product/sellers/{self.supplier_id}/v2/products"
         async with httpx.AsyncClient(timeout=60.0) as client:
             headers = self._get_headers()
@@ -131,6 +137,12 @@ class TrendyolClient:
         from marketplace_block import refresh_blocked, zero_stock_items
         await refresh_blocked()
         items, _mo_zero = zero_stock_items(items, "trendyol.update")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("trendyol")
+        if _off:
+            return _dr("trendyol", _off, len(items or []))
+        if not items:
+            return {"skipped_members_only": _mo_zero, "items": [], "message": "Gönderilecek kalem kalmadı (XML dışı / engelli)."}
         url = f"{self.base_url}/product/sellers/{self.supplier_id}/products"
         async with httpx.AsyncClient(timeout=60.0) as client:
             headers = self._get_headers()
@@ -202,6 +214,10 @@ class TrendyolClient:
         from marketplace_block import refresh_blocked, filter_items, skipped_response
         await refresh_blocked()
         barcodes, _mo_skip = filter_items(list(barcodes or []), "trendyol.archive")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("trendyol")
+        if _off:
+            return _dr("trendyol", _off, len(barcodes or []))
         if not barcodes:
             return skipped_response(_mo_skip)
         url = f"{self.base_url}/product/sellers/{self.supplier_id}/products/archive-state"
@@ -226,6 +242,10 @@ class TrendyolClient:
         from marketplace_block import refresh_blocked, filter_items, skipped_response
         await refresh_blocked()
         barcodes, _mo_skip = filter_items(list(barcodes or []), "trendyol.unarchive")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("trendyol")
+        if _off:
+            return _dr("trendyol", _off, len(barcodes or []))
         if not barcodes:
             return skipped_response(_mo_skip)
         url = f"{self.base_url}/product/sellers/{self.supplier_id}/products/archive-state"
@@ -271,6 +291,10 @@ class TrendyolClient:
         from marketplace_block import refresh_blocked, filter_items, skipped_response
         await refresh_blocked()
         items, _mo_skip = filter_items(items, "trendyol.price_inventory")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("trendyol")
+        if _off:
+            return _dr("trendyol", _off, len(items or []))
         if not items:
             return skipped_response(_mo_skip)
         url = f"{self.base_url}/inventory/sellers/{self.supplier_id}/products/price-and-inventory"

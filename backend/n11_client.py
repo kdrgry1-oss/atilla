@@ -89,6 +89,10 @@ class N11Client:
         # ÜYELERE ÖZEL (erken erişim) ürünler n11'e gönderilmez
         from marketplace_block import refresh_blocked, filter_items, skipped_response
         await refresh_blocked()
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("n11")
+        if _off:
+            return _dr("n11", _off, len(skus or []))
         skus, _mo_skip = filter_items(list(skus or []), f"n11.{kind}")
         if not skus:
             return skipped_response(_mo_skip) if _mo_skip else {}

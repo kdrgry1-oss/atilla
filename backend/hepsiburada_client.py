@@ -235,6 +235,10 @@ class HepsiburadaClient:
         if isinstance(items, dict):
             items = [items]
         items, _mo_skip = filter_items(list(items or []), "hb.create")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, len(items or []))
         if not items:
             return skipped_response(_mo_skip)
         if isinstance(items, dict):
@@ -277,6 +281,10 @@ class HepsiburadaClient:
         if isinstance(items, dict):
             items = [items]
         items, _mo_skip = filter_items(list(items or []), "hb.update")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, len(items or []))
         if not items:
             return skipped_response(_mo_skip)
         if isinstance(items, dict):
@@ -340,6 +348,10 @@ class HepsiburadaClient:
         if isinstance(items, dict):
             items = [items]
         items, _mo_skip = filter_items(list(items or []), "hb.prices")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, len(items or []))
         if not items:
             return skipped_response(_mo_skip)
         path = f"/listings/merchantid/{self.merchant_id}/price-uploads"
@@ -353,6 +365,10 @@ class HepsiburadaClient:
         if isinstance(items, dict):
             items = [items]
         items, _mo_skip = filter_items(list(items or []), "hb.stocks")
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, len(items or []))
         if not items:
             return skipped_response(_mo_skip)
         path = f"/listings/merchantid/{self.merchant_id}/stock-uploads"
@@ -383,6 +399,15 @@ class HepsiburadaClient:
         listings: [{HepsiburadaSku, MerchantSku, ProductName, Price, AvailableStock,
                     DispatchTime, MaximumPurchasableQuantity, CargoCompany1..3}]
         Doner: {"id": <inventoryUploadId>, ...}"""
+        from marketplace_block import (filter_items, skipped_response,
+                                       marketplace_write_blocked as _mwb, disabled_response as _dr)
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, len(listings or []))
+        listings, _mo_skip = filter_items(list(listings or []), "hb.listings_xml")
+        if not listings:
+            return skipped_response(_mo_skip)
+
         def esc(v):
             s = "" if v is None else str(v)
             return (s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
@@ -423,6 +448,10 @@ class HepsiburadaClient:
 
     def activate_listing(self, hepsiburada_sku):
         """Listingi satışa açar (stok ve fiyat 0'dan farklı olmalı)."""
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, 1)
         from marketplace_block import item_is_blocked, skipped_response
         if item_is_blocked([hepsiburada_sku]):
             return skipped_response(1)
@@ -432,6 +461,10 @@ class HepsiburadaClient:
 
     def deactivate_listing(self, hepsiburada_sku):
         """Listingi satışa kapatır."""
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, 1)
         from marketplace_block import item_is_blocked, skipped_response
         if item_is_blocked([hepsiburada_sku]):
             return skipped_response(1)
@@ -441,6 +474,10 @@ class HepsiburadaClient:
 
     def delete_listing(self, hepsiburada_sku, merchant_sku):
         """Satışta olmayan bir listingi siler."""
+        from marketplace_block import marketplace_write_blocked as _mwb, disabled_response as _dr
+        _off = _mwb("hepsiburada")
+        if _off:
+            return _dr("hepsiburada", _off, 1)
         from marketplace_block import item_is_blocked, skipped_response
         if item_is_blocked([hepsiburada_sku, merchant_sku]):
             return skipped_response(1)

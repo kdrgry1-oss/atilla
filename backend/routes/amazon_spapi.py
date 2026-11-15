@@ -208,6 +208,13 @@ async def _spapi_send(method: str, path: str, body: dict = None, params: dict = 
     ne gönderileceğini döndürür → SKU/payload'ı canlı yazmadan doğrulayabilirsiniz.
     Açıkken gerçek çağrı yapılır. PII yol koruması (§1) yine geçerli; gövde loglanmaz."""
     _assert_restricted_allowed(path)
+    # Panelde PASİF / acil anahtarla duraklatılmış Amazon'a hiçbir yazma gitmez
+    from marketplace_block import (refresh_blocked as _rb, marketplace_write_blocked as _mwb,
+                                   disabled_response as _dr)
+    await _rb()
+    _off = _mwb("amazon")
+    if _off:
+        return {"status": 0, "ok": True, **_dr("amazon", _off, 1)}
     # ÜYELERE ÖZEL (erken erişim) ürünlerin SKU'larına Amazon'a yazılmaz
     try:
         import urllib.parse as _up
